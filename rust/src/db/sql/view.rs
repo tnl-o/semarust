@@ -49,11 +49,11 @@ impl SqlDb {
         match self.get_dialect() {
             crate::db::sql::types::SqlDialect::SQLite => {
                 let result = sqlx::query(
-                    "INSERT INTO view (project_id, name, position)
+                    "INSERT INTO view (project_id, title, position)
                      VALUES (?, ?, ?)"
                 )
                 .bind(view.project_id)
-                .bind(&view.name)
+                .bind(&view.title)
                 .bind(view.position)
                 .execute(self.get_sqlite_pool().ok_or(Error::Other("SQLite pool not found".to_string()))?)
                 .await
@@ -71,10 +71,10 @@ impl SqlDb {
         match self.get_dialect() {
             crate::db::sql::types::SqlDialect::SQLite => {
                 sqlx::query(
-                    "UPDATE view SET name = ?, position = ?
+                    "UPDATE view SET title = ?, position = ?
                      WHERE id = ? AND project_id = ?"
                 )
-                .bind(&view.name)
+                .bind(&view.title)
                 .bind(view.position)
                 .bind(view.id)
                 .bind(view.project_id)

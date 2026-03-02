@@ -306,7 +306,7 @@ impl BackupDB {
         // Конвертируем представления
         for view in &self.views {
             backup.views.push(BackupView {
-                name: view.name.clone(),
+                name: view.title.clone(),
                 position: view.position,
             });
         }
