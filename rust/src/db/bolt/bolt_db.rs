@@ -38,7 +38,9 @@ impl BoltStore {
     where
         F: FnOnce(&TransactionalTree) -> Result<T>,
     {
-        self.db.transaction(|tx| f(tx)).map_err(|e| Error::Other(e.to_string()))
+        self.db.transaction(|tx| {
+            f(tx).map_err(|e| sled::transaction::ConflictableTransactionError::TransactionError(e.to_string()))
+        }).map_err(|e| Error::Other(e.to_string()))
     }
 
     /// Выполняет async транзакцию на чтение
@@ -46,7 +48,9 @@ impl BoltStore {
     where
         F: FnOnce(&TransactionalTree) -> Result<T>,
     {
-        self.db.transaction(|tx| f(tx)).map_err(|e| Error::Other(e.to_string()))
+        self.db.transaction(|tx| {
+            f(tx).map_err(|e| sled::transaction::ConflictableTransactionError::TransactionError(e.to_string()))
+        }).map_err(|e| Error::Other(e.to_string()))
     }
 }
 

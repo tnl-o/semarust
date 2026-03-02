@@ -20,7 +20,7 @@ pub async fn get_last_events(
     State(state): State<Arc<AppState>>,
     _auth_user: AuthUser,
 ) -> std::result::Result<Json<Vec<Event>>, (StatusCode, Json<ErrorResponse>)> {
-    get_events(state, _auth_user, 200).await
+    get_events_inner(&state, 200).await
 }
 
 /// Получает все события
@@ -28,21 +28,22 @@ pub async fn get_all_events(
     State(state): State<Arc<AppState>>,
     _auth_user: AuthUser,
 ) -> std::result::Result<Json<Vec<Event>>, (StatusCode, Json<ErrorResponse>)> {
-    get_events(state, _auth_user, 0).await
+    get_events_inner(&state, 0).await
 }
 
 /// Получает события
-async fn get_events(
-    State(state): State<Arc<AppState>>,
-    _auth_user: AuthUser,
+async fn get_events_inner(
+    state: &AppState,
     limit: usize,
 ) -> std::result::Result<Json<Vec<Event>>, (StatusCode, Json<ErrorResponse>)> {
-    let events = state.store.get_events(None, limit)
-        .await
-        .map_err(|e| (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            Json(ErrorResponse::new(e.to_string()))
-        ))?;
+    let events: Result<Vec<Event>, Error> = state.store
+        .get_events(None, limit)
+        .await;
+
+    let events = events.map_err(|e| (
+        StatusCode::INTERNAL_SERVER_ERROR,
+        Json(ErrorResponse::new(e.to_string()))
+    ))?;
 
     Ok(Json(events))
 }

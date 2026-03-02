@@ -95,15 +95,10 @@ impl UsersController {
         }
 
         let mut user_to_update = state.store.get_user(update_user_id).await?;
-        
+
         // Обновляем поля
-        if let Some(name) = user.name {
-            user_to_update.name = name;
-        }
-        
-        if let Some(email) = user.email {
-            user_to_update.email = email;
-        }
+        user_to_update.name = user.name;
+        user_to_update.email = user.email;
 
         state.store.update_user(user_to_update).await?;
         Ok(Json(user_to_update))
