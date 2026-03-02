@@ -89,6 +89,14 @@ pub struct Task {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub inventory_id: Option<i32>,
 
+    /// ID репозитория
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub repository_id: Option<i32>,
+
+    /// ID окружения
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub environment_id: Option<i32>,
+
     /// Параметры задачи
     #[serde(skip_serializing_if = "Option::is_none")]
     pub params: Option<HashMap<String, serde_json::Value>>,
