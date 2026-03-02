@@ -50,7 +50,7 @@ impl BoltStore {
         
         let key_clone = key.clone();
         
-        let new_key = self.db.update(|tx| {
+        let new_key = self.update(|tx| {
             let bucket = tx.create_bucket_if_not_exists(b"access_keys")?;
             
             let str = serde_json::to_vec(&key_clone)?;

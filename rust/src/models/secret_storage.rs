@@ -1,7 +1,6 @@
 //! Модель SecretStorage - хранилище секретов
 
 use serde::{Deserialize, Serialize};
-use sqlx::FromRow;
 
 /// Тип хранилища секретов
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
@@ -12,8 +11,31 @@ pub enum SecretStorageType {
     Dvls,
 }
 
+impl std::fmt::Display for SecretStorageType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            SecretStorageType::Local => write!(f, "local"),
+            SecretStorageType::Vault => write!(f, "vault"),
+            SecretStorageType::Dvls => write!(f, "dvls"),
+        }
+    }
+}
+
+impl std::str::FromStr for SecretStorageType {
+    type Err = String;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "local" => Ok(SecretStorageType::Local),
+            "vault" => Ok(SecretStorageType::Vault),
+            "dvls" => Ok(SecretStorageType::Dvls),
+            _ => Ok(SecretStorageType::Local),
+        }
+    }
+}
+
 /// Хранилище секретов
-#[derive(Debug, Clone, Serialize, Deserialize, FromRow)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SecretStorage {
     /// Уникальный идентификатор
     pub id: i32,

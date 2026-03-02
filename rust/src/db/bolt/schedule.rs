@@ -82,7 +82,7 @@ impl BoltStore {
         
         let schedule_clone = schedule.clone();
         
-        let new_schedule = self.db.update(|tx| {
+        let new_schedule = self.update(|tx| {
             let bucket = tx.create_bucket_if_not_exists(b"schedules")?;
             
             let str = serde_json::to_vec(&schedule_clone)?;
@@ -104,7 +104,7 @@ impl BoltStore {
 
     /// Обновляет расписание
     pub async fn update_schedule(&self, schedule: Schedule) -> Result<()> {
-        self.db.update(|tx| {
+        self.update(|tx| {
             let bucket = tx.bucket(b"schedules");
             if bucket.is_none() {
                 return Err(crate::error::Error::NotFound("Расписание не найдено".to_string()));
@@ -126,7 +126,7 @@ impl BoltStore {
 
     /// Получает расписание по ID
     pub async fn get_schedule(&self, project_id: i32, schedule_id: i32) -> Result<Schedule> {
-        self.db.view(|tx| {
+        self.view(|tx| {
             let bucket = tx.bucket(b"schedules");
             if bucket.is_none() {
                 return Err(crate::error::Error::NotFound("Расписание не найдено".to_string()));
@@ -150,7 +150,7 @@ impl BoltStore {
 
     /// Удаляет расписание
     pub async fn delete_schedule(&self, project_id: i32, schedule_id: i32) -> Result<()> {
-        self.db.update(|tx| {
+        self.update(|tx| {
             let bucket = tx.bucket(b"schedules");
             if bucket.is_none() {
                 return Err(crate::error::Error::NotFound("Расписание не найдено".to_string()));

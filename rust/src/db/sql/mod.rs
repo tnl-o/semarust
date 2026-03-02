@@ -31,7 +31,7 @@ pub mod session;
 pub mod view;
 
 use crate::db::store::*;
-use crate::models::{User, Project, Task, TaskWithTpl, TaskOutput, TaskStage, Template, Inventory, Repository, Environment, AccessKey, Integration, Schedule, Session, APIToken, Event, Runner, View, Role, ProjectInvite, ProjectInviteWithUser, RetrieveQueryParams, TerraformInventoryAlias, TerraformInventoryState, SecretStorage};
+use crate::models::{User, Project, Task, TaskWithTpl, TaskOutput, TaskStage, Template, Inventory, Repository, Environment, AccessKey, Integration, Schedule, Session, APIToken, Event, Runner, View, Role, ProjectInvite, ProjectInviteWithUser, ProjectUser, RetrieveQueryParams, TerraformInventoryAlias, TerraformInventoryState, SecretStorage};
 use crate::error::{Error, Result};
 use async_trait::async_trait;
 use sqlx::{SqlitePool, Row};
@@ -321,6 +321,27 @@ impl UserManager for SqlStore {
             .await
             .map_err(|e| Error::Database(e))?;
         Ok(count as usize)
+    }
+
+    async fn get_project_users(&self, project_id: i32, _params: RetrieveQueryParams) -> Result<Vec<ProjectUser>> {
+        let query = "SELECT pu.*, u.username, u.name, u.email 
+                     FROM project__user pu 
+                     JOIN user u ON pu.user_id = u.id 
+                     WHERE pu.project_id = ? 
+                     ORDER BY pu.id";
+        let rows = sqlx::query(query)
+            .bind(project_id)
+            .fetch_all(&self.pool)
+            .await
+            .map_err(|e| Error::Database(e))?;
+
+        Ok(rows.into_iter().map(|row| ProjectUser {
+            id: row.get("id"),
+            project_id: row.get("project_id"),
+            user_id: row.get("user_id"),
+            role: row.get("role"),
+            created: row.get("created"),
+        }).collect())
     }
 }
 

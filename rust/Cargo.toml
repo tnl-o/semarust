@@ -130,6 +130,7 @@ features = ["derive", "env"]
 
 # System
 libc = "0.2"
+which = "4"
 
 # Тестирование
 [dev-dependencies]

@@ -3,7 +3,6 @@
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use sqlx::{FromRow, Type, decode::Decode, encode::Encode, database::Database};
-use std::collections::HashMap;
 use crate::models::template::{TemplateType, TemplateApp};
 use crate::services::task_logger::TaskStatus;
 
@@ -99,7 +98,7 @@ pub struct Task {
 
     /// Параметры задачи
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub params: Option<HashMap<String, serde_json::Value>>,
+    pub params: Option<serde_json::Value>,
 }
 
 /// Задача с дополнительными полями шаблона
@@ -150,6 +149,17 @@ pub enum TaskStageType {
     TerraformPlan,
     Running,
     PrintResult,
+}
+
+impl std::fmt::Display for TaskStageType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            TaskStageType::Init => write!(f, "init"),
+            TaskStageType::TerraformPlan => write!(f, "terraform_plan"),
+            TaskStageType::Running => write!(f, "running"),
+            TaskStageType::PrintResult => write!(f, "print_result"),
+        }
+    }
 }
 
 /// Этап задачи

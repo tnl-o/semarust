@@ -47,7 +47,7 @@ pub use template::{Template, TemplateWithPerms, TemplateRolePerm, TemplateType, 
 pub use template_vault::TemplateVault;
 pub use totp_verification::TotpVerification;
 pub use inventory::{Inventory, InventoryType};
-pub use repository::Repository;
+pub use repository::{Repository, RepositoryType};
 pub use environment::{Environment, EnvironmentSecret, EnvironmentSecretType};
 pub use access_key::{AccessKey, AccessKeyOwner, AccessKeyType, SshKeyData, LoginPasswordData};
 pub use integration::{Integration, IntegrationExtractValue, IntegrationMatcher, IntegrationAlias};

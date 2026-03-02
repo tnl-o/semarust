@@ -16,7 +16,7 @@ impl BoltStore {
         
         let session_clone = session.clone();
         
-        let new_session = self.db.update(|tx| {
+        let new_session = self.update(|tx| {
             let bucket_name = format!("sessions_{}", session.user_id);
             let bucket = tx.create_bucket_if_not_exists(bucket_name.as_bytes())?;
             
@@ -39,7 +39,7 @@ impl BoltStore {
 
     /// Получает сессию по ID
     pub async fn get_session(&self, user_id: i32, session_id: i32) -> Result<Session> {
-        self.db.view(|tx| {
+        self.view(|tx| {
             let bucket_name = format!("sessions_{}", user_id);
             let bucket = tx.bucket(bucket_name.as_bytes());
             
@@ -89,7 +89,7 @@ impl BoltStore {
 
     /// Обновляет сессию
     async fn update_session(&self, user_id: i32, session: Session) -> Result<()> {
-        self.db.update(|tx| {
+        self.update(|tx| {
             let bucket_name = format!("sessions_{}", user_id);
             let bucket = tx.bucket(bucket_name.as_bytes());
             
@@ -119,7 +119,7 @@ impl BoltStore {
         let token_clone = token.clone();
         let user_id = token.user_id;
         
-        let new_token = self.db.update(|tx| {
+        let new_token = self.update(|tx| {
             // Создаём токен в бакете пользователя
             let bucket_name = format!("tokens_{}", user_id);
             let bucket = tx.create_bucket_if_not_exists(bucket_name.as_bytes())?;
@@ -177,7 +177,7 @@ impl BoltStore {
         
         for token in tokens {
             if token.id.starts_with(token_id) {
-                return self.db.update(|tx| {
+                return self.update(|tx| {
                     let bucket_name = format!("tokens_{}", user_id);
                     let bucket = tx.bucket(bucket_name.as_bytes());
                     
@@ -200,7 +200,7 @@ impl BoltStore {
     pub async fn get_api_tokens(&self, user_id: i32) -> Result<Vec<APIToken>> {
         let mut tokens = Vec::new();
         
-        self.db.view(|tx| {
+        self.view(|tx| {
             let bucket_name = format!("tokens_{}", user_id);
             let bucket = tx.bucket(bucket_name.as_bytes());
             
@@ -227,7 +227,7 @@ impl BoltStore {
 
     /// Обновляет API токен
     async fn update_api_token(&self, user_id: i32, token_id: &str, expired: bool) -> Result<()> {
-        self.db.update(|tx| {
+        self.update(|tx| {
             let bucket_name = format!("tokens_{}", user_id);
             let bucket = tx.bucket(bucket_name.as_bytes());
             

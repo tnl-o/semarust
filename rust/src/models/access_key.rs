@@ -28,6 +28,30 @@ pub enum AccessKeyType {
     AccessKey,
 }
 
+impl std::fmt::Display for AccessKeyType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            AccessKeyType::None => write!(f, "none"),
+            AccessKeyType::LoginPassword => write!(f, "login_password"),
+            AccessKeyType::SSH => write!(f, "ssh"),
+            AccessKeyType::AccessKey => write!(f, "access_key"),
+        }
+    }
+}
+
+impl std::str::FromStr for AccessKeyType {
+    type Err = String;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "login_password" => Ok(AccessKeyType::LoginPassword),
+            "ssh" => Ok(AccessKeyType::SSH),
+            "access_key" => Ok(AccessKeyType::AccessKey),
+            _ => Ok(AccessKeyType::None),
+        }
+    }
+}
+
 impl<DB: Database> Type<DB> for AccessKeyType {
     fn type_info() -> DB::TypeInfo {
         String::type_info()

@@ -78,6 +78,7 @@ pub trait UserManager: Send + Sync {
     async fn set_user_password(&self, user_id: i32, password: &str) -> Result<()>;
     async fn get_all_admins(&self) -> Result<Vec<User>>;
     async fn get_user_count(&self) -> Result<usize>;
+    async fn get_project_users(&self, project_id: i32, params: RetrieveQueryParams) -> Result<Vec<ProjectUser>>;
 }
 
 /// Хранилище проектов

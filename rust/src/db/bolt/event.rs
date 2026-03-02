@@ -14,7 +14,7 @@ impl BoltStore {
         
         let evt_clone = evt.clone();
         
-        self.db.update(|tx| {
+        self.update(|tx| {
             let bucket = tx.create_bucket_if_not_exists(b"events")?;
             
             let str = serde_json::to_vec(&evt_clone)?;
@@ -34,7 +34,7 @@ impl BoltStore {
     pub async fn get_user_events(&self, user_id: i32, params: RetrieveQueryParams) -> Result<Vec<Event>> {
         let mut events = Vec::new();
         
-        self.db.view(|tx| {
+        self.view(|tx| {
             let bucket = tx.bucket(b"events");
             if bucket.is_none() {
                 return Ok(());
@@ -82,7 +82,7 @@ impl BoltStore {
     pub async fn get_events(&self, project_id: i32, params: RetrieveQueryParams) -> Result<Vec<Event>> {
         let mut events = Vec::new();
         
-        self.db.view(|tx| {
+        self.view(|tx| {
             let bucket = tx.bucket(b"events");
             if bucket.is_none() {
                 return Ok(());
@@ -124,7 +124,7 @@ impl BoltStore {
     pub async fn get_all_events(&self, params: RetrieveQueryParams) -> Result<Vec<Event>> {
         let mut events = Vec::new();
         
-        self.db.view(|tx| {
+        self.view(|tx| {
             let bucket = tx.bucket(b"events");
             if bucket.is_none() {
                 return Ok(());
@@ -168,7 +168,7 @@ impl BoltStore {
     {
         let mut events = Vec::new();
         
-        self.db.view(|tx| {
+        self.view(|tx| {
             let bucket = tx.bucket(b"events");
             if bucket.is_none() {
                 return Ok(());

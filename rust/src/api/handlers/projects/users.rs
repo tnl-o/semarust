@@ -29,7 +29,8 @@ pub async fn get_users(
     State(state): State<Arc<AppState>>,
     Path(project_id): Path<i32>,
 ) -> std::result::Result<Json<Vec<ProjectUserResponse>>, (StatusCode, Json<ErrorResponse>)> {
-    let users = state.store.get_project_users(project_id, RetrieveQueryParams::default())
+    let users = state.store
+        .get_project_users(project_id, RetrieveQueryParams::default())
         .await
         .map_err(|e| (
             StatusCode::INTERNAL_SERVER_ERROR,

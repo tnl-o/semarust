@@ -20,7 +20,7 @@ impl BoltStore {
         
         let user_clone = user.clone();
         
-        self.db.update(|tx| {
+        self.update(|tx| {
             let bucket = tx.create_bucket_if_not_exists(b"users")?;
             
             let str = serde_json::to_vec(&user_clone)?;
@@ -45,7 +45,7 @@ impl BoltStore {
         
         let user_clone = user.clone();
         
-        self.db.update(|tx| {
+        self.update(|tx| {
             let bucket = tx.create_bucket_if_not_exists(b"users")?;
             
             let str = serde_json::to_vec(&user_clone)?;
@@ -65,7 +65,7 @@ impl BoltStore {
 
     /// Получает пользователя по ID
     pub async fn get_user(&self, user_id: i32) -> Result<User> {
-        self.db.view(|tx| {
+        self.view(|tx| {
             let bucket = tx.bucket(b"users");
             if bucket.is_none() {
                 return Err(crate::error::Error::NotFound("Пользователь не найден".to_string()));
@@ -85,7 +85,7 @@ impl BoltStore {
 
     /// Получает пользователя по login или email
     pub async fn get_user_by_login_or_email(&self, login: &str, email: &str) -> Result<User> {
-        self.db.view(|tx| {
+        self.view(|tx| {
             let bucket = tx.bucket(b"users");
             if bucket.is_none() {
                 return Err(crate::error::Error::NotFound("Пользователь не найден".to_string()));
@@ -110,7 +110,7 @@ impl BoltStore {
     pub async fn get_users(&self, params: RetrieveQueryParams) -> Result<Vec<User>> {
         let mut users = Vec::new();
         
-        self.db.view(|tx| {
+        self.view(|tx| {
             let bucket = tx.bucket(b"users");
             if bucket.is_none() {
                 return Ok(());
@@ -158,7 +158,7 @@ impl BoltStore {
 
     /// Обновляет пользователя
     pub async fn update_user(&self, user: User) -> Result<()> {
-        self.db.update(|tx| {
+        self.update(|tx| {
             let bucket = tx.bucket(b"users");
             if bucket.is_none() {
                 return Err(crate::error::Error::NotFound("Пользователь не найден".to_string()));
@@ -180,7 +180,7 @@ impl BoltStore {
 
     /// Удаляет пользователя
     pub async fn delete_user(&self, user_id: i32) -> Result<()> {
-        self.db.update(|tx| {
+        self.update(|tx| {
             let bucket = tx.bucket(b"users");
             if bucket.is_none() {
                 return Err(crate::error::Error::NotFound("Пользователь не найден".to_string()));
@@ -204,7 +204,7 @@ impl BoltStore {
         let hashed_password = hash(password, DEFAULT_COST)
             .map_err(|e| crate::error::Error::Other(format!("Bcrypt error: {}", e)))?;
         
-        self.db.update(|tx| {
+        self.update(|tx| {
             let bucket = tx.bucket(b"users");
             if bucket.is_none() {
                 return Err(crate::error::Error::NotFound("Пользователь не найден".to_string()));
@@ -231,7 +231,7 @@ impl BoltStore {
     pub async fn get_all_admins(&self) -> Result<Vec<User>> {
         let mut admins = Vec::new();
         
-        self.db.view(|tx| {
+        self.view(|tx| {
             let bucket = tx.bucket(b"users");
             if bucket.is_none() {
                 return Ok(());
@@ -256,7 +256,7 @@ impl BoltStore {
 
     /// Получает количество пользователей
     pub async fn get_user_count(&self) -> Result<usize> {
-        self.db.view(|tx| {
+        self.view(|tx| {
             let bucket = tx.bucket(b"users");
             if bucket.is_none() {
                 return Ok(0);

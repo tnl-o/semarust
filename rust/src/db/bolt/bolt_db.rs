@@ -32,15 +32,17 @@ pub trait BoltDbOperations {
         F: FnOnce(&TransactionalTree) -> Result<T>;
 }
 
-impl BoltDbOperations for BoltStore {
-    fn update<F, T>(&self, f: F) -> Result<T>
+impl BoltStore {
+    /// Выполняет async транзакцию на запись
+    pub async fn update<F, T>(&self, f: F) -> Result<T>
     where
         F: FnOnce(&TransactionalTree) -> Result<T>,
     {
         self.db.transaction(|tx| f(tx)).map_err(|e| Error::Other(e.to_string()))
     }
 
-    fn view<F, T>(&self, f: F) -> Result<T>
+    /// Выполняет async транзакцию на чтение
+    pub async fn view<F, T>(&self, f: F) -> Result<T>
     where
         F: FnOnce(&TransactionalTree) -> Result<T>,
     {

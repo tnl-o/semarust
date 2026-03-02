@@ -33,7 +33,7 @@ mod public_alias;
 mod migration_system;
 
 use crate::db::store::*;
-use crate::models::{User, Project, Task, TaskWithTpl, TaskOutput, TaskStage, Template, TemplateFilter, Inventory, Repository, Environment, AccessKey, Integration, Schedule, Session, APIToken, Event, Runner, View, Role, ProjectInvite, ProjectInviteWithUser, RetrieveQueryParams, ObjectReferrers, OptionItem, SecretStorage, Hook, GetAccessKeyOptions, TerraformInventoryAlias, TerraformInventoryState};
+use crate::models::{User, Project, Task, TaskWithTpl, TaskOutput, TaskStage, Template, TemplateFilter, Inventory, Repository, Environment, AccessKey, Integration, Schedule, Session, APIToken, Event, Runner, View, Role, ProjectInvite, ProjectInviteWithUser, ProjectUser, RetrieveQueryParams, ObjectReferrers, OptionItem, SecretStorage, Hook, GetAccessKeyOptions, TerraformInventoryAlias, TerraformInventoryState};
 use crate::error::{Error, Result};
 use async_trait::async_trait;
 use std::collections::HashMap;
@@ -179,6 +179,11 @@ impl UserManager for BoltStore {
 
     async fn get_user_count(&self) -> Result<usize> {
         self.get_user_count().await
+    }
+
+    async fn get_project_users(&self, project_id: i32, _params: RetrieveQueryParams) -> Result<Vec<ProjectUser>> {
+        // Заглушка - нужно реализовать
+        self.get_project_users(project_id).await
     }
 }
 

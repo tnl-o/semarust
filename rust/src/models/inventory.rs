@@ -14,6 +14,33 @@ pub enum InventoryType {
     TerraformInventory,
 }
 
+impl std::fmt::Display for InventoryType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            InventoryType::Static => write!(f, "static"),
+            InventoryType::StaticYaml => write!(f, "static_yaml"),
+            InventoryType::StaticJson => write!(f, "static_json"),
+            InventoryType::File => write!(f, "file"),
+            InventoryType::TerraformInventory => write!(f, "terraform_inventory"),
+        }
+    }
+}
+
+impl std::str::FromStr for InventoryType {
+    type Err = String;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "static" => Ok(InventoryType::Static),
+            "static_yaml" => Ok(InventoryType::StaticYaml),
+            "static_json" => Ok(InventoryType::StaticJson),
+            "file" => Ok(InventoryType::File),
+            "terraform_inventory" => Ok(InventoryType::TerraformInventory),
+            _ => Ok(InventoryType::Static),
+        }
+    }
+}
+
 impl<DB: Database> Type<DB> for InventoryType {
     fn type_info() -> DB::TypeInfo {
         String::type_info()

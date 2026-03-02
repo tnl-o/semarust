@@ -18,7 +18,7 @@ impl BoltStore {
         
         let template_clone = template.clone();
         
-        let new_template = self.db.update(|tx| {
+        let new_template = self.update(|tx| {
             let bucket = tx.create_bucket_if_not_exists(b"templates")?;
             
             let str = serde_json::to_vec(&template_clone)?;
@@ -46,7 +46,7 @@ impl BoltStore {
         // Валидация шаблона
         template.validate()?;
         
-        self.db.update(|tx| {
+        self.update(|tx| {
             let bucket = tx.bucket(b"templates");
             if bucket.is_none() {
                 return Err(crate::error::Error::NotFound("Шаблон не найден".to_string()));
@@ -73,7 +73,7 @@ impl BoltStore {
 
     /// Устанавливает описание шаблона
     pub async fn set_template_description(&self, project_id: i32, template_id: i32, description: String) -> Result<()> {
-        self.db.update(|tx| {
+        self.update(|tx| {
             let bucket = tx.bucket(b"templates");
             if bucket.is_none() {
                 return Err(crate::error::Error::NotFound("Шаблон не найден".to_string()));
@@ -119,7 +119,7 @@ impl BoltStore {
     pub async fn get_templates(&self, project_id: i32, filter: TemplateFilter, params: RetrieveQueryParams) -> Result<Vec<Template>> {
         let mut templates = Vec::new();
         
-        self.db.view(|tx| {
+        self.view(|tx| {
             let bucket = tx.bucket(b"templates");
             if bucket.is_none() {
                 return Ok(());
@@ -170,7 +170,7 @@ impl BoltStore {
 
     /// Получает шаблон по ID
     pub async fn get_template(&self, project_id: i32, template_id: i32) -> Result<Template> {
-        self.db.view(|tx| {
+        self.view(|tx| {
             let bucket = tx.bucket(b"templates");
             if bucket.is_none() {
                 return Err(crate::error::Error::NotFound("Шаблон не найден".to_string()));
@@ -194,7 +194,7 @@ impl BoltStore {
 
     /// Удаляет шаблон
     pub async fn delete_template(&self, project_id: i32, template_id: i32) -> Result<()> {
-        self.db.update(|tx| {
+        self.update(|tx| {
             let bucket = tx.bucket(b"templates");
             if bucket.is_none() {
                 return Err(crate::error::Error::NotFound("Шаблон не найден".to_string()));

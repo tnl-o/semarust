@@ -2,10 +2,9 @@
 
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
-use sqlx::FromRow;
 
 /// Пользователь системы
-#[derive(Debug, Clone, Serialize, Deserialize, FromRow)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct User {
     /// Уникальный идентификатор
     pub id: i32,
@@ -39,13 +38,11 @@ pub struct User {
     pub pro: bool,
 
     /// Двухфакторная аутентификация TOTP
-    #[sqlx(default)]
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(skip_serializing, skip_deserializing)]
     pub totp: Option<UserTotp>,
 
     /// OTP по электронной почте
-    #[sqlx(default)]
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(skip_serializing, skip_deserializing)]
     pub email_otp: Option<UserEmailOtp>,
 }
 
@@ -72,7 +69,7 @@ pub struct UserEmailOtp {
 }
 
 /// Пользователь с ролью в проекте
-#[derive(Debug, Clone, Serialize, Deserialize, FromRow)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct UserWithProjectRole {
     #[serde(flatten)]
     pub user: User,

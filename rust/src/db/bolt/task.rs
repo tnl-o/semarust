@@ -15,7 +15,7 @@ impl BoltStore {
         
         let task_clone = task.clone();
         
-        let new_task = self.db.update(|tx| {
+        let new_task = self.update(|tx| {
             let bucket = tx.create_bucket_if_not_exists(b"tasks")?;
             
             let str = serde_json::to_vec(&task_clone)?;
@@ -42,7 +42,7 @@ impl BoltStore {
 
     /// Получает задачу по ID
     pub async fn get_task(&self, project_id: i32, task_id: i32) -> Result<Task> {
-        self.db.view(|tx| {
+        self.view(|tx| {
             let bucket = tx.bucket(b"tasks");
             if bucket.is_none() {
                 return Err(crate::error::Error::NotFound("Задача не найдена".to_string()));
@@ -76,7 +76,7 @@ impl BoltStore {
 
     /// Обновляет задачу
     pub async fn update_task(&self, task: Task) -> Result<()> {
-        self.db.update(|tx| {
+        self.update(|tx| {
             let bucket = tx.bucket(b"tasks");
             if bucket.is_none() {
                 return Err(crate::error::Error::NotFound("Задача не найдена".to_string()));
@@ -98,7 +98,7 @@ impl BoltStore {
 
     /// Удаляет задачу с выводами
     pub async fn delete_task_with_outputs(&self, project_id: i32, task_id: i32) -> Result<()> {
-        self.db.update(|tx| {
+        self.update(|tx| {
             let bucket = tx.bucket(b"tasks");
             if bucket.is_none() {
                 return Err(crate::error::Error::NotFound("Задача не найдена".to_string()));
@@ -129,7 +129,7 @@ impl BoltStore {
     pub async fn create_task_output(&self, mut output: TaskOutput) -> Result<TaskOutput> {
         output.time = Utc::now();
         
-        self.db.update(|tx| {
+        self.update(|tx| {
             let bucket_name = format!("task_outputs_{}", output.task_id);
             let bucket = tx.create_bucket_if_not_exists(bucket_name.as_bytes())?;
             
@@ -161,7 +161,7 @@ impl BoltStore {
         // Проверяем существование задачи
         self.get_task(project_id, task_id).await?;
         
-        self.db.view(|tx| {
+        self.view(|tx| {
             let bucket_name = format!("task_outputs_{}", task_id);
             let bucket = tx.bucket(bucket_name.as_bytes());
             
@@ -276,7 +276,7 @@ impl BoltStore {
         let mut tasks_with_tpl = Vec::new();
 
         // Сначала получаем все задачи из БД
-        let tasks: Vec<Task> = self.db.view(|tx| {
+        let tasks: Vec<Task> = self.view(|tx| {
             let bucket = tx.bucket(b"tasks");
             if bucket.is_none() {
                 return Ok(Vec::new());

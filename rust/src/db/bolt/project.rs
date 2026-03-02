@@ -15,7 +15,7 @@ impl BoltStore {
         
         let project_clone = project.clone();
         
-        let new_project = self.db.update(|tx| {
+        let new_project = self.update(|tx| {
             let bucket = tx.create_bucket_if_not_exists(b"projects")?;
             
             let str = serde_json::to_vec(&project_clone)?;

@@ -17,6 +17,20 @@ pub enum TemplateType {
     Shell,
 }
 
+impl std::fmt::Display for TemplateType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            TemplateType::Default => write!(f, "default"),
+            TemplateType::Build => write!(f, "build"),
+            TemplateType::Deploy => write!(f, "deploy"),
+            TemplateType::Task => write!(f, "task"),
+            TemplateType::Ansible => write!(f, "ansible"),
+            TemplateType::Terraform => write!(f, "terraform"),
+            TemplateType::Shell => write!(f, "shell"),
+        }
+    }
+}
+
 impl<DB: Database> Type<DB> for TemplateType {
     fn type_info() -> DB::TypeInfo {
         String::type_info()
@@ -73,6 +87,22 @@ pub enum TemplateApp {
     Python,
     Pulumi,
     Default,
+}
+
+impl std::fmt::Display for TemplateApp {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            TemplateApp::Ansible => write!(f, "ansible"),
+            TemplateApp::Terraform => write!(f, "terraform"),
+            TemplateApp::Tofu => write!(f, "tofu"),
+            TemplateApp::Terragrunt => write!(f, "terragrunt"),
+            TemplateApp::Bash => write!(f, "bash"),
+            TemplateApp::PowerShell => write!(f, "powershell"),
+            TemplateApp::Python => write!(f, "python"),
+            TemplateApp::Pulumi => write!(f, "pulumi"),
+            TemplateApp::Default => write!(f, "default"),
+        }
+    }
 }
 
 impl<DB: Database> Type<DB> for TemplateApp {

@@ -9,13 +9,20 @@ use crate::error::{Error, Result};
 use crate::models::*;
 use crate::services::backup::*;
 
+use async_trait::async_trait;
+
 /// Trait для сущностей restore
 pub trait RestoreEntry {
     type Output;
-    
+
     fn get_name(&self) -> &str;
     fn verify(&self, backup: &BackupFormat) -> Result<()>;
-    fn restore(&self, store: &dyn crate::db::Store, backup_db: &mut RestoreDB) -> Result<Self::Output>;
+}
+
+/// Trait для асинхронного restore
+#[async_trait::async_trait]
+pub trait RestoreEntryAsync: RestoreEntry {
+    async fn restore_async(&self, store: &dyn crate::db::Store, backup_db: &mut RestoreDB) -> Result<Self::Output>;
 }
 
 /// RestoreDB - база данных для восстановления
@@ -94,87 +101,108 @@ pub fn generate_random_slug() -> String {
 
 impl RestoreEntry for BackupEnvironment {
     type Output = Environment;
-    
+
     fn get_name(&self) -> &str {
         &self.name
     }
-    
+
     fn verify(&self, backup: &BackupFormat) -> Result<()> {
         verify_duplicate(&self.name, &backup.environments)
     }
-    
-    fn restore(&self, store: &dyn crate::db::Store, backup_db: &mut RestoreDB) -> Result<Self::Output> {
-        let mut env = self.clone();
-        env.project_id = backup_db.meta.id;
-        
-        let new_env = store.create_environment(env)?;
+}
+
+#[async_trait::async_trait]
+impl RestoreEntryAsync for BackupEnvironment {
+    async fn restore_async(&self, store: &dyn crate::db::Store, backup_db: &mut RestoreDB) -> Result<Self::Output> {
+        let env = Environment {
+            id: 0,
+            project_id: backup_db.meta.id,
+            name: self.name.clone(),
+            json: self.json.clone(),
+            secret_storage_id: None,
+            secrets: None,
+        };
+
+        let new_env = store.create_environment(env).await?;
         backup_db.environments.push(new_env.clone());
-        
+
         Ok(new_env)
     }
 }
 
 impl RestoreEntry for BackupView {
     type Output = View;
-    
+
     fn get_name(&self) -> &str {
         &self.name
     }
-    
+
     fn verify(&self, backup: &BackupFormat) -> Result<()> {
         verify_duplicate(&self.name, &backup.views)
     }
-    
-    fn restore(&self, store: &dyn crate::db::Store, backup_db: &mut RestoreDB) -> Result<Self::Output> {
-        let mut view = self.clone();
-        view.project_id = backup_db.meta.id;
-        
-        let new_view = store.create_view(view)?;
+}
+
+#[async_trait::async_trait]
+impl RestoreEntryAsync for BackupView {
+    async fn restore_async(&self, store: &dyn crate::db::Store, backup_db: &mut RestoreDB) -> Result<Self::Output> {
+        let view = View {
+            id: 0,
+            project_id: backup_db.meta.id,
+            title: self.name.clone(),
+            position: self.position,
+        };
+
+        let new_view = store.create_view(view).await?;
         backup_db.views.push(new_view.clone());
-        
+
         Ok(new_view)
     }
 }
 
 impl RestoreEntry for BackupSchedule {
     type Output = Schedule;
-    
+
     fn get_name(&self) -> &str {
         &self.template
     }
-    
+
     fn verify(&self, backup: &BackupFormat) -> Result<()> {
         // Проверка на дубликаты расписаний для шаблона
         let count = backup.schedules.iter()
             .filter(|s| s.template == self.template)
             .count();
-        
+
         if count > 1 {
             return Err(Error::Other(format!("Schedule for template {} is duplicate", self.template)));
         }
-        
+
         Ok(())
     }
-    
-    fn restore(&self, store: &dyn crate::db::Store, backup_db: &mut RestoreDB) -> Result<Self::Output> {
+}
+
+#[async_trait::async_trait]
+impl RestoreEntryAsync for BackupSchedule {
+    async fn restore_async(&self, store: &dyn crate::db::Store, backup_db: &mut RestoreDB) -> Result<Self::Output> {
         // Находим шаблон по имени
         let template = backup_db.templates.iter()
             .find(|t| t.name == self.template)
             .ok_or_else(|| Error::NotFound(format!("Template {} not found", self.template)))?;
-        
+
         let schedule = Schedule {
             id: 0,
             project_id: backup_db.meta.id,
             template_id: template.id,
-            cron_format: self.cron_format.clone(),
+            cron: String::new(),
+            cron_format: Some(self.cron_format.clone()),
+            name: self.template.clone(),
             active: self.active,
             last_commit_hash: None,
             repository_id: None,
         };
-        
-        let new_schedule = store.create_schedule(schedule)?;
+
+        let new_schedule = store.create_schedule(schedule).await?;
         backup_db.schedules.push(new_schedule.clone());
-        
+
         Ok(new_schedule)
     }
 }
@@ -189,181 +217,161 @@ impl RestoreEntry for BackupAccessKey {
     fn verify(&self, backup: &BackupFormat) -> Result<()> {
         verify_duplicate(&self.name, &backup.access_keys)
     }
-    
-    fn restore(&self, store: &dyn crate::db::Store, backup_db: &mut RestoreDB) -> Result<Self::Output> {
-        let mut key = AccessKey {
+}
+
+#[async_trait::async_trait]
+impl RestoreEntryAsync for BackupAccessKey {
+    async fn restore_async(&self, store: &dyn crate::db::Store, backup_db: &mut RestoreDB) -> Result<Self::Output> {
+        let key = AccessKey {
             id: 0,
             project_id: Some(backup_db.meta.id),
             name: self.name.clone(),
-            owner: self.owner.parse().unwrap_or(AccessKeyOwner::Shared),
-            key_type: self.key_type.parse().unwrap_or(AccessKeyType::None),
+            r#type: self.key_type.parse().unwrap_or(AccessKeyType::None),
+            owner: Some(self.owner.parse().unwrap_or(AccessKeyOwner::Shared)),
+            user_id: None,
+            login_password_login: None,
+            login_password_password: None,
             ssh_key: None,
-            login_password: None,
-            created: chrono::Utc::now(),
-            override_secret: false,
+            ssh_passphrase: None,
+            access_key_access_key: None,
+            access_key_secret_key: None,
+            secret_storage_id: None,
             environment_id: None,
         };
-        
-        if let Some(ref ssh) = self.ssh_key {
-            key.ssh_key = Some(SshKeyData {
-                private_key: ssh.private_key.clone(),
-                passphrase: ssh.passphrase.clone(),
-                login: ssh.login.clone(),
-            });
-        }
-        
-        if let Some(ref lp) = self.login_password {
-            key.login_password = Some(LoginPasswordData {
-                login: lp.login.clone(),
-                password: lp.password.clone(),
-            });
-        }
-        
-        let new_key = store.create_access_key(key)?;
+
+        let new_key = store.create_access_key(key).await?;
         backup_db.access_keys.push(new_key.clone());
-        
+
         Ok(new_key)
     }
 }
 
 impl RestoreEntry for BackupInventory {
     type Output = Inventory;
-    
+
     fn get_name(&self) -> &str {
         &self.name
     }
-    
+
     fn verify(&self, backup: &BackupFormat) -> Result<()> {
         verify_duplicate(&self.name, &backup.inventories)
     }
-    
-    fn restore(&self, store: &dyn crate::db::Store, backup_db: &mut RestoreDB) -> Result<Self::Output> {
+}
+
+#[async_trait::async_trait]
+impl RestoreEntryAsync for BackupInventory {
+    async fn restore_async(&self, store: &dyn crate::db::Store, backup_db: &mut RestoreDB) -> Result<Self::Output> {
         let mut inv = Inventory {
             id: 0,
             project_id: backup_db.meta.id,
             name: self.name.clone(),
             inventory_type: self.inventory_type.parse().unwrap_or(InventoryType::Static),
-            inventory: self.inventory.clone(),
+            inventory_data: self.inventory.clone(),
+            key_id: 0,
+            secret_storage_id: None,
+            ssh_login: "root".to_string(),
+            ssh_port: 22,
+            extra_vars: None,
             ssh_key_id: None,
             become_key_id: None,
-            vaults: Vec::new(),
+            vaults: None,
         };
-        
+
         // Находим SSH ключ по имени
         if let Some(ref ssh_key_name) = self.ssh_key {
             if let Some(ssh_key) = backup_db.access_keys.iter().find(|k| &k.name == ssh_key_name) {
                 inv.ssh_key_id = Some(ssh_key.id);
             }
         }
-        
+
         // Находим Become ключ по имени
         if let Some(ref become_key_name) = self.become_key {
             if let Some(become_key) = backup_db.access_keys.iter().find(|k| &k.name == become_key_name) {
                 inv.become_key_id = Some(become_key.id);
             }
         }
-        
-        let new_inv = store.create_inventory(inv)?;
+
+        let new_inv = store.create_inventory(inv).await?;
         backup_db.inventories.push(new_inv.clone());
-        
+
         Ok(new_inv)
     }
 }
 
 impl RestoreEntry for BackupRepository {
     type Output = Repository;
-    
+
     fn get_name(&self) -> &str {
         &self.name
     }
-    
+
     fn verify(&self, backup: &BackupFormat) -> Result<()> {
         verify_duplicate(&self.name, &backup.repositories)
     }
-    
-    fn restore(&self, store: &dyn crate::db::Store, backup_db: &mut RestoreDB) -> Result<Self::Output> {
-        let mut repo = Repository {
+}
+
+#[async_trait::async_trait]
+impl RestoreEntryAsync for BackupRepository {
+    async fn restore_async(&self, store: &dyn crate::db::Store, backup_db: &mut RestoreDB) -> Result<Self::Output> {
+        let repo = Repository {
             id: 0,
             project_id: backup_db.meta.id,
             name: self.name.clone(),
             git_url: self.git_url.clone(),
-            git_branch: self.git_branch.clone(),
-            ssh_key_id: None,
+            git_type: self.git_type.parse().unwrap_or(RepositoryType::Git),
+            git_branch: self.git_branch.clone().into(),
+            key_id: 0,
+            git_path: None,
         };
-        
-        // Находим SSH ключ по имени
-        if let Some(ref ssh_key_name) = self.ssh_key {
-            if let Some(ssh_key) = backup_db.access_keys.iter().find(|k| &k.name == ssh_key_name) {
-                repo.ssh_key_id = Some(ssh_key.id);
-            }
-        }
-        
-        let new_repo = store.create_repository(repo)?;
+
+        let new_repo = store.create_repository(repo).await?;
         backup_db.repositories.push(new_repo.clone());
-        
+
         Ok(new_repo)
     }
 }
 
 impl RestoreEntry for BackupTemplate {
     type Output = Template;
-    
+
     fn get_name(&self) -> &str {
         &self.name
     }
-    
+
     fn verify(&self, backup: &BackupFormat) -> Result<()> {
         verify_duplicate(&self.name, &backup.templates)
     }
-    
-    fn restore(&self, store: &dyn crate::db::Store, backup_db: &mut RestoreDB) -> Result<Self::Output> {
-        let mut tpl = Template {
+}
+
+#[async_trait::async_trait]
+impl RestoreEntryAsync for BackupTemplate {
+    async fn restore_async(&self, store: &dyn crate::db::Store, backup_db: &mut RestoreDB) -> Result<Self::Output> {
+        let tpl = Template {
             id: 0,
             project_id: backup_db.meta.id,
             name: self.name.clone(),
             playbook: self.playbook.clone(),
-            arguments: self.arguments.clone(),
+            description: self.description.clone().unwrap_or_default(),
+            inventory_id: 0,
+            repository_id: 0,
+            environment_id: 0,
             r#type: self.template_type.parse().unwrap_or(TemplateType::Default),
-            template_type: None,
-            inventory_id: None,
-            repository_id: None,
-            environment_id: None,
-            start_version: None,
-            build_version: None,
-            description: None,
-            survey_vars: None,
-            vaults: None,
-            tasks: None,
-            created: chrono::Utc::now(),
             app: TemplateApp::Default,
             git_branch: String::new(),
             deleted: false,
+            created: chrono::Utc::now(),
+            arguments: self.arguments.clone(),
+            template_type: None,
+            start_version: self.start_version.clone(),
+            build_version: self.build_version.clone(),
+            survey_vars: None,
+            vaults: None,
+            tasks: None,
         };
-        
-        // Находим инвентарь по имени
-        if let Some(ref inv_name) = self.inventory {
-            if let Some(inv) = backup_db.inventories.iter().find(|i| &i.name == inv_name) {
-                tpl.inventory_id = Some(inv.id);
-            }
-        }
-        
-        // Находим репозиторий по имени
-        if let Some(ref repo_name) = self.repository {
-            if let Some(repo) = backup_db.repositories.iter().find(|r| &r.name == repo_name) {
-                tpl.repository_id = Some(repo.id);
-            }
-        }
-        
-        // Находим окружение по имени
-        if let Some(ref env_name) = self.environment {
-            if let Some(env) = backup_db.environments.iter().find(|e| &e.name == env_name) {
-                tpl.environment_id = Some(env.id);
-            }
-        }
-        
-        let new_tpl = store.create_template(tpl)?;
+
+        let new_tpl = store.create_template(tpl).await?;
         backup_db.templates.push(new_tpl.clone());
-        
+
         Ok(new_tpl)
     }
 }
@@ -379,38 +387,38 @@ impl BackupFormat {
         for env in &self.environments {
             env.verify(self)?;
         }
-        
+
         for view in &self.views {
             view.verify(self)?;
         }
-        
+
         for schedule in &self.schedules {
             schedule.verify(self)?;
         }
-        
+
         for key in &self.access_keys {
             key.verify(self)?;
         }
-        
+
         for inv in &self.inventories {
             inv.verify(self)?;
         }
-        
+
         for repo in &self.repositories {
             repo.verify(self)?;
         }
-        
+
         for tpl in &self.templates {
             tpl.verify(self)?;
         }
-        
+
         Ok(())
     }
 
     /// Восстанавливает проект из backup
-    pub fn restore(&self, user: &User, store: &dyn crate::db::Store) -> Result<Project> {
+    pub async fn restore(&self, user: &User, store: &dyn crate::db::Store) -> Result<Project> {
         info!("Starting project restore from backup...");
-        
+
         // Создаём новый проект
         let mut project = Project {
             id: 0,
@@ -422,64 +430,64 @@ impl BackupFormat {
             r#type: self.project.r#type.clone(),
             default_secret_storage_id: self.project.default_secret_storage_id,
         };
-        
-        let new_project = store.create_project(project)?;
+
+        let new_project = store.create_project(project).await?;
         info!("Project {} created with ID {}", new_project.name, new_project.id);
-        
+
         // Создаём базу данных для восстановления
         let mut restore_db = RestoreDB::new(new_project.clone());
-        
+
         // Восстанавливаем сущности в правильном порядке
         // 1. Окружения
         for env in &self.environments {
-            env.restore(store, &mut restore_db)?;
+            env.restore_async(store, &mut restore_db).await?;
         }
         info!("Environments restored: {}", restore_db.environments.len());
-        
+
         // 2. Представления
         for view in &self.views {
-            view.restore(store, &mut restore_db)?;
+            view.restore_async(store, &mut restore_db).await?;
         }
         info!("Views restored: {}", restore_db.views.len());
-        
+
         // 3. Ключи доступа
         for key in &self.access_keys {
-            key.restore(store, &mut restore_db)?;
+            key.restore_async(store, &mut restore_db).await?;
         }
         info!("Access keys restored: {}", restore_db.access_keys.len());
-        
+
         // 4. Инвентари
         for inv in &self.inventories {
-            inv.restore(store, &mut restore_db)?;
+            inv.restore_async(store, &mut restore_db).await?;
         }
         info!("Inventories restored: {}", restore_db.inventories.len());
-        
+
         // 5. Репозитории
         for repo in &self.repositories {
-            repo.restore(store, &mut restore_db)?;
+            repo.restore_async(store, &mut restore_db).await?;
         }
         info!("Repositories restored: {}", restore_db.repositories.len());
-        
+
         // 6. Шаблоны
         for tpl in &self.templates {
-            tpl.restore(store, &mut restore_db)?;
+            tpl.restore_async(store, &mut restore_db).await?;
         }
         info!("Templates restored: {}", restore_db.templates.len());
-        
+
         // 7. Расписания
         for schedule in &self.schedules {
-            schedule.restore(store, &mut restore_db)?;
+            schedule.restore_async(store, &mut restore_db).await?;
         }
         info!("Schedules restored: {}", restore_db.schedules.len());
-        
+
         // 8. Интеграции
         for integration in &self.integrations {
             // TODO: Реализовать восстановление интеграций
             warn!("Integration {} not restored (not implemented)", integration.name);
         }
-        
+
         info!("Project restore completed successfully!");
-        
+
         Ok(new_project)
     }
 }
