@@ -168,13 +168,6 @@ impl Default for UsersController {
 // Типы данных
 // ============================================================================
 
-/// Параметры запроса для получения пользователей
-#[derive(Debug, Default, Deserialize)]
-pub struct RetrieveQueryParams {
-    /// Фильтр по имени/email
-    pub filter: Option<String>,
-}
-
 /// Пользователь с паролем (для создания)
 #[derive(Debug, Deserialize)]
 pub struct UserWithPwd {
