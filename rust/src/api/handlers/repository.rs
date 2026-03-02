@@ -13,6 +13,7 @@ use crate::api::state::AppState;
 use crate::models::Repository;
 use crate::error::Error;
 use crate::api::middleware::ErrorResponse;
+use crate::db::store::RepositoryManager;
 
 /// Получить список репозиториев проекта
 ///

@@ -14,6 +14,7 @@ use crate::models::Inventory;
 use crate::models::inventory::InventoryType;
 use crate::error::Error;
 use crate::api::middleware::ErrorResponse;
+use crate::db::store::InventoryManager;
 
 /// Получить список инвентарей проекта
 ///
@@ -22,12 +23,14 @@ pub async fn get_inventories(
     State(state): State<Arc<AppState>>,
     Path(project_id): Path<i32>,
 ) -> Result<Json<Vec<Inventory>>, (StatusCode, Json<ErrorResponse>)> {
-    let inventories = state.store.get_inventories(project_id)
-        .await
-        .map_err(|e| (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            Json(ErrorResponse::new(e.to_string()))
-        ))?;
+    let inventories: Result<Vec<Inventory>, Error> = state.store
+        .get_inventories(project_id)
+        .await;
+
+    let inventories = inventories.map_err(|e| (
+        StatusCode::INTERNAL_SERVER_ERROR,
+        Json(ErrorResponse::new(e.to_string()))
+    ))?;
 
     Ok(Json(inventories))
 }
@@ -46,12 +49,14 @@ pub async fn create_inventory(
         payload.inventory_type,
     );
 
-    let created = state.store.create_inventory(inventory)
-        .await
-        .map_err(|e| (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            Json(ErrorResponse::new(e.to_string()))
-        ))?;
+    let created: Result<Inventory, Error> = state.store
+        .create_inventory(inventory)
+        .await;
+
+    let created = created.map_err(|e| (
+        StatusCode::INTERNAL_SERVER_ERROR,
+        Json(ErrorResponse::new(e.to_string()))
+    ))?;
 
     Ok((StatusCode::CREATED, Json(created)))
 }

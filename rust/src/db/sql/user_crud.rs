@@ -6,6 +6,41 @@ use crate::db::sql::types::SqlDb;
 use crate::error::{Error, Result};
 use crate::models::*;
 use sqlx::Row;
+use chrono::{DateTime, Utc};
+
+/// Временная структура для загрузки пользователя из БД
+#[derive(Debug, sqlx::FromRow)]
+struct UserRow {
+    pub id: i32,
+    pub created: DateTime<Utc>,
+    pub username: String,
+    pub name: String,
+    pub email: String,
+    pub password: String,
+    pub admin: bool,
+    pub external: bool,
+    pub alert: bool,
+    pub pro: bool,
+}
+
+impl From<UserRow> for User {
+    fn from(row: UserRow) -> Self {
+        User {
+            id: row.id,
+            created: row.created,
+            username: row.username,
+            name: row.name,
+            email: row.email,
+            password: row.password,
+            admin: row.admin,
+            external: row.external,
+            alert: row.alert,
+            pro: row.pro,
+            totp: None,
+            email_otp: None,
+        }
+    }
+}
 
 impl SqlDb {
     /// Получает всех пользователей
@@ -23,24 +58,29 @@ impl SqlDb {
 
                 // Добавляем лимит и оффсет
                 if let Some(count) = params.count {
-                    let offset = params.offset.unwrap_or(0);
-                    query.push_str(&format!(" LIMIT {} OFFSET {}", count, offset));
+                    query.push_str(&format!(" LIMIT {} OFFSET {}", count, params.offset));
                 }
 
                 let users = if params.filter.as_ref().map_or(false, |f| !f.is_empty()) {
                     let filter_pattern = format!("%{}%", params.filter.as_ref().unwrap());
-                    sqlx::query_as::<_, User>(&query)
+                    sqlx::query_as::<_, UserRow>(&query)
                         .bind(&filter_pattern)
                         .bind(&filter_pattern)
                         .bind(&filter_pattern)
                         .fetch_all(self.get_sqlite_pool().ok_or(Error::Other("SQLite pool not found".to_string()))?)
                         .await
                         .map_err(|e| Error::Database(e))?
+                        .into_iter()
+                        .map(|r| r.into())
+                        .collect()
                 } else {
-                    sqlx::query_as::<_, User>(&query)
+                    sqlx::query_as::<_, UserRow>(&query)
                         .fetch_all(self.get_sqlite_pool().ok_or(Error::Other("SQLite pool not found".to_string()))?)
                         .await
                         .map_err(|e| Error::Database(e))?
+                        .into_iter()
+                        .map(|r| r.into())
+                        .collect()
                 };
 
                 Ok(users)
@@ -53,23 +93,23 @@ impl SqlDb {
     pub async fn get_user(&self, user_id: i32) -> Result<User> {
         match self.get_dialect() {
             crate::db::sql::types::SqlDialect::SQLite => {
-                let user = sqlx::query_as::<_, User>("SELECT * FROM user WHERE id = ?")
+                let user: UserRow = sqlx::query_as::<_, UserRow>("SELECT * FROM user WHERE id = ?")
                     .bind(user_id)
                     .fetch_one(self.get_sqlite_pool().ok_or(Error::Other("SQLite pool not found".to_string()))?)
                     .await
                     .map_err(|e| Error::Database(e))?;
-                
-                Ok(user)
+
+                Ok(user.into())
             }
             _ => Err(Error::Other("Only SQLite supported for now".to_string()))
         }
     }
-    
+
     /// Получает пользователя по login или email
     pub async fn get_user_by_login_or_email(&self, login: &str, email: &str) -> Result<User> {
         match self.get_dialect() {
             crate::db::sql::types::SqlDialect::SQLite => {
-                let user = sqlx::query_as::<_, User>(
+                let user: UserRow = sqlx::query_as::<_, UserRow>(
                     "SELECT * FROM user WHERE username = ? OR email = ?"
                 )
                 .bind(login)
@@ -77,8 +117,8 @@ impl SqlDb {
                 .fetch_one(self.get_sqlite_pool().ok_or(Error::Other("SQLite pool not found".to_string()))?)
                 .await
                 .map_err(|e| Error::Database(e))?;
-                
-                Ok(user)
+
+                Ok(user.into())
             }
             _ => Err(Error::Other("Only SQLite supported for now".to_string()))
         }
@@ -166,11 +206,14 @@ impl SqlDb {
     pub async fn get_all_admins(&self) -> Result<Vec<User>> {
         match self.get_dialect() {
             crate::db::sql::types::SqlDialect::SQLite => {
-                let users = sqlx::query_as::<_, User>("SELECT * FROM user WHERE admin = 1")
+                let users = sqlx::query_as::<_, UserRow>("SELECT * FROM user WHERE admin = 1")
                     .fetch_all(self.get_sqlite_pool().ok_or(Error::Other("SQLite pool not found".to_string()))?)
                     .await
-                    .map_err(|e| Error::Database(e))?;
-                
+                    .map_err(|e| Error::Database(e))?
+                    .into_iter()
+                    .map(|r| r.into())
+                    .collect();
+
                 Ok(users)
             }
             _ => Err(Error::Other("Only SQLite supported for now".to_string()))
