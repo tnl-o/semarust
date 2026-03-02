@@ -1,33 +1,46 @@
 # Отчёт об ошибках сборки Semaphore Rust
 Дата: 2026-03-02
+Последнее обновление: 2026-03-02 (сессия 2)
 
 ## Статистика
-- **Всего ошибок:** 585
-- **Предупреждений:** 277
+- **Начальное количество ошибок:** 585
+- **Текущее количество ошибок:** ~557
+- **Исправлено ошибок:** ~28
+- **Предупреждений:** ~277
 
-## Категории ошибок
+## ✅ Исправленные категории ошибок
 
-### 1. Проблемы моделей данных (Model Errors)
-#### Missing Fields (E0063)
-Множественные структуры инициализированы без обязательных полей:
-- `Project` - missing `alert`, `alert_chat`, `default_secret_storage_id`, `type`
-- `Template` - missing `arguments`, `build_version`, `start_version`
-- `Task` - missing поля для `repository_id`, `environment_id`
-- `AccessKey` - missing `key_type`, `login_password`, `access_key`, `environment_id`
-- `Inventory` - missing `inventory_type`, `ssh_key_id`, `vaults`, `become_key_id`
-- `Repository` - missing `ssh_key_id`, `git_branch`
-- `Schedule` - missing `cron_format`, `last_commit_hash`, `repository_id`
-- `User` - missing `created`
-- `APIToken` - missing `created`
-- `ProjectUser` - missing `created`
-- `TaskOutput` - missing `stage_id`, `project_id`
-- `TaskStage` - missing `project_id`, `stage_type`
-- `View` - missing `name`
-- `Environment` - missing `env`, `secrets`
-- `IntegrationMatcher` - missing `project_id`, `matcher_type`, `matcher_value`
-- `IntegrationExtractValue` - missing `project_id`, `value_name`, `value_type`
-- `ProjectInvite` - missing `inviter_user_id`, `token`
-- `Role` - missing `id`, `project_id`
+### 1. Модели данных - ИСПРАВЛЕНО
+- ✅ `TemplateType` - добавлены варианты: Deploy, Task, Ansible, Terraform, Shell
+- ✅ `AccessKeyOwner` - добавлен вариант: Shared
+- ✅ `Inventory` - исправлено поле: inventory → inventory_type
+- ✅ `Repository` - добавлено поле: git_branch
+- ✅ `Schedule` - добавлены поля: cron_format, last_commit_hash, repository_id
+- ✅ `View` - добавлен алиас name для title
+- ✅ `Environment` - добавлено поле: secrets
+- ✅ `Task` - добавлены поля: repository_id, environment_id
+- ✅ `TaskStage` - добавлено поле: project_id
+- ✅ `IntegrationMatcher` - добавлены поля: project_id, matcher_type, matcher_value
+- ✅ `IntegrationExtractValue` - добавлены поля: project_id, value_name, value_type
+- ✅ `Role` - добавлены поля: id, project_id
+- ✅ `ProjectInvite` - добавлены поля: token, inviter_user_id
+- ✅ `AccessKey` - добавлены поля: owner, environment_id
+- ✅ `UserTotp/UserEmailOtp` - убран FromRow (не нужны для SQLx)
+
+### 2. Конфигурация - ИСПРАВЛЕНО
+- ✅ `Config` - добавлены методы: from_env(), database_url(), db_path(), db_dialect(), non_admin_can_create_project()
+- ✅ `DbDialect` - исправлено: PostgreSQL → Postgres
+
+### 3. Store Trait - ИСПРАВЛЕНО
+- ✅ Добавлен `SecretStorageManager` trait
+- ✅ Реализован для `SqlStore`
+- ✅ Реализован для `BoltStore`
+
+### 4. Инициализация моделей - ЧАСТИЧНО ИСПРАВЛЕНО
+- ✅ `ProjectUser` - добавлено поле: created
+- ✅ `Project` - добавлены поля в инициализацию
+- ✅ `Template` - добавлены поля в инициализацию (templates.rs, restore.rs)
+- ✅ `Task` - добавлены поля в инициализацию (tasks.rs, task_pool_status.rs)
 - `Runner` - `project_id` is `Option<i32>` вместо `i32`
 
 #### Несоответствие типов SQLx Decode/Encode (E0277)
