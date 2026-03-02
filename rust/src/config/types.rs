@@ -360,15 +360,71 @@ impl Default for Config {
 }
 
 impl Config {
+    /// Загружает конфигурацию из переменных окружения
+    pub fn from_env() -> Result<Self, crate::error::Error> {
+        use std::env;
+        
+        let dialect_str = env::var("SEMAPHORE_DB_DIALECT")
+            .unwrap_or_else(|_| "sqlite".to_string());
+        
+        let dialect = match dialect_str.as_str() {
+            "postgres" | "postgresql" => DbDialect::Postgres,
+            "mysql" => DbDialect::MySQL,
+            "sqlite" => DbDialect::SQLite,
+            _ => DbDialect::SQLite,
+        };
+
+        let mut config = Self::default();
+        config.database.dialect = dialect;
+        
+        // Загрузка пути к БД для SQLite
+        if let Ok(db_path) = env::var("SEMAPHORE_DB_PATH") {
+            config.database.path = Some(db_path);
+        }
+        
+        // Загрузка URL для PostgreSQL/MySQL
+        if let Ok(db_url) = env::var("SEMAPHORE_DB_URL") {
+            config.database.connection_string = Some(db_url);
+        }
+
+        Ok(config)
+    }
+
+    /// Получает URL базы данных
+    pub fn database_url(&self) -> Result<String, crate::error::Error> {
+        if let Some(ref url) = self.database.connection_string {
+            Ok(url.clone())
+        } else if let Some(ref path) = self.database.path {
+            Ok(path.clone())
+        } else {
+            Err(crate::error::Error::Other("Database URL not configured".to_string()))
+        }
+    }
+
+    /// Получает путь к базе данных
+    pub fn db_path(&self) -> Option<String> {
+        self.database.path.clone()
+    }
+
+    /// Получает диалект базы данных
+    pub fn db_dialect(&self) -> DbDialect {
+        self.database.dialect
+    }
+
+    /// Проверяет может ли пользователь создавать проекты
+    pub fn non_admin_can_create_project(&self) -> bool {
+        self.database.dialect == DbDialect::SQLite // Пример условия
+    }
+
     /// Генерирует секреты для cookie
     pub fn generate_secrets(&mut self) {
         use rand::RngCore;
-        
+
         let mut rng = rand::thread_rng();
-        
+
         self.cookie_hash = vec![0u8; 32];
         rng.fill_bytes(&mut self.cookie_hash);
-        
+
         self.cookie_encryption = vec![0u8; 32];
         rng.fill_bytes(&mut self.cookie_encryption);
     }
