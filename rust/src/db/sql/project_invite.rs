@@ -14,7 +14,7 @@ impl SqlDb {
         match self.get_dialect() {
             crate::db::sql::types::SqlDialect::SQLite => {
                 let invites = sqlx::query_as::<_, ProjectInviteWithUser>(
-                    r#"SELECT pi.*, u.username as user_name, u.email as user_email 
+                    r#"SELECT pi.*, u.username as user_name, u.email as user_email
                        FROM project_invite pi
                        JOIN user u ON pi.user_id = u.id
                        WHERE pi.project_id = ?
