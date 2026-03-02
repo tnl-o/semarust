@@ -33,17 +33,17 @@ impl std::fmt::Display for TemplateType {
 
 impl<DB: Database> Type<DB> for TemplateType {
     fn type_info() -> DB::TypeInfo {
-        String::type_info()
+        <String as Type<DB>>::type_info()
     }
 
     fn compatible(ty: &DB::TypeInfo) -> bool {
-        String::compatible(ty)
+        <String as Type<DB>>::compatible(ty)
     }
 }
 
 impl<'r, DB: Database> Decode<'r, DB> for TemplateType {
     fn decode(value: <DB as Database>::ValueRef<'r>) -> Result<Self, sqlx::error::BoxDynError> {
-        let s = String::decode(value)?;
+        let s = <String as Decode<'r, DB>>::decode(value)?;
         Ok(match s.as_str() {
             "build" => TemplateType::Build,
             "deploy" => TemplateType::Deploy,
@@ -70,7 +70,7 @@ where
             TemplateType::Shell => "shell",
             TemplateType::Default => "default",
         }.to_string();
-        Encode::encode(s, buf)
+        <String as Encode<'q, DB>>::encode(s, buf)
     }
 }
 
@@ -107,17 +107,17 @@ impl std::fmt::Display for TemplateApp {
 
 impl<DB: Database> Type<DB> for TemplateApp {
     fn type_info() -> DB::TypeInfo {
-        String::type_info()
+        <String as Type<DB>>::type_info()
     }
 
     fn compatible(ty: &DB::TypeInfo) -> bool {
-        String::compatible(ty)
+        <String as Type<DB>>::compatible(ty)
     }
 }
 
 impl<'r, DB: Database> Decode<'r, DB> for TemplateApp {
     fn decode(value: <DB as Database>::ValueRef<'r>) -> Result<Self, sqlx::error::BoxDynError> {
-        let s = String::decode(value)?;
+        let s = <String as Decode<'r, DB>>::decode(value)?;
         Ok(match s.as_str() {
             "ansible" => TemplateApp::Ansible,
             "terraform" => TemplateApp::Terraform,
@@ -148,7 +148,7 @@ where
             TemplateApp::Pulumi => "pulumi",
             TemplateApp::Default => "default",
         }.to_string();
-        Encode::encode(s, buf)
+        <String as Encode<'q, DB>>::encode(s, buf)
     }
 }
 
