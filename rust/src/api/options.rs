@@ -14,6 +14,7 @@ use crate::models::OptionItem;
 use crate::error::{Error, Result};
 use crate::api::middleware::ErrorResponse;
 use crate::api::extractors::AuthUser;
+use crate::db::store::OptionsManager;
 
 /// Получает все опции
 pub async fn get_options(

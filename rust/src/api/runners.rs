@@ -13,6 +13,7 @@ use crate::api::state::AppState;
 use crate::models::Runner;
 use crate::error::{Error, Result};
 use crate::api::middleware::ErrorResponse;
+use crate::db::store::RunnerManager;
 
 /// Раннер с токеном
 #[derive(Debug, Serialize, Deserialize)]

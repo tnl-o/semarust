@@ -70,12 +70,14 @@ pub async fn create_task(
         params: None,
     };
 
-    let created = state.store.create_task(task)
-        .await
-        .map_err(|e| (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            Json(ErrorResponse::new(e.to_string()))
-        ))?;
+    let created: Result<Task, Error> = state.store
+        .create_task(task)
+        .await;
+
+    let created = created.map_err(|e| (
+        StatusCode::INTERNAL_SERVER_ERROR,
+        Json(ErrorResponse::new(e.to_string()))
+    ))?;
 
     Ok((StatusCode::CREATED, Json(created)))
 }
@@ -87,18 +89,20 @@ pub async fn get_task(
     State(state): State<Arc<AppState>>,
     Path((project_id, task_id)): Path<(i32, i32)>,
 ) -> Result<Json<Task>, (StatusCode, Json<ErrorResponse>)> {
-    let task = state.store.get_task(project_id, task_id)
-        .await
-        .map_err(|e| match e {
-            Error::NotFound(_) => (
-                StatusCode::NOT_FOUND,
-                Json(ErrorResponse::new(e.to_string())),
-            ),
-            _ => (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                Json(ErrorResponse::new(e.to_string())),
-            ),
-        })?;
+    let task: Result<Task, Error> = state.store
+        .get_task(project_id, task_id)
+        .await;
+
+    let task = task.map_err(|e| match e {
+        Error::NotFound(_) => (
+            StatusCode::NOT_FOUND,
+            Json(ErrorResponse::new(e.to_string())),
+        ),
+        _ => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(ErrorResponse::new(e.to_string())),
+        ),
+    })?;
 
     Ok(Json(task))
 }
@@ -110,12 +114,14 @@ pub async fn delete_task(
     State(state): State<Arc<AppState>>,
     Path((project_id, task_id)): Path<(i32, i32)>,
 ) -> Result<StatusCode, (StatusCode, Json<ErrorResponse>)> {
-    state.store.delete_task(project_id, task_id)
-        .await
-        .map_err(|e| (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            Json(ErrorResponse::new(e.to_string()))
-        ))?;
+    let result: Result<(), Error> = state.store
+        .delete_task(project_id, task_id)
+        .await;
+
+    result.map_err(|e| (
+        StatusCode::INTERNAL_SERVER_ERROR,
+        Json(ErrorResponse::new(e.to_string()))
+    ))?;
 
     Ok(StatusCode::NO_CONTENT)
 }
