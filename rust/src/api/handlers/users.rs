@@ -11,7 +11,7 @@ use std::sync::Arc;
 use serde::Deserialize;
 use crate::api::state::AppState;
 use crate::models::User;
-use crate::db::store::RetrieveQueryParams;
+use crate::db::store::{RetrieveQueryParams, UserManager};
 use crate::error::Error;
 use crate::api::middleware::ErrorResponse;
 
