@@ -24,6 +24,12 @@ pub struct ProjectInvite {
 
     /// Дата обновления
     pub updated: DateTime<Utc>,
+
+    /// Токен приглашения
+    pub token: String,
+
+    /// ID пригласившего пользователя
+    pub inviter_user_id: i32,
 }
 
 /// Приглашение в проект с информацией о пользователе

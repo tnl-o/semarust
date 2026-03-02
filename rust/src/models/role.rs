@@ -6,7 +6,22 @@ use sqlx::FromRow;
 /// Роль - набор разрешений
 #[derive(Debug, Clone, Serialize, Deserialize, FromRow)]
 pub struct Role {
+    pub id: i32,
+    pub project_id: i32,
     pub slug: String,
     pub name: String,
     pub description: Option<String>,
+}
+
+impl Role {
+    /// Создаёт новую роль
+    pub fn new(project_id: i32, slug: String, name: String) -> Self {
+        Self {
+            id: 0,
+            project_id,
+            slug,
+            name,
+            description: None,
+        }
+    }
 }
