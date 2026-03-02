@@ -9,6 +9,7 @@ use std::collections::HashMap;
 use std::sync::Arc;
 
 /// Wrapper для Arc<Box<dyn Store>>
+#[derive(Clone)]
 pub struct StoreWrapper {
     inner: Arc<Box<dyn Store>>,
 }
@@ -251,8 +252,8 @@ impl AccessKeyManager for StoreWrapper {
 
 #[async_trait]
 impl TaskManager for StoreWrapper {
-    async fn get_tasks(&self, project_id: i32, params: RetrieveQueryParams) -> Result<Vec<TaskWithTpl>> {
-        self.inner.as_ref().as_ref().get_tasks(project_id, params).await
+    async fn get_tasks(&self, project_id: i32, template_id: Option<i32>) -> Result<Vec<TaskWithTpl>> {
+        self.inner.as_ref().as_ref().get_tasks(project_id, template_id).await
     }
 
     async fn get_task(&self, project_id: i32, task_id: i32) -> Result<Task> {
@@ -271,8 +272,8 @@ impl TaskManager for StoreWrapper {
         self.inner.as_ref().as_ref().delete_task(project_id, task_id).await
     }
 
-    async fn get_task_outputs(&self, task_id: i32, params: RetrieveQueryParams) -> Result<Vec<TaskOutput>> {
-        self.inner.as_ref().as_ref().get_task_outputs(task_id, params).await
+    async fn get_task_outputs(&self, task_id: i32) -> Result<Vec<TaskOutput>> {
+        self.inner.as_ref().as_ref().get_task_outputs(task_id).await
     }
 
     async fn create_task_output(&self, output: TaskOutput) -> Result<TaskOutput> {
@@ -302,35 +303,35 @@ impl ScheduleManager for StoreWrapper {
         self.inner.as_ref().as_ref().delete_schedule(project_id, schedule_id).await
     }
 
-    async fn set_schedule_active(&self, schedule_id: i32, active: bool) -> Result<()> {
-        self.inner.as_ref().as_ref().set_schedule_active(schedule_id, active).await
+    async fn set_schedule_active(&self, project_id: i32, schedule_id: i32, active: bool) -> Result<()> {
+        self.inner.as_ref().as_ref().set_schedule_active(project_id, schedule_id, active).await
     }
 
-    async fn set_schedule_commit_hash(&self, schedule_id: i32, hash: String) -> Result<()> {
-        self.inner.as_ref().as_ref().set_schedule_commit_hash(schedule_id, hash).await
+    async fn set_schedule_commit_hash(&self, project_id: i32, schedule_id: i32, hash: &str) -> Result<()> {
+        self.inner.as_ref().as_ref().set_schedule_commit_hash(project_id, schedule_id, hash).await
     }
 }
 
 #[async_trait]
 impl SessionManager for StoreWrapper {
-    async fn get_session(&self, session_id: &str) -> Result<Session> {
-        self.inner.as_ref().as_ref().get_session(session_id).await
+    async fn get_session(&self, user_id: i32, session_id: i32) -> Result<Session> {
+        self.inner.as_ref().as_ref().get_session(user_id, session_id).await
     }
 
     async fn create_session(&self, session: Session) -> Result<Session> {
         self.inner.as_ref().as_ref().create_session(session).await
     }
 
-    async fn expire_session(&self, session_id: &str) -> Result<()> {
-        self.inner.as_ref().as_ref().expire_session(session_id).await
+    async fn expire_session(&self, user_id: i32, session_id: i32) -> Result<()> {
+        self.inner.as_ref().as_ref().expire_session(user_id, session_id).await
     }
 
-    async fn verify_session(&self, session_id: &str) -> Result<Session> {
-        self.inner.as_ref().as_ref().verify_session(session_id).await
+    async fn verify_session(&self, user_id: i32, session_id: i32) -> Result<()> {
+        self.inner.as_ref().as_ref().verify_session(user_id, session_id).await
     }
 
-    async fn touch_session(&self, session_id: &str) -> Result<()> {
-        self.inner.as_ref().as_ref().touch_session(session_id).await
+    async fn touch_session(&self, user_id: i32, session_id: i32) -> Result<()> {
+        self.inner.as_ref().as_ref().touch_session(user_id, session_id).await
     }
 }
 
@@ -344,23 +345,23 @@ impl TokenManager for StoreWrapper {
         self.inner.as_ref().as_ref().create_api_token(token).await
     }
 
-    async fn get_api_token(&self, token_id: i32) -> Result<APIToken> {
+    async fn get_api_token(&self, token_id: &str) -> Result<APIToken> {
         self.inner.as_ref().as_ref().get_api_token(token_id).await
     }
 
-    async fn expire_api_token(&self, token_id: i32) -> Result<()> {
-        self.inner.as_ref().as_ref().expire_api_token(token_id).await
+    async fn expire_api_token(&self, user_id: i32, token_id: &str) -> Result<()> {
+        self.inner.as_ref().as_ref().expire_api_token(user_id, token_id).await
     }
 
-    async fn delete_api_token(&self, token_id: i32) -> Result<()> {
-        self.inner.as_ref().as_ref().delete_api_token(token_id).await
+    async fn delete_api_token(&self, user_id: i32, token_id: &str) -> Result<()> {
+        self.inner.as_ref().as_ref().delete_api_token(user_id, token_id).await
     }
 }
 
 #[async_trait]
 impl EventManager for StoreWrapper {
-    async fn get_events(&self, params: RetrieveQueryParams) -> Result<Vec<Event>> {
-        self.inner.as_ref().as_ref().get_events(params).await
+    async fn get_events(&self, project_id: Option<i32>, limit: usize) -> Result<Vec<Event>> {
+        self.inner.as_ref().as_ref().get_events(project_id, limit).await
     }
 
     async fn create_event(&self, event: Event) -> Result<Event> {
@@ -370,8 +371,8 @@ impl EventManager for StoreWrapper {
 
 #[async_trait]
 impl RunnerManager for StoreWrapper {
-    async fn get_runners(&self) -> Result<Vec<Runner>> {
-        self.inner.as_ref().as_ref().get_runners().await
+    async fn get_runners(&self, project_id: Option<i32>) -> Result<Vec<Runner>> {
+        self.inner.as_ref().as_ref().get_runners(project_id).await
     }
 
     async fn get_runner(&self, runner_id: i32) -> Result<Runner> {
