@@ -15,17 +15,17 @@ pub enum SessionVerificationMethod {
 
 impl<DB: Database> Type<DB> for SessionVerificationMethod {
     fn type_info() -> DB::TypeInfo {
-        String::type_info()
+        <String as Type<DB>>::type_info()
     }
 
     fn compatible(ty: &DB::TypeInfo) -> bool {
-        String::compatible(ty)
+        <String as Type<DB>>::compatible(ty)
     }
 }
 
 impl<'r, DB: Database> Decode<'r, DB> for SessionVerificationMethod {
     fn decode(value: <DB as Database>::ValueRef<'r>) -> Result<Self, sqlx::error::BoxDynError> {
-        let s = String::decode(value)?;
+        let s = <String as Decode<'r, DB>>::decode(value)?;
         Ok(match s.as_str() {
             "totp" => SessionVerificationMethod::Totp,
             "email_otp" => SessionVerificationMethod::EmailOtp,
@@ -44,7 +44,7 @@ where
             SessionVerificationMethod::Totp => "totp",
             SessionVerificationMethod::EmailOtp => "email_otp",
         }.to_string();
-        Encode::encode(s, buf)
+        <String as Encode<'q, DB>>::encode(s, buf)
     }
 }
 

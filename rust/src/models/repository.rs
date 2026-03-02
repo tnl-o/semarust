@@ -15,17 +15,17 @@ pub enum RepositoryType {
 
 impl<DB: Database> Type<DB> for RepositoryType {
     fn type_info() -> DB::TypeInfo {
-        String::type_info()
+        <String as Type<DB>>::type_info()
     }
 
     fn compatible(ty: &DB::TypeInfo) -> bool {
-        String::compatible(ty)
+        <String as Type<DB>>::compatible(ty)
     }
 }
 
 impl<'r, DB: Database> Decode<'r, DB> for RepositoryType {
     fn decode(value: <DB as Database>::ValueRef<'r>) -> Result<Self, sqlx::error::BoxDynError> {
-        let s = String::decode(value)?;
+        let s = <String as Decode<'r, DB>>::decode(value)?;
         Ok(match s.as_str() {
             "git" => RepositoryType::Git,
             "http" => RepositoryType::Http,
@@ -47,7 +47,7 @@ where
             RepositoryType::Https => "https",
             RepositoryType::File => "file",
         }.to_string();
-        Encode::encode(s, buf)
+        <String as Encode<'q, DB>>::encode(s, buf)
     }
 }
 

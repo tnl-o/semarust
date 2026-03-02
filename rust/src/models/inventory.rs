@@ -43,17 +43,17 @@ impl std::str::FromStr for InventoryType {
 
 impl<DB: Database> Type<DB> for InventoryType {
     fn type_info() -> DB::TypeInfo {
-        String::type_info()
+        <String as Type<DB>>::type_info()
     }
 
     fn compatible(ty: &DB::TypeInfo) -> bool {
-        String::compatible(ty)
+        <String as Type<DB>>::compatible(ty)
     }
 }
 
 impl<'r, DB: Database> Decode<'r, DB> for InventoryType {
     fn decode(value: <DB as Database>::ValueRef<'r>) -> Result<Self, sqlx::error::BoxDynError> {
-        let s = String::decode(value)?;
+        let s = <String as Decode<'r, DB>>::decode(value)?;
         Ok(match s.as_str() {
             "static" => InventoryType::Static,
             "static_yaml" => InventoryType::StaticYaml,
@@ -77,7 +77,7 @@ where
             InventoryType::File => "file",
             InventoryType::TerraformInventory => "terraform_inventory",
         }.to_string();
-        Encode::encode(s, buf)
+        <String as Encode<'q, DB>>::encode(s, buf)
     }
 }
 

@@ -299,6 +299,6 @@ where
             TaskStageType::Running => "running",
             TaskStageType::PrintResult => "print_result",
         }.to_string();
-        Encode::encode(s, buf)
+        <String as Encode<'q, DB>>::encode(s, buf)
     }
 }
