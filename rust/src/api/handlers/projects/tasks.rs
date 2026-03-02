@@ -20,9 +20,9 @@ use crate::services::task_logger::TaskStatus;
 pub async fn get_tasks(
     State(state): State<Arc<AppState>>,
     Path(project_id): Path<i32>,
-    Query(params): Query<RetrieveQueryParams>,
+    Query(_params): Query<RetrieveQueryParams>,
 ) -> std::result::Result<Json<Vec<TaskWithTpl>>, (StatusCode, Json<ErrorResponse>)> {
-    let tasks = state.store.get_tasks(project_id, params)
+    let tasks = state.store.get_tasks(project_id, None)
         .await
         .map_err(|e| (
             StatusCode::INTERNAL_SERVER_ERROR,

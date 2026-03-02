@@ -14,7 +14,7 @@ use crate::api::state::AppState;
 use crate::api::extractors::AuthUser;
 use crate::error::{Error, Result};
 use crate::models::User;
-use crate::db::store::UserManager;
+use crate::db::store::{UserManager, RetrieveQueryParams};
 
 /// Контроллер пользователей
 pub struct UsersController {
@@ -94,8 +94,19 @@ impl UsersController {
             return Err(Error::Other("User is not permitted to update other users".to_string()));
         }
 
-        let updated_user = state.store.update_user(user).await?;
-        Ok(Json(updated_user))
+        let mut user_to_update = state.store.get_user(update_user_id).await?;
+        
+        // Обновляем поля
+        if let Some(name) = user.name {
+            user_to_update.name = name;
+        }
+        
+        if let Some(email) = user.email {
+            user_to_update.email = email;
+        }
+
+        state.store.update_user(user_to_update).await?;
+        Ok(Json(user_to_update))
     }
 
     /// Удаляет пользователя

@@ -13,7 +13,7 @@ use crate::models::Event;
 use crate::error::{Error, Result};
 use crate::api::middleware::ErrorResponse;
 use crate::api::extractors::AuthUser;
-use crate::db::store::{RetrieveQueryParams, EventManager};
+use crate::db::store::EventManager;
 
 /// Получает последние события
 pub async fn get_last_events(
@@ -37,12 +37,7 @@ async fn get_events(
     auth_user: AuthUser,
     limit: usize,
 ) -> std::result::Result<Json<Vec<Event>>, (StatusCode, Json<ErrorResponse>)> {
-    let mut params = RetrieveQueryParams::default();
-    if limit > 0 {
-        params.count = Some(limit);
-    }
-
-    let events = state.store.get_events(None, params)
+    let events = state.store.get_events(None, limit)
         .await
         .map_err(|e| (
             StatusCode::INTERNAL_SERVER_ERROR,
@@ -58,10 +53,7 @@ pub async fn get_project_events(
     Path(project_id): Path<i32>,
     auth_user: AuthUser,
 ) -> std::result::Result<Json<Vec<Event>>, (StatusCode, Json<ErrorResponse>)> {
-    let mut params = RetrieveQueryParams::default();
-    params.count = Some(200);
-
-    let events = state.store.get_events(Some(project_id), params)
+    let events = state.store.get_events(Some(project_id), 200)
         .await
         .map_err(|e| (
             StatusCode::INTERNAL_SERVER_ERROR,

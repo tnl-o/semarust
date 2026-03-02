@@ -112,8 +112,8 @@ impl UserController {
         }
 
         // Сохраняем изменения
-        let updated_user = state.store.update_user(current_user).await?;
-        Ok(Json(updated_user))
+        state.store.update_user(current_user).await?;
+        Ok(Json(current_user))
     }
 
     /// Меняет пароль пользователя
