@@ -50,7 +50,7 @@ pub struct User {
 }
 
 /// TOTP-конфигурация пользователя
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct UserTotp {
     pub id: i32,
     pub created: DateTime<Utc>,
@@ -63,7 +63,7 @@ pub struct UserTotp {
 }
 
 /// OTP по электронной почте
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct UserEmailOtp {
     pub id: i32,
     pub created: DateTime<Utc>,

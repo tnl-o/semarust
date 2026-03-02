@@ -18,23 +18,23 @@ use crate::db::store::EventManager;
 /// Получает последние события
 pub async fn get_last_events(
     State(state): State<Arc<AppState>>,
-    auth_user: AuthUser,
+    _auth_user: AuthUser,
 ) -> std::result::Result<Json<Vec<Event>>, (StatusCode, Json<ErrorResponse>)> {
-    get_events(state, auth_user, 200).await
+    get_events(state, _auth_user, 200).await
 }
 
 /// Получает все события
 pub async fn get_all_events(
     State(state): State<Arc<AppState>>,
-    auth_user: AuthUser,
+    _auth_user: AuthUser,
 ) -> std::result::Result<Json<Vec<Event>>, (StatusCode, Json<ErrorResponse>)> {
-    get_events(state, auth_user, 0).await
+    get_events(state, _auth_user, 0).await
 }
 
 /// Получает события
 async fn get_events(
     State(state): State<Arc<AppState>>,
-    auth_user: AuthUser,
+    _auth_user: AuthUser,
     limit: usize,
 ) -> std::result::Result<Json<Vec<Event>>, (StatusCode, Json<ErrorResponse>)> {
     let events = state.store.get_events(None, limit)
@@ -51,7 +51,7 @@ async fn get_events(
 pub async fn get_project_events(
     State(state): State<Arc<AppState>>,
     Path(project_id): Path<i32>,
-    auth_user: AuthUser,
+    _auth_user: AuthUser,
 ) -> std::result::Result<Json<Vec<Event>>, (StatusCode, Json<ErrorResponse>)> {
     let events = state.store.get_events(Some(project_id), 200)
         .await

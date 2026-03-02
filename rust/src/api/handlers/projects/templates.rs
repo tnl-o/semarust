@@ -19,7 +19,7 @@ use crate::db::store::{RetrieveQueryParams, TemplateManager};
 pub async fn get_templates(
     State(state): State<Arc<AppState>>,
     Path(project_id): Path<i32>,
-    Query(params): Query<RetrieveQueryParams>,
+    Query(_params): Query<RetrieveQueryParams>,
 ) -> std::result::Result<Json<Vec<Template>>, (StatusCode, Json<ErrorResponse>)> {
     let templates = state.store.get_templates(project_id)
         .await

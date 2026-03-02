@@ -18,7 +18,7 @@ use crate::db::store::{RetrieveQueryParams, RepositoryManager};
 pub async fn get_repositories(
     State(state): State<Arc<AppState>>,
     Path(project_id): Path<i32>,
-    Query(params): Query<RetrieveQueryParams>,
+    Query(_params): Query<RetrieveQueryParams>,
 ) -> std::result::Result<Json<Vec<Repository>>, (StatusCode, Json<ErrorResponse>)> {
     let repositories = state.store.get_repositories(project_id)
         .await

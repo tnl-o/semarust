@@ -18,7 +18,7 @@ use crate::db::store::{RetrieveQueryParams, InventoryManager};
 pub async fn get_inventories(
     State(state): State<Arc<AppState>>,
     Path(project_id): Path<i32>,
-    Query(params): Query<RetrieveQueryParams>,
+    Query(_params): Query<RetrieveQueryParams>,
 ) -> std::result::Result<Json<Vec<Inventory>>, (StatusCode, Json<ErrorResponse>)> {
     let inventories = state.store.get_inventories(project_id)
         .await

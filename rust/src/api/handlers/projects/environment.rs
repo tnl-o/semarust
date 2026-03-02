@@ -18,7 +18,7 @@ use crate::db::store::{RetrieveQueryParams, EnvironmentManager};
 pub async fn get_environments(
     State(state): State<Arc<AppState>>,
     Path(project_id): Path<i32>,
-    Query(params): Query<RetrieveQueryParams>,
+    Query(_params): Query<RetrieveQueryParams>,
 ) -> std::result::Result<Json<Vec<Environment>>, (StatusCode, Json<ErrorResponse>)> {
     let environments = state.store.get_environments(project_id)
         .await

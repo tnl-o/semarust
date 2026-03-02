@@ -17,7 +17,7 @@ use crate::db::store::RetrieveQueryParams;
 /// Получает все интеграции (глобальные)
 pub async fn get_integrations(
     State(state): State<Arc<AppState>>,
-    Query(params): Query<RetrieveQueryParams>,
+    Query(_params): Query<RetrieveQueryParams>,
 ) -> std::result::Result<Json<Vec<Integration>>, (StatusCode, Json<ErrorResponse>)> {
     // В реальной реализации нужно получить глобальные интеграции
     Ok(Json(vec![]))
