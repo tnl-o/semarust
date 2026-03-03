@@ -35,6 +35,29 @@ impl std::str::FromStr for SecretStorageType {
     }
 }
 
+impl<DB: sqlx::Database> sqlx::Type<DB> for SecretStorageType
+where
+    String: sqlx::Type<DB>,
+{
+    fn type_info() -> DB::TypeInfo {
+        <String as sqlx::Type<DB>>::type_info()
+    }
+
+    fn compatible(ty: &DB::TypeInfo) -> bool {
+        <String as sqlx::Type<DB>>::compatible(ty)
+    }
+}
+
+impl<'r, DB: sqlx::Database> sqlx::Decode<'r, DB> for SecretStorageType
+where
+    String: sqlx::Decode<'r, DB>,
+{
+    fn decode(value: <DB as sqlx::Database>::ValueRef<'r>) -> Result<Self, sqlx::error::BoxDynError> {
+        let s = <String as sqlx::Decode<'r, DB>>::decode(value)?;
+        Ok(s.parse().unwrap_or(SecretStorageType::Local))
+    }
+}
+
 /// Хранилище секретов
 #[derive(Debug, Clone, Serialize, Deserialize, FromRow)]
 pub struct SecretStorage {
