@@ -7,27 +7,16 @@ use std::path::PathBuf;
 use tokio::fs;
 use crate::error::Result;
 use crate::services::local_job::LocalJob;
-use crate::db_lib::DbAccessKeyRole;
 
 impl LocalJob {
     /// Устанавливает файлы ключей Vault
     pub async fn install_vault_key_files(&mut self) -> Result<()> {
         self.vault_file_installations = HashMap::new();
 
-        for vault in &self.inventory.vaults {
-            if let Some(vault_key_id) = vault.vault_key_id {
-                // TODO: Загрузить ключ из БД
-                // let key = self.store.get_access_key(vault_key_id).await?;
-                // let installation = self.key_installer.install(
-                //     &key,
-                //     DbAccessKeyRole::AnsiblePasswordVault,
-                //     &self.logger
-                // ).await?;
-                // self.vault_file_installations.insert(vault.name.clone(), installation);
-                
-                self.log(&format!("Vault key installation pending for vault '{}' (key ID: {})", 
-                    vault.name, vault_key_id));
-            }
+        // vaults - это JSON строка, нужно распарсить
+        if let Some(ref vaults_json) = self.inventory.vaults {
+            // TODO: Распарсить vaults_json и загрузить ключи из БД
+            self.log(&format!("Vault configuration loaded: {}", vaults_json));
         }
 
         Ok(())

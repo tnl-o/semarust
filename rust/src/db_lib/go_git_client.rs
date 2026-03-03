@@ -5,7 +5,6 @@
 use std::sync::Arc;
 use git2::{Repository, FetchOptions, RemoteCallbacks, Cred};
 use crate::error::{Error, Result};
-use crate::models::Repository as DbRepository;
 use crate::services::task_logger::TaskLogger;
 use super::{GitClient, GitRepository, AccessKeyInstaller};
 
@@ -23,46 +22,9 @@ impl GoGitClient {
 
     /// Получает метод аутентификации
     fn get_auth_method(&self, repo: &GitRepository) -> Result<Option<RemoteCallbacks<'_>>> {
-        match repo.repository.ssh_key.key_type {
-            crate::models::access_key::AccessKeyType::Ssh => {
-                // Установка SSH ключа
-                let install = self.key_installer.install(
-                    &repo.repository.ssh_key,
-                    crate::services::access_key_installer::AccessKeyRole::Git,
-                    repo.logger.clone(),
-                )?;
-
-                // Создаём callback для аутентификации
-                let mut callbacks = RemoteCallbacks::new();
-                callbacks.credentials(|_url, username_from_url, allowed_types| {
-                    Cred::ssh_key_from_agent(
-                        username_from_url.unwrap_or("git"),
-                        None,
-                        None,
-                    )
-                });
-
-                // Очищаем установку после использования
-                install.destroy()?;
-
-                Ok(Some(callbacks))
-            }
-            crate::models::access_key::AccessKeyType::LoginPassword => {
-                // Аутентификация по логину/паролю
-                let mut callbacks = RemoteCallbacks::new();
-                callbacks.credentials(|_url, username_from_url, _allowed_types| {
-                    Cred::userpass_plaintext(
-                        &repo.repository.ssh_key.login_password.login,
-                        &repo.repository.ssh_key.login_password.password,
-                    )
-                });
-                Ok(Some(callbacks))
-            }
-            crate::models::access_key::AccessKeyType::None => {
-                Ok(None)
-            }
-            _ => Err(Error::Other("Unsupported auth method".to_string())),
-        }
+        // TODO: Загрузить AccessKey через ssh_key_id из хранилища
+        // Пока заглушка - возвращаем Ok(None)
+        Ok(None)
     }
 }
 
@@ -72,12 +34,15 @@ impl GitClient for GoGitClient {
     async fn clone(&self, repo: &GitRepository) -> Result<()> {
         let auth_callbacks = self.get_auth_method(repo)?;
 
-        let mut builder = BuildRepo::new();
+        let mut fetch_options = FetchOptions::new();
         if let Some(callbacks) = auth_callbacks {
-            builder.fetch_options(callbacks);
+            fetch_options.remote_callbacks(callbacks);
         }
 
-        builder.clone(&repo.repository.git_url, repo.get_full_path())?;
+        let mut opts = git2::build::RepoBuilder::new();
+        opts.fetch_options(fetch_options);
+
+        opts.clone(&repo.repository.git_url, repo.get_full_path())?;
         Ok(())
     }
 

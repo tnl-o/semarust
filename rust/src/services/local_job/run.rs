@@ -68,17 +68,17 @@ impl LocalJob {
 
         // Получаем аргументы в зависимости от типа шаблона
         match self.template.template_type {
-            crate::models::TemplateType::Ansible => {
+            Some(crate::models::TemplateType::Ansible) => {
                 self.log("Preparing Ansible playbook...");
                 // TODO: Создать AnsibleApp
                 // let args = self.get_playbook_args(username, incoming_version)?;
             }
-            crate::models::TemplateType::Terraform => {
+            Some(crate::models::TemplateType::Terraform) => {
                 self.log("Preparing Terraform...");
                 // TODO: Создать TerraformApp
                 // let args = self.get_terraform_args(username, incoming_version)?;
             }
-            crate::models::TemplateType::Shell => {
+            Some(crate::models::TemplateType::Shell) => {
                 self.log("Preparing Shell script...");
                 // TODO: Создать ShellApp
                 // let args = self.get_shell_args(username, incoming_version)?;

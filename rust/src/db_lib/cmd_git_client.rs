@@ -252,11 +252,7 @@ impl CmdGitClient {
         args: &[&str],
         logger: &dyn TaskLogger,
     ) -> Result<()> {
-        // Устанавливаем SSH ключ
-        let ssh_key = r.repository.key_id;
-
-        // TODO: Получить ключ из БД и установить
-        // Пока используем заглушку
+        // TODO: Установить SSH ключ из БД через r.repository.ssh_key_id
         let installation = AccessKeyInstallation::new();
 
         let mut cmd = self.make_cmd(r, target_dir, &installation, args);
@@ -282,10 +278,7 @@ impl CmdGitClient {
         args: &[&str],
         logger: &dyn TaskLogger,
     ) -> Result<String> {
-        // Устанавливаем SSH ключ
-        let ssh_key = r.repository.key_id;
-
-        // TODO: Получить ключ из БД и установить
+        // TODO: Установить SSH ключ из БД через r.repository.ssh_key_id
         let installation = AccessKeyInstallation::new();
 
         let mut cmd = self.make_cmd(r, target_dir, &installation, args);

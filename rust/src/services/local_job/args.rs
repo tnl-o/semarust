@@ -22,10 +22,14 @@ impl LocalJob {
         args.push(self.template.playbook.clone());
 
         // Секретные переменные
-        for secret in &self.environment.secrets {
-            if secret.secret_type == crate::models::EnvironmentSecretType::Var {
-                args.push(format!("{}={}", secret.name, secret.secret));
-            }
+        // secrets - это JSON строка, нужно распарсить
+        if let Some(ref _secrets_json) = self.environment.secrets {
+            // TODO: Распарсить secrets_json и получить секреты
+            // for secret in secrets {
+            //     if secret.secret_type == crate::models::EnvironmentSecretType::Var {
+            //         args.push(format!("{}={}", secret.name, secret.secret));
+            //     }
+            // }
         }
 
         // Аргументы шаблона
@@ -75,13 +79,17 @@ impl LocalJob {
         }
 
         // Аргументы для секретов
+        // secrets - это JSON строка, нужно распарсить
         let mut secret_args = Vec::new();
-        for secret in &self.environment.secrets {
-            if secret.secret_type != crate::models::EnvironmentSecretType::Var {
-                continue;
-            }
-            secret_args.push("-var".to_string());
-            secret_args.push(format!("{}={}", secret.name, secret.secret));
+        if let Some(ref _secrets_json) = self.environment.secrets {
+            // TODO: Распарсить secrets_json и получить секреты
+            // for secret in secrets {
+            //     if secret.secret_type != crate::models::EnvironmentSecretType::Var {
+            //         continue;
+            //     }
+            //     secret_args.push("-var".to_string());
+            //     secret_args.push(format!("{}={}", secret.name, secret.secret));
+            // }
         }
 
         // Базовые аргументы
