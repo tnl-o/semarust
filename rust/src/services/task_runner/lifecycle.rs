@@ -88,7 +88,7 @@ impl TaskRunner {
 
         match self.pool.store.create_event(Event {
             id: 0,
-            object_type: obj_type,
+            object_type: obj_type.to_string(),
             object_id: Some(self.task.id),
             project_id: Some(self.task.project_id),
             description: desc,

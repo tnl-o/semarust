@@ -398,7 +398,7 @@ impl AnsibleApp {
             cli_args,
             args.environment_vars,
             args.inputs,
-            Box::new(|_| {}),  // callback
+            None,  // callback
         ).await
     }
 
