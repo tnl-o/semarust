@@ -31,6 +31,23 @@ impl std::fmt::Display for TemplateType {
     }
 }
 
+impl std::str::FromStr for TemplateType {
+    type Err = String;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "default" => Ok(TemplateType::Default),
+            "build" => Ok(TemplateType::Build),
+            "deploy" => Ok(TemplateType::Deploy),
+            "task" => Ok(TemplateType::Task),
+            "ansible" => Ok(TemplateType::Ansible),
+            "terraform" => Ok(TemplateType::Terraform),
+            "shell" => Ok(TemplateType::Shell),
+            _ => Ok(TemplateType::Default),
+        }
+    }
+}
+
 impl<DB: Database> Type<DB> for TemplateType
 where
     String: Type<DB>,

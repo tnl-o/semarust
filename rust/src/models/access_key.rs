@@ -115,6 +115,19 @@ impl std::fmt::Display for AccessKeyOwner {
     }
 }
 
+impl std::str::FromStr for AccessKeyOwner {
+    type Err = String;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "user" => Ok(AccessKeyOwner::User),
+            "project" => Ok(AccessKeyOwner::Project),
+            "shared" => Ok(AccessKeyOwner::Shared),
+            _ => Ok(AccessKeyOwner::Shared),
+        }
+    }
+}
+
 impl<DB: Database> Type<DB> for AccessKeyOwner
 where
     String: Type<DB>,
