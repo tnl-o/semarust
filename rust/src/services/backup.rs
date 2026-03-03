@@ -218,9 +218,9 @@ impl BackupDB {
                 playbook: tpl.playbook.clone(),
                 arguments: tpl.arguments.clone(),
                 template_type: tpl.template_type.as_ref().map(|t| t.to_string()).unwrap_or_default(),
-                inventory: tpl.inventory_id.map(|id| inventory_map.get(&id).cloned()).flatten(),
-                repository: tpl.repository_id.map(|id| repository_map.get(&id).cloned()).flatten(),
-                environment: tpl.environment_id.map(|id| environment_map.get(&id).cloned()).flatten(),
+                inventory: inventory_map.get(&tpl.inventory_id).cloned(),
+                repository: repository_map.get(&tpl.repository_id).cloned(),
+                environment: environment_map.get(&tpl.environment_id).cloned(),
                 cron: schedule,
             });
         }
