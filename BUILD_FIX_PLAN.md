@@ -1,31 +1,51 @@
 # План исправления ошибок сборки Semaphore Rust
-Дата: 2026-03-02
-Последнее обновление: 2026-03-03 (сессия 5)
 
-## Прогресс
+**Дата:** 2026-03-02  
+**Последнее обновление:** 2026-03-03 (сессия 6)
 
-### ✅ Сессия 5 - Выполнено
-- [x] **Удаление BoltDB** - полностью удалена директория `src/db/bolt/`
-- [x] Удалён `BoltStore` из всех импортов и CLI
-- [x] Удалён `DbDialect::Bolt` из конфигурации
-- [x] Исправлены инициализаторы `DbConfig` (path, connection_string)
-- [x] Исправлены инициализаторы `Task` (environment_id, repository_id)
-- [x] Исправлены инициализаторы `TaskOutput` (project_id)
-- [x] Исправлены moved value ошибки (user.email, current_user)
-- [x] Исправлено форматирование `[u8; 16]` в hex
-- [x] Исправлен `HAConfig` доступ к `node_id`
-- [x] Добавлен `Repository::get_full_path()`
-- [x] Исправлен `Config::db_dialect()` и `non_admin_can_create_project()`
+---
 
-### ✅ Сессия 4 - Выполнено
-- [x] System Process - libc → nix
-- [x] Default реализации для Repository, Inventory, Environment, HARedisConfig
-- [x] ProjectUser модель (username, name)
-- [x] TaskStageType (InstallRoles → Init)
+## 📊 Текущий статус
 
-### ✅ Сессия 1-3 - Выполнено
-- [x] BoltDB API (полностью)
-- [x] Модели данных (частично)
+| Метрика | Значение |
+|---------|----------|
+| Начальное количество ошибок | 585 |
+| Исправлено ошибок | 448 |
+| **Осталось ошибок** | **137** |
+| **Процент выполнения** | **76.6%** |
+
+---
+
+## ✅ Выполнено (сессии 1-6)
+
+### Сессия 6 (28 ошибок)
+- [x] Git Client ssh_key ошибки (4)
+- [x] local_job/vault.rs ошибки (3)
+- [x] local_job/environment.rs ошибки (3)
+- [x] local_job/args.rs ошибки (4)
+- [x] TemplateType match ошибки (3)
+- [x] mismatched types часть 1 (11)
+
+### Сессия 5 (61 ошибка)
+- [x] Удаление BoltDB (43 файла)
+- [x] Конфигурация (db_dialect, non_admin_can_create_project)
+- [x] DbConfig инициализаторы
+- [x] Task инициализаторы
+- [x] TaskOutput инициализаторы
+- [x] Moved value ошибки
+- [x] [u8; 16] форматирование
+- [x] HAConfig node_id
+- [x] Repository.get_full_path()
+
+### Сессия 4 (159 ошибок)
+- [x] System Process (libc → nix)
+- [x] Default реализации
+- [x] ProjectUser модель
+- [x] TaskStageType
+
+### Сессии 1-3 (~200 ошибок)
+- [x] BoltDB API
+- [x] Модели данных
 - [x] Конфигурация
 - [x] Store Trait
 - [x] TaskLogger Clone
@@ -33,228 +53,165 @@
 
 ---
 
-## Текущий статус
+## 🔴 Оставшиеся ошибки (137)
 
-| Метрика | Значение |
-|---------|----------|
-| Начальное количество ошибок | 585 |
-| Исправлено ошибок | 420 |
-| Осталось ошибок | 165 |
-| Процент выполнения | 71.8% |
+### Приоритет 1: mismatched types (~11 ошибок)
 
----
+#### ansible_app.rs
+- [ ] Строка 398: callback тип `FnOnce(u32)` vs `Fn(&Child)`
 
-## 🔴 Критические ошибки (165 осталось)
+#### ansible_playbook.rs
+- [ ] Строки 71, 96: `tokio::process::Command` vs `std::process::Command`
 
-### Топ ошибок по количеству
+#### go_git_client.rs
+- [ ] Строка 45: `opts.clone()` сигнатура
+- [ ] Строка 78: `set_head()` сигнатура
 
-| Ошибка | Количество | Файлы |
-|--------|------------|-------|
-| mismatched types | 24 | Различные |
-| type annotations needed | 10 | Различные |
-| no field `ssh_key` on `DbRepository` | 4 | go_git_client.rs, cmd_git_client.rs |
-| no field `name`/`secret`/`secret_type` on `&String` | 10 | local_job/*.rs |
-| dyn Any + Send + Sync: Clone | 4 | local_app.rs |
-| no field `key_id` on `DbRepository` | 2 | go_git_client.rs |
-| Task: sqlx::Decode/Type | 4 | task_crud.rs |
-| SecretStorage: FromRow | 2 | mod.rs |
-| ExporterChain: DataExporter | 4 | exporter*.rs |
+#### shell_app.rs
+- [ ] Строка 86: callback тип для status listener
 
 ---
 
-## 📋 План сессии 6
+### Приоритет 2: SQLx трейты (6 ошибок)
 
-### 🔴 ПРИОРИТЕТ 1: Git Client (6 ошибок)
+#### Task модель
+- [ ] Реализовать `sqlx::Decode<'_, DB>` для `Task`
+- [ ] Реализовать `sqlx::Type<DB>` для `Task`
+- [ ] Файл: `src/models/task.rs`
 
-**Проблема:** Код обращается к несуществующему полю `ssh_key` вместо `key_id`
-
-#### Задачи:
-- [ ] **go_git_client.rs** (строки 26, 30, 55, 56)
-  - Заменить `repo.repository.ssh_key` на загрузку через `key_id`
-  - Использовать `store.get_access_key(key_id)` для получения ключа
-  
-- [ ] **cmd_git_client.rs** (строки 256, 286)
-  - Заменить `r.repository.key_id` на правильную загрузку ключа
-
-#### Пример исправления:
-```rust
-// Было (неправильно):
-let ssh_key = repo.repository.ssh_key;
-
-// Стало (правильно):
-let ssh_key = store.get_access_key(repo.repository.key_id).await?;
-```
+#### SecretStorage модель
+- [ ] Реализовать `FromRow` для `SecretStorage`
+- [ ] Файл: `src/models/secret_storage.rs`
 
 ---
 
-### 🔴 ПРИОРИТЕТ 2: Модели данных (10 ошибок)
+### Приоритет 3: Clone trait (4 ошибки)
 
-**Проблема:** Неправильное использование типов - обращение к полям на `&String`
-
-#### Задачи:
-- [ ] **local_job/vault.rs** (строки 18, 29)
-  - Исправить тип `vault` с `&String` на правильную структуру
-  
-- [ ] **local_job/environment.rs** (строки 113, 114)
-  - Исправить тип `secret` с `&String` на `EnvironmentSecret`
-  
-- [ ] **local_job/args.rs** (строки 26, 27, 80, 84)
-  - Исправить тип `secret` с `&String` на `EnvironmentSecret`
+#### LocalAppRunningArgs
+- [ ] Убрать `#[derive(Clone)]`
+- [ ] Использовать `Arc` для `task_params`, `template_params`
+- [ ] Изменить callback тип
+- [ ] Файл: `src/db_lib/local_app.rs`
 
 ---
 
-### 🔴 ПРИОРИТЕТ 3: mismatched types (24 ошибки)
+### Приоритет 4: Job trait (1 ошибка)
 
-#### Подзадачи:
-
-**TemplateType match** (3 ошибки):
-- [ ] **local_job/run.rs** (строки 71, 76, 81)
-  - Исправить `match self.template.template_type` на `match self.template.template_type { Some(t) => ... }`
-
-**TerraformTaskParams** (5 ошибок):
-- [ ] **terraform_app.rs** (строки 140, 141, 228, 277, 278, 282)
-  - Удалить использование несуществующих полей
-  - Использовать доступные поля: `plan`, `auto_approve`
-
-**Backup/Restore модели** (8 ошибок):
-- [ ] **restore.rs** (строки 432, 433, 354, 358, 365, 366)
-  - Исправить типы полей BackupProject, BackupTemplate
-  
-- [ ] **backup.rs** (строки 221, 222, 223, 233, 243, 269, 270, 271, 275, 290, 300)
-  - Исправить типы полей
-
-**Git Client callback** (2 ошибки):
-- [ ] **ansible_app.rs** (строка 398)
-  - Исправить тип callback с `FnOnce(u32)` на `Fn(&Child)`
-  
-- [ ] **ansible_playbook.rs** (строки 71, 96)
-  - Исправить использование `tokio::process::Command` vs `std::process::Command`
+#### LocalJob
+- [ ] Реализовать `impl Job for LocalJob`
+- [ ] Метод `run()` с 4 параметрами
+- [ ] Файлы: `src/services/local_job/types.rs`, `src/services/job.rs`
 
 ---
 
-### 🟡 ПРИОРИТЕТ 4: SQLx трейты (4 ошибки)
+### Приоритет 5: Прочие ошибки (~115 ошибок)
 
-**Проблема:** `Task` не реализует `sqlx::Decode` и `sqlx::Type`
+#### type annotations needed (~10)
+- [ ] Добавить явные аннотации типов в closure
 
-#### Задачи:
-- [ ] **models/task.rs**
-  - Добавить реализацию `sqlx::Decode` и `sqlx::Type` для `Task`
-  - Или использовать кастомный `FromRow` с ручным парсингом
+#### and_then for i32 (3)
+- [ ] Исправить использование `and_then` для `i32`
 
-#### Пример реализации:
-```rust
-impl<DB: Database> Type<DB> for Task 
-where
-    TaskStatus: Type<DB>,
-    DateTime<Utc>: Type<DB>,
-{
-    fn type_info() -> DB::TypeInfo {
-        // ...
-    }
-}
-```
-
----
-
-### 🟡 ПРИОРИТЕТ 5: Job trait (1 ошибка)
-
-**Проблема:** `LocalJob` не реализует трейт `Job`
-
-#### Задачи:
-- [ ] **services/local_job/types.rs**
-  - Реализовать `impl Job for LocalJob`
-  
-- [ ] **services/job.rs**
-  - Проверить сигнатуру метода `Job::run` (4 параметра)
-
----
-
-### 🟡 ПРИОРИТЕТ 6: Clone trait (4 ошибки)
-
-**Проблема:** `dyn Any + Send + Sync` и `dyn FnOnce` не реализуют Clone
-
-#### Задачи:
-- [ ] **local_app.rs** (строки 22, 25, 28, 51, 54, 57)
-  - Убрать `#[derive(Clone)]` с `LocalAppArgs`
-  - Использовать `Arc` для shared данных
-  - Изменить архитектуру callback
-
----
-
-### 🟢 ПРИОРИТЕТ 7: Прочие ошибки
-
-#### SecretStorage FromRow (2 ошибки):
-- [ ] **models/secret_storage.rs**
-  - Добавить `#[derive(FromRow)]` или реализовать вручную
-
-#### ExporterChain DataExporter (4 ошибки):
-- [ ] **services/exporter.rs**
-  - Реализовать `impl DataExporter for ExporterChain`
-  
-- [ ] **services/exporter_main.rs**
-  - Реализовать `impl DataExporter for ExporterChain`
-
-#### type annotations (10 ошибок):
-- [ ] Различные файлы
-  - Добавить явные аннотации типов
+#### Exporter traits (4)
+- [ ] Реализовать `DataExporter` для `ExporterChain`
+- [ ] Реализовать `TypeExporter` для `ValueMap<T>`
 
 ---
 
 ## 📅 Дорожная карта
 
-### Сессия 6 (текущая)
-- [ ] Исправить Git Client (6 ошибок)
-- [ ] Исправить модели данных (10 ошибок)
-- [ ] Исправить mismatched types часть 1 (12 ошибок)
-- **Цель: < 140 ошибок**
+### Сессия 7 (текущая)
+**Цель: < 120 ошибок**
 
-### Сессия 7
-- [ ] Исправить mismatched types часть 2 (12 ошибок)
-- [ ] Исправить SQLx трейты (4 ошибки)
-- [ ] Исправить Job trait (1 ошибка)
-- **Цель: < 120 ошибок**
+- [ ] Исправить mismatched types часть 2 (11 ошибок)
+- [ ] Исправить SQLx трейты (6 ошибок)
+- [ ] Исправить Clone trait (4 ошибки)
+
+**Ожидаемый результат:** ~116 ошибок
 
 ### Сессия 8
-- [ ] Исправить Clone trait (4 ошибки)
-- [ ] Исправить SecretStorage (2 ошибки)
-- [ ] Исправить ExporterChain (4 ошибки)
+**Цель: < 100 ошибок**
+
+- [ ] Исправить Job trait (1 ошибка)
 - [ ] Исправить type annotations (10 ошибок)
-- **Цель: < 100 ошибок**
+- [ ] Исправить and_then for i32 (3 ошибки)
+- [ ] Исправить Exporter traits (4 ошибки)
+
+**Ожидаемый результат:** ~98 ошибок
 
 ### Сессия 9-10
-- [ ] Исправить оставшиеся ошибки
+**Цель: < 50 ошибок**
+
+- [ ] Исправить оставшиеся mismatched types
+- [ ] Исправить прочие ошибки
+
+**Ожидаемый результат:** ~40-50 ошибок
+
+### Сессия 11-12
+**Цель: < 10 ошибок**
+
 - [ ] Финальная полировка
+- [ ] Исправление последних ошибок
+
+**Ожидаемый результат:** < 10 ошибок
+
+### Сессия 13
+**Цель: 0 ошибок**
+
 - [ ] Первая успешная сборка!
-- **Цель: 0 ошибок**
+- [ ] Все тесты проходят
 
 ---
 
-## 📝 Заметки
+## 📝 Технические заметки
 
 ### Архитектурные решения
 
-1. **Удаление BoltDB**
-   - BoltDB - Go библиотека, не имеет нативного Rust аналога
-   - Sled реализация имела множество проблем
-   - SQL БД полностью покрывают потребности
+1. **SQLx интеграция**
+   - Для сложных моделей использовать кастомный `FromRow`
+   - Для простых - derive макросы
+   - Избегать сложных вложенных структур
 
-2. **Git Client архитектура**
-   - Использовать `key_id` для загрузки ключей из хранилища
-   - Не хранить ключи напрямую в Repository
+2. **Clone для dyn traits**
+   - Использовать `Arc` вместо `Clone`
+   - Избегать хранения `Box<dyn Trait>` в Clone структурах
 
-3. **Job trait**
-   - Требует 4 параметра в `run()` методе
-   - LocalJob должен реализовать этот трейт
+3. **Command типы**
+   - Использовать `tokio::process::Command` для async кода
+   - Использовать `std::process::Command` для sync кода
+   - Не смешивать!
 
-### Технические долги
+### Известные проблемы
 
-1. **SQLx трейты** - требуют глубокой интеграции с SQLx
-2. **Exporter traits** - требуют рефакторинга архитектуры
-3. **Clone для dyn traits** - требует изменения архитектуры callback
+1. **callback типы**
+   - `FnOnce(u32)` vs `Fn(&Child)` - требуют унификации
+   - Решение: использовать один тип во всех местах
 
-### Успехи
+2. **git2 API**
+   - `RepoBuilder::clone()` требует правильную сигнатуру
+   - `Repository::set_head()` требует `&str` не `Oid`
 
-- ✅ 71.8% ошибок исправлено
-- ✅ BoltDB удалён без потери функциональности
-- ✅ Конфигурация полностью исправлена
-- ✅ Основные модели данных исправлены
+3. **JSON строки в моделях**
+   - `vaults`, `secrets` - JSON строки
+   - Требуют парсинга перед использованием
+   - Решение: создать helper методы для парсинга
+
+---
+
+## 🎯 Метрики качества
+
+| Метрика | Цель | Текущее | Статус |
+|---------|------|---------|--------|
+| Ошибок компиляции | 0 | 137 | 🔴 |
+| Предупреждений | < 100 | ~280 | 🔴 |
+| Покрытие тестами | > 50% | ? | ⚪ |
+| Успешная сборка | Да | Нет | 🔴 |
+
+---
+
+## 📚 Ресурсы
+
+- [BUILD_ERRORS.md](BUILD_ERRORS.md) - полный отчёт об ошибках
+- [SQLx документация](https://docs.rs/sqlx/)
+- [git2 документация](https://docs.rs/git2/)
+- [tokio документация](https://docs.rs/tokio/)
