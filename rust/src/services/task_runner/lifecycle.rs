@@ -88,8 +88,8 @@ impl TaskRunner {
         match self.pool.store.create_event(Event {
             id: 0,
             object_type: obj_type,
-            object_id: self.task.id,
-            project_id: self.task.project_id,
+            object_id: Some(self.task.id),
+            project_id: Some(self.task.project_id),
             description: desc,
             user_id: None,
             created: chrono::Utc::now(),

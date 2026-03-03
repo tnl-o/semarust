@@ -326,12 +326,12 @@ impl Cli {
 
         // Переопределение из аргументов командной строки
         if let Some(db_dialect) = self.db_dialect {
-            config.database.dialect = match db_dialect.as_str() {
+            config.database.dialect = Some(match db_dialect.as_str() {
                 "sqlite" => DbDialect::SQLite,
                 "mysql" => DbDialect::MySQL,
                 "postgres" => DbDialect::Postgres,
                 _ => DbDialect::SQLite,
-            };
+            });
         }
 
         if let Some(db_path) = self.db_path {

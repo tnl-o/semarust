@@ -11,7 +11,7 @@ use tokio::process::Command as TokioCommand;
 use crate::error::{Error, Result};
 use crate::services::ssh_agent::AccessKeyInstallation;
 use crate::services::task_logger::TaskLogger;
-use super::access_key_installer::{AccessKeyInstallerTrait, DbAccessKeyRole};
+use super::access_key_installer::AccessKeyInstallerTrait;
 
 // ============================================================================
 // Типы данных
