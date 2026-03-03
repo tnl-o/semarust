@@ -421,7 +421,8 @@ mod tests {
 
     fn create_test_ansible_app() -> AnsibleApp {
         let logger = Arc::new(BasicLogger::new());
-        let template = Template::default();
+        let mut template = Template::default();
+        template.playbook = "playbook.yml".to_string();
         let repository = Repository::default();
         let work_dir = PathBuf::from("/tmp/test_ansible");
 
@@ -431,14 +432,15 @@ mod tests {
     #[test]
     fn test_ansible_app_creation() {
         let app = create_test_ansible_app();
-        assert_eq!(app.template.playbook, "");
+        assert_eq!(app.template.playbook, "playbook.yml");
     }
 
     #[test]
     fn test_get_playbook_dir() {
         let app = create_test_ansible_app();
         let dir = app.get_playbook_dir();
-        assert!(dir.ends_with("repository"));
+        // get_playbook_dir returns parent of (repo_path/playbook), i.e. repository dir
+        assert!(dir.ends_with("repository") || dir.to_string_lossy().replace('\\', "/").ends_with("repository"));
     }
 
     #[test]

@@ -16,11 +16,9 @@ use crate::api::auth_local::LocalAuthService;
 use crate::api::middleware::ErrorResponse;
 use crate::api::state::AppState;
 
-/// Извлекает токен из заголовка Authorization
+/// Извлекает токен из заголовка Authorization (только Bearer)
 pub fn extract_token_from_header(auth_header: Option<&str>) -> Option<&str> {
-    auth_header
-        .and_then(|h| h.strip_prefix("Bearer "))
-        .or(auth_header) // Если нет префикса Bearer, используем как есть
+    auth_header.and_then(|h| h.strip_prefix("Bearer "))
 }
 
 /// Извлекатель для аутентифицированного пользователя

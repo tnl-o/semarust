@@ -1,7 +1,7 @@
 # Отчёт об ошибках сборки Semaphore Rust
 
 **Дата начала:** 2026-03-02  
-**Последнее обновление:** 2026-03-03 (сессия 9)
+**Последнее обновление:** 2026-03-03 (сессия 10)
 
 ---
 
@@ -13,7 +13,7 @@
 | Исправлено ошибок (lib) | 585 |
 | **Ошибок сборки lib** | **0** ✅ |
 | Ошибок в тестах (компиляция) | 0 ✅ |
-| Падающих тестов (runtime) | 73 |
+| Падающих тестов (runtime) | 21 |
 | **Процент выполнения (lib)** | **100%** |
 
 ---
@@ -34,6 +34,18 @@
 ---
 
 ## ✅ Исправленные категории ошибок
+
+### Сессия 10 — план работы (2026-03-03)
+
+- SQLite тесты — tempfile + sqlite:/// для Windows
+- extract_token_from_header — только Bearer, Basic возвращает None
+- AccessKeyType::SSH — #[serde(rename = "ssh")] для десериализации
+- App::default() — active: false
+- task_runner errors/logging — #[tokio::test] для TaskPool
+- ansible_app — playbook в фикстуре для get_playbook_dir
+- TotpSetupResponse — удалён дубликат из auth.rs
+- task_pool_impl.rs — удалён (мёртвый код)
+- **Результат:** 475 passed, 21 failed (было 423/73)
 
 ### Сессия 9 — исправления тестов
 
@@ -154,18 +166,18 @@
 | Импорты (TaskStatus, extract_token_from_header) | ✅ Исправлено |
 | RetrieveQueryParams, TotpVerification, TaskOutput | ✅ Исправлено |
 
-### Падающие тесты (runtime) — 73 шт.
+### Падающие тесты (runtime) — 21 шт.
+
+**Исправлено в сессии 10:** SQLite пути (tempfile), extract_token, AccessKeyType SSH, App::default, task_runner tokio, ansible_app playbook_dir, TotpSetupResponse ambiguous, task_pool_impl удалён.
 
 **Требуют дальнейшей работы:**
 
 | Область | Тесты | Возможная причина |
 |---------|-------|-------------------|
-| db/sql/* | init, migrations, crud, utils | SQLite :memory: или пути к temp на Windows |
-| api/extractors | test_extract_token_from_invalid_header | Логика теста |
-| config/* | merge_db_configs, validate_config | Конфигурация окружения |
-| services/task_runner | errors, logging | Зависимости MockStore/пула |
-| services/task_pool_runner | test_kill_task | Структура TaskPool (task_pool vs task_pool_types) |
-| utils/app | test_app_default | Инициализация |
+| db/sql/* | template_crud, task_crud, integration_*, template_roles | Схема БД (ColumnNotFound, NOT NULL) |
+| config/* | merge_db_configs, validate_config, verify_recovery_code | Конфигурация окружения |
+| services/task_pool_runner | test_kill_task | Структура TaskPool |
+| services/local_job | test_get_template_params, test_get_environment_env | Логика тестов |
 
 **Рекомендации:** запустить `cargo test -- --nocapture` для просмотра выводов падающих тестов.
 
@@ -218,7 +230,5 @@
 
 ## 📋 TODO для следующей сессии
 
-1. **Исправить 73 падающих теста** — анализ логов, исправление db/sql тестов (возможно tempfile вместо env::temp_dir)
-2. **Удалить неиспользуемые импорты** — `cargo fix --allow-dirty` или ручная очистка
-3. **Разрешить ambiguous glob re-exports** — `TotpSetupResponse` в api/handlers/mod.rs
-4. **Проверить дублирование TaskPool** — task_pool.rs vs task_pool_types.rs vs task_pool_impl.rs
+1. **Исправить 21 падающий тест** — db/sql (схема), config, task_pool_runner, local_job
+2. **Устранение оставшихся warnings** — ~250 (cargo fix применён частично)

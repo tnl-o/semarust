@@ -98,22 +98,22 @@ mod tests {
         TaskRunner::new(task, pool, "testuser".to_string(), AccessKeyInstallerImpl::new())
     }
 
-    #[test]
-    fn test_is_error_fatal_permission_denied() {
+    #[tokio::test]
+    async fn test_is_error_fatal_permission_denied() {
         let runner = create_test_task_runner();
         let err = crate::error::Error::Other("permission denied".to_string());
         assert!(runner.is_error_fatal(&err));
     }
 
-    #[test]
-    fn test_is_error_fatal_non_fatal() {
+    #[tokio::test]
+    async fn test_is_error_fatal_non_fatal() {
         let runner = create_test_task_runner();
         let err = crate::error::Error::Other("minor issue".to_string());
         assert!(!runner.is_error_fatal(&err));
     }
 
-    #[test]
-    fn test_wrap_error() {
+    #[tokio::test]
+    async fn test_wrap_error() {
         let runner = create_test_task_runner();
         let err = crate::error::Error::Other("original error".to_string());
         let wrapped = runner.wrap_error(err, "context");
@@ -121,8 +121,8 @@ mod tests {
         assert!(wrapped.to_string().contains("original error"));
     }
 
-    #[test]
-    fn test_prepare_error_ok() {
+    #[tokio::test]
+    async fn test_prepare_error_ok() {
         let runner = create_test_task_runner();
         let result = runner.prepare_error(Ok(()), "test message");
         assert!(result.is_ok());
