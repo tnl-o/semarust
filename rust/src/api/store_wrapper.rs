@@ -283,6 +283,10 @@ impl TaskManager for StoreWrapper {
     async fn create_task_output(&self, output: TaskOutput) -> Result<TaskOutput> {
         self.inner.as_ref().as_ref().create_task_output(output).await
     }
+
+    async fn update_task_status(&self, project_id: i32, task_id: i32, status: TaskStatus) -> Result<()> {
+        self.inner.as_ref().as_ref().update_task_status(project_id, task_id, status).await
+    }
 }
 
 #[async_trait]

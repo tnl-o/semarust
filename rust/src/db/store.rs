@@ -4,6 +4,7 @@
 
 use crate::models::*;
 use crate::error::Result;
+use crate::services::task_logger::TaskStatus;
 use async_trait::async_trait;
 use chrono::{DateTime, Utc};
 use std::collections::HashMap;
@@ -151,6 +152,7 @@ pub trait TaskManager: Send + Sync {
     async fn delete_task(&self, project_id: i32, task_id: i32) -> Result<()>;
     async fn get_task_outputs(&self, task_id: i32) -> Result<Vec<TaskOutput>>;
     async fn create_task_output(&self, output: TaskOutput) -> Result<TaskOutput>;
+    async fn update_task_status(&self, project_id: i32, task_id: i32, status: TaskStatus) -> Result<()>;
 }
 
 /// Менеджер расписаний

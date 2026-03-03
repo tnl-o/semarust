@@ -713,7 +713,7 @@ impl KeyInstaller {
                             // Запускаем SSH агент
                             let ssh_key = SshKey::from_string(
                                 ssh_key_data.private_key.clone(),
-                                if ssh_key_data.passphrase.as_ref().map_or(true, |s| s.is_empty()) {
+                                if ssh_key_data.passphrase.is_empty() {
                                     None
                                 } else {
                                     Some(ssh_key_data.passphrase.clone())
@@ -783,7 +783,7 @@ impl KeyInstaller {
                         if let Some(ssh_key_data) = key.get_ssh_key_data() {
                             let ssh_key = SshKey::from_string(
                                 ssh_key_data.private_key.clone(),
-                                if ssh_key_data.passphrase.as_ref().map_or(true, |s| s.is_empty()) {
+                                if ssh_key_data.passphrase.is_empty() {
                                     None
                                 } else {
                                     Some(ssh_key_data.passphrase.clone())

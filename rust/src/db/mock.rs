@@ -281,6 +281,7 @@ impl TaskManager for MockTaskManager {
     }
     async fn delete_task(&self, _id: i32) -> Result<bool> { Ok(true) }
     async fn get_task_for_template(&self, _template_id: i32, _limit: i64) -> Result<Vec<Task>> { Ok(vec![]) }
+    async fn update_task_status(&self, _project_id: i32, _task_id: i32, _status: TaskStatus) -> Result<()> { Ok(()) }
 }
 
 struct MockScheduleManager;

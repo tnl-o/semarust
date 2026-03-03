@@ -511,6 +511,7 @@ impl TaskManager for SqlStore {
     async fn delete_task(&self, _project_id: i32, _task_id: i32) -> Result<()> { Err(Error::Other("Не реализовано".to_string())) }
     async fn get_task_outputs(&self, _task_id: i32) -> Result<Vec<TaskOutput>> { Ok(vec![]) }
     async fn create_task_output(&self, _output: TaskOutput) -> Result<TaskOutput> { Err(Error::Other("Не реализовано".to_string())) }
+    async fn update_task_status(&self, _project_id: i32, _task_id: i32, _status: TaskStatus) -> Result<()> { Err(Error::Other("Не реализовано".to_string())) }
 }
 
 #[async_trait]

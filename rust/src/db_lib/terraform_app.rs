@@ -89,14 +89,15 @@ impl TerraformApp {
         
         // TF_INPUT=0 - отключить интерактивный ввод
         env.insert("TF_INPUT".to_string(), "0".to_string());
-        
+
         // TF_VAR_* переменные из инвентаря
-        if let Some(ref inventory_vars) = self.inventory.variables {
-            for (key, value) in inventory_vars {
-                env.insert(format!("TF_VAR_{}", key), value.clone());
-            }
-        }
-        
+        // TODO: variables поле удалено из Inventory
+        // if let Some(ref inventory_vars) = self.inventory.variables {
+        //     for (key, value) in inventory_vars {
+        //         env.insert(format!("TF_VAR_{}", key), value.clone());
+        //     }
+        // }
+
         env
     }
 
