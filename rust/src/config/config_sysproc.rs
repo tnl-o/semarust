@@ -4,6 +4,7 @@
 
 use std::os::unix::process::CommandExt;
 use std::process::Command;
+use libc;
 
 /// Конфигурация процесса
 #[derive(Debug, Clone, Default)]

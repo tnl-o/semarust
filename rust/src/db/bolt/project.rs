@@ -12,27 +12,25 @@ impl BoltStore {
     /// Создаёт новый проект
     pub async fn create_project(&self, mut project: Project) -> Result<Project> {
         project.created = Utc::now();
-        
+
         let project_clone = project.clone();
-        
-        let new_project = self.update(|tx| {
-            let bucket = tx.create_bucket_if_not_exists(b"projects")?;
-            
-            let str = serde_json::to_vec(&project_clone)?;
-            
-            let id = bucket.next_sequence()?;
-            let id = i64::MAX - id as i64;
-            
-            let mut project_with_id = project_clone;
-            project_with_id.id = id as i32;
-            
-            let str = serde_json::to_vec(&project_with_id)?;
-            bucket.put(id.to_be_bytes(), str)?;
-            
-            Ok(project_with_id)
-        }).await?;
-        
-        Ok(new_project)
+
+        let tree = self.db.open_tree(b"projects")
+            .map_err(|e| crate::error::Error::Database(sqlx::Error::Protocol(e.to_string())))?;
+
+        let id = self.get_next_id("projects")?;
+        let id_key = (i64::MAX - id as i64).to_be_bytes();
+
+        let mut project_with_id = project_clone;
+        project_with_id.id = id as i32;
+
+        let str = serde_json::to_vec(&project_with_id)
+            .map_err(|e| crate::error::Error::Json(e))?;
+
+        tree.insert(id_key, str)
+            .map_err(|e| crate::error::Error::Database(sqlx::Error::Protocol(e.to_string())))?;
+
+        Ok(project_with_id)
     }
 
     /// Получает все проекты
@@ -40,8 +38,6 @@ impl BoltStore {
         self.get_objects::<Project>(0, "projects", crate::db::store::RetrieveQueryParams {
             offset: 0,
             count: Some(1000),
-            sort_by: None,
-            sort_inverted: false,
             filter: None,
             sort_by: None,
             sort_inverted: false,
@@ -51,9 +47,9 @@ impl BoltStore {
     /// Получает проекты пользователя
     pub async fn get_projects(&self, user_id: i32) -> Result<Vec<Project>> {
         let all_projects = self.get_all_projects().await?;
-        
+
         let mut projects = Vec::new();
-        
+
         for project in all_projects {
             // Проверяем права пользователя
             match self.get_project_user(project.id, user_id).await {
@@ -62,7 +58,7 @@ impl BoltStore {
                 Err(e) => return Err(e),
             }
         }
-        
+
         Ok(projects)
     }
 
@@ -108,7 +104,7 @@ mod tests {
     async fn test_create_project() {
         let db = create_test_bolt_db();
         let project = create_test_project("Test Project");
-        
+
         let result = db.create_project(project).await;
         assert!(result.is_ok());
     }
@@ -118,7 +114,7 @@ mod tests {
         let db = create_test_bolt_db();
         let project = create_test_project("Test Project");
         let created = db.create_project(project).await.unwrap();
-        
+
         let retrieved = db.get_project(created.id).await;
         assert!(retrieved.is_ok());
         assert_eq!(retrieved.unwrap().name, "Test Project");
@@ -127,13 +123,13 @@ mod tests {
     #[tokio::test]
     async fn test_get_all_projects() {
         let db = create_test_bolt_db();
-        
+
         // Создаём несколько проектов
         for i in 0..5 {
             let project = create_test_project(&format!("Project {}", i));
             db.create_project(project).await.unwrap();
         }
-        
+
         let projects = db.get_all_projects().await;
         assert!(projects.is_ok());
         assert!(projects.unwrap().len() >= 5);
@@ -144,7 +140,7 @@ mod tests {
         let db = create_test_bolt_db();
         let project = create_test_project("Test Project");
         let mut created = db.create_project(project).await.unwrap();
-        
+
         created.name = "Updated Project".to_string();
         let result = db.update_project(created).await;
         assert!(result.is_ok());
@@ -155,10 +151,10 @@ mod tests {
         let db = create_test_bolt_db();
         let project = create_test_project("Test Project");
         let created = db.create_project(project).await.unwrap();
-        
+
         let result = db.delete_project(created.id).await;
         assert!(result.is_ok());
-        
+
         let retrieved = db.get_project(created.id).await;
         assert!(retrieved.is_err());
     }

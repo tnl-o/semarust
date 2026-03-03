@@ -14,257 +14,225 @@ impl BoltStore {
         // Хешируем пароль
         let hashed_password = hash(password, DEFAULT_COST)
             .map_err(|e| crate::error::Error::Other(format!("Bcrypt error: {}", e)))?;
-        
+
         user.password = hashed_password;
         user.created = chrono::Utc::now();
-        
-        let user_clone = user.clone();
-        
-        self.update(|tx| {
-            let bucket = tx.create_bucket_if_not_exists(b"users")?;
-            
-            let str = serde_json::to_vec(&user_clone)?;
-            
-            let id = bucket.next_sequence()?;
-            let id = i64::MAX - id as i64;
-            
-            let mut user_with_id = user_clone;
-            user_with_id.id = id as i32;
-            
-            let str = serde_json::to_vec(&user_with_id)?;
-            bucket.put(id.to_be_bytes(), str)?;
-            
-            Ok(user_with_id)
-        }).await
+
+        let tree = self.db.open_tree(b"users")
+            .map_err(|e| crate::error::Error::Database(sqlx::Error::Protocol(e.to_string())))?;
+
+        let id = self.get_next_id("users")?;
+        let id = i64::MAX - id as i64;
+
+        user.id = id as i32;
+
+        let str = serde_json::to_vec(&user)?;
+        tree.insert(id.to_be_bytes(), str)
+            .map_err(|e| crate::error::Error::Database(sqlx::Error::Protocol(e.to_string())))?;
+
+        Ok(user)
     }
 
     /// Создаёт пользователя без пароля (внешний пользователь)
     pub async fn create_user_without_password(&self, mut user: User) -> Result<User> {
         user.created = chrono::Utc::now();
         user.external = true;
-        
-        let user_clone = user.clone();
-        
-        self.update(|tx| {
-            let bucket = tx.create_bucket_if_not_exists(b"users")?;
-            
-            let str = serde_json::to_vec(&user_clone)?;
-            
-            let id = bucket.next_sequence()?;
-            let id = i64::MAX - id as i64;
-            
-            let mut user_with_id = user_clone;
-            user_with_id.id = id as i32;
-            
-            let str = serde_json::to_vec(&user_with_id)?;
-            bucket.put(id.to_be_bytes(), str)?;
-            
-            Ok(user_with_id)
-        }).await
+
+        let tree = self.db.open_tree(b"users")
+            .map_err(|e| crate::error::Error::Database(sqlx::Error::Protocol(e.to_string())))?;
+
+        let id = self.get_next_id("users")?;
+        let id = i64::MAX - id as i64;
+
+        user.id = id as i32;
+
+        let str = serde_json::to_vec(&user)?;
+        tree.insert(id.to_be_bytes(), str)
+            .map_err(|e| crate::error::Error::Database(sqlx::Error::Protocol(e.to_string())))?;
+
+        Ok(user)
     }
 
     /// Получает пользователя по ID
     pub async fn get_user(&self, user_id: i32) -> Result<User> {
-        self.view(|tx| {
-            let bucket = tx.bucket(b"users");
-            if bucket.is_none() {
-                return Err(crate::error::Error::NotFound("Пользователь не найден".to_string()));
-            }
-            
-            let bucket = bucket.unwrap();
-            let key = (i64::MAX - user_id as i64).to_be_bytes();
-            
-            if let Some(v) = bucket.get(key) {
+        let tree = self.db.open_tree(b"users")
+            .map_err(|e| crate::error::Error::Database(sqlx::Error::Protocol(e.to_string())))?;
+
+        let key = (i64::MAX - user_id as i64).to_be_bytes();
+
+        match tree.get(key)
+            .map_err(|e| crate::error::Error::Database(sqlx::Error::Protocol(e.to_string())))?
+        {
+            Some(v) => {
                 let user: User = serde_json::from_slice(&v)?;
                 Ok(user)
-            } else {
-                Err(crate::error::Error::NotFound("Пользователь не найден".to_string()))
             }
-        }).await
+            None => Err(crate::error::Error::NotFound("Пользователь не найден".to_string())),
+        }
     }
 
     /// Получает пользователя по login или email
     pub async fn get_user_by_login_or_email(&self, login: &str, email: &str) -> Result<User> {
-        self.view(|tx| {
-            let bucket = tx.bucket(b"users");
-            if bucket.is_none() {
-                return Err(crate::error::Error::NotFound("Пользователь не найден".to_string()));
+        let tree = self.db.open_tree(b"users")
+            .map_err(|e| crate::error::Error::Database(sqlx::Error::Protocol(e.to_string())))?;
+
+        for item in tree.iter() {
+            let (_k, v) = item
+                .map_err(|e| crate::error::Error::Database(sqlx::Error::Protocol(e.to_string())))?;
+            let user: User = serde_json::from_slice(&v)?;
+
+            if user.username == login || user.email == email {
+                return Ok(user);
             }
-            
-            let bucket = bucket.unwrap();
-            
-            for item in bucket.iter() {
-                let (_, v) = item?;
-                let user: User = serde_json::from_slice(&v)?;
-                
-                if user.username == login || user.email == email {
-                    return Ok(user);
-                }
-            }
-            
-            Err(crate::error::Error::NotFound("Пользователь не найден".to_string()))
-        }).await
+        }
+
+        Err(crate::error::Error::NotFound("Пользователь не найден".to_string()))
     }
 
     /// Получает всех пользователей с фильтрацией
     pub async fn get_users(&self, params: RetrieveQueryParams) -> Result<Vec<User>> {
         let mut users = Vec::new();
-        
-        self.view(|tx| {
-            let bucket = tx.bucket(b"users");
-            if bucket.is_none() {
-                return Ok(());
+
+        let tree = self.db.open_tree(b"users")
+            .map_err(|e| crate::error::Error::Database(sqlx::Error::Protocol(e.to_string())))?;
+
+        let mut i = 0;
+        let mut n = 0;
+        let limit = params.count.unwrap_or(1000);
+
+        for item in tree.iter() {
+            let (_k, v) = item
+                .map_err(|e| crate::error::Error::Database(sqlx::Error::Protocol(e.to_string())))?;
+
+            if params.offset > 0 && i < params.offset {
+                i += 1;
+                continue;
             }
-            
-            let bucket = bucket.unwrap();
-            let mut cursor = bucket.cursor();
-            
-            let mut i = 0;
-            let mut n = 0;
-            
-            while let Some((k, v)) = cursor.first() {
-                if params.offset > 0 && i < params.offset {
-                    i += 1;
-                    continue;
-                }
-                
-                let user: User = serde_json::from_slice(v)?;
-                
-                // Фильтрация по имени/email
-                if let Some(ref filter) = params.filter {
-                    if !filter.is_empty() {
-                        let filter_lower = filter.to_lowercase();
-                        if !user.username.to_lowercase().contains(&filter_lower) &&
-                           !user.name.to_lowercase().contains(&filter_lower) &&
-                           !user.email.to_lowercase().contains(&filter_lower) {
-                            continue;
-                        }
+
+            let user: User = serde_json::from_slice(&v)?;
+
+            // Фильтрация по имени/email
+            if let Some(ref filter) = params.filter {
+                if !filter.is_empty() {
+                    let filter_lower = filter.to_lowercase();
+                    if !user.username.to_lowercase().contains(&filter_lower) &&
+                       !user.name.to_lowercase().contains(&filter_lower) &&
+                       !user.email.to_lowercase().contains(&filter_lower) {
+                        continue;
                     }
                 }
-                
-                users.push(user);
-                n += 1;
-                
-                if n > params.count {
-                    break;
-                }
             }
-            
-            Ok(())
-        }).await?;
-        
+
+            users.push(user);
+            n += 1;
+
+            if n >= limit {
+                break;
+            }
+        }
+
         Ok(users)
     }
 
     /// Обновляет пользователя
     pub async fn update_user(&self, user: User) -> Result<()> {
-        self.update(|tx| {
-            let bucket = tx.bucket(b"users");
-            if bucket.is_none() {
-                return Err(crate::error::Error::NotFound("Пользователь не найден".to_string()));
-            }
-            
-            let bucket = bucket.unwrap();
-            let key = (i64::MAX - user.id as i64).to_be_bytes();
-            
-            if bucket.get(key).is_none() {
-                return Err(crate::error::Error::NotFound("Пользователь не найден".to_string()));
-            }
-            
-            let str = serde_json::to_vec(&user)?;
-            bucket.put(key, str)?;
-            
-            Ok(())
-        }).await
+        let tree = self.db.open_tree(b"users")
+            .map_err(|e| crate::error::Error::Database(sqlx::Error::Protocol(e.to_string())))?;
+
+        let key = (i64::MAX - user.id as i64).to_be_bytes();
+
+        if tree.get(key)
+            .map_err(|e| crate::error::Error::Database(sqlx::Error::Protocol(e.to_string())))?
+            .is_none()
+        {
+            return Err(crate::error::Error::NotFound("Пользователь не найден".to_string()));
+        }
+
+        let str = serde_json::to_vec(&user)?;
+        tree.insert(key, str)
+            .map_err(|e| crate::error::Error::Database(sqlx::Error::Protocol(e.to_string())))?;
+
+        Ok(())
     }
 
     /// Удаляет пользователя
     pub async fn delete_user(&self, user_id: i32) -> Result<()> {
-        self.update(|tx| {
-            let bucket = tx.bucket(b"users");
-            if bucket.is_none() {
-                return Err(crate::error::Error::NotFound("Пользователь не найден".to_string()));
-            }
-            
-            let bucket = bucket.unwrap();
-            let key = (i64::MAX - user_id as i64).to_be_bytes();
-            
-            if bucket.get(key).is_none() {
-                return Err(crate::error::Error::NotFound("Пользователь не найден".to_string()));
-            }
-            
-            bucket.remove(key)?;
-            
-            Ok(())
-        }).await
+        let tree = self.db.open_tree(b"users")
+            .map_err(|e| crate::error::Error::Database(sqlx::Error::Protocol(e.to_string())))?;
+
+        let key = (i64::MAX - user_id as i64).to_be_bytes();
+
+        if tree.get(key)
+            .map_err(|e| crate::error::Error::Database(sqlx::Error::Protocol(e.to_string())))?
+            .is_none()
+        {
+            return Err(crate::error::Error::NotFound("Пользователь не найден".to_string()));
+        }
+
+        tree.remove(key)
+            .map_err(|e| crate::error::Error::Database(sqlx::Error::Protocol(e.to_string())))?;
+
+        Ok(())
     }
 
     /// Устанавливает пароль пользователя
     pub async fn set_user_password(&self, user_id: i32, password: &str) -> Result<()> {
         let hashed_password = hash(password, DEFAULT_COST)
             .map_err(|e| crate::error::Error::Other(format!("Bcrypt error: {}", e)))?;
-        
-        self.update(|tx| {
-            let bucket = tx.bucket(b"users");
-            if bucket.is_none() {
-                return Err(crate::error::Error::NotFound("Пользователь не найден".to_string()));
-            }
-            
-            let bucket = bucket.unwrap();
-            let key = (i64::MAX - user_id as i64).to_be_bytes();
-            
-            if let Some(v) = bucket.get(key) {
+
+        let tree = self.db.open_tree(b"users")
+            .map_err(|e| crate::error::Error::Database(sqlx::Error::Protocol(e.to_string())))?;
+
+        let key = (i64::MAX - user_id as i64).to_be_bytes();
+
+        match tree.get(key)
+            .map_err(|e| crate::error::Error::Database(sqlx::Error::Protocol(e.to_string())))?
+        {
+            Some(v) => {
                 let mut user: User = serde_json::from_slice(&v)?;
                 user.password = hashed_password;
-                
+
                 let str = serde_json::to_vec(&user)?;
-                bucket.put(key, str)?;
-                
+                tree.insert(key, str)
+                    .map_err(|e| crate::error::Error::Database(sqlx::Error::Protocol(e.to_string())))?;
+
                 Ok(())
-            } else {
-                Err(crate::error::Error::NotFound("Пользователь не найден".to_string()))
             }
-        }).await
+            None => Err(crate::error::Error::NotFound("Пользователь не найден".to_string())),
+        }
     }
 
     /// Получает всех администраторов
     pub async fn get_all_admins(&self) -> Result<Vec<User>> {
         let mut admins = Vec::new();
-        
-        self.view(|tx| {
-            let bucket = tx.bucket(b"users");
-            if bucket.is_none() {
-                return Ok(());
+
+        let tree = self.db.open_tree(b"users")
+            .map_err(|e| crate::error::Error::Database(sqlx::Error::Protocol(e.to_string())))?;
+
+        for item in tree.iter() {
+            let (_k, v) = item
+                .map_err(|e| crate::error::Error::Database(sqlx::Error::Protocol(e.to_string())))?;
+            let user: User = serde_json::from_slice(&v)?;
+
+            if user.admin {
+                admins.push(user);
             }
-            
-            let bucket = bucket.unwrap();
-            
-            for item in bucket.iter() {
-                let (_, v) = item?;
-                let user: User = serde_json::from_slice(&v)?;
-                
-                if user.admin {
-                    admins.push(user);
-                }
-            }
-            
-            Ok(())
-        }).await?;
-        
+        }
+
         Ok(admins)
     }
 
     /// Получает количество пользователей
     pub async fn get_user_count(&self) -> Result<usize> {
-        self.view(|tx| {
-            let bucket = tx.bucket(b"users");
-            if bucket.is_none() {
-                return Ok(0);
-            }
-            
-            let bucket = bucket.unwrap();
-            Ok(bucket.len())
-        }).await
+        let tree = self.db.open_tree(b"users")
+            .map_err(|e| crate::error::Error::Database(sqlx::Error::Protocol(e.to_string())))?;
+
+        let mut count = 0;
+        for _ in tree.iter() {
+            count += 1;
+        }
+
+        Ok(count)
     }
 
     /// Проверяет пароль пользователя

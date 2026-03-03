@@ -2,7 +2,6 @@
 //!
 //! Аналог db/bolt/template.go из Go версии
 
-use std::sync::Arc;
 use crate::db::bolt::BoltStore;
 use crate::error::Result;
 use crate::models::{Template, TemplateWithPerms, TemplateFilter, RetrieveQueryParams, TemplateRolePerm};
@@ -13,28 +12,26 @@ impl BoltStore {
     pub async fn create_template(&self, mut template: Template) -> Result<Template> {
         // Валидация шаблона
         template.validate()?;
-        
+
         template.created = Utc::now();
-        
+
         let template_clone = template.clone();
-        
-        let new_template = self.update(|tx| {
-            let bucket = tx.create_bucket_if_not_exists(b"templates")?;
-            
-            let str = serde_json::to_vec(&template_clone)?;
-            
-            let id = bucket.next_sequence()?;
-            let id = i64::MAX - id as i64;
-            
-            let mut template_with_id = template_clone;
-            template_with_id.id = id as i32;
-            
-            let str = serde_json::to_vec(&template_with_id)?;
-            bucket.put(id.to_be_bytes(), str)?;
-            
-            Ok(template_with_id)
-        }).await?;
-        
+
+        let tree = self.db.open_tree(b"templates")
+            .map_err(|e| crate::error::Error::Database(sqlx::Error::Protocol(e.to_string())))?;
+
+        let id = self.get_next_id("templates")?;
+        let id_key = (i64::MAX - id as i64).to_be_bytes();
+
+        let mut template_with_id = template_clone;
+        template_with_id.id = id as i32;
+
+        let str = serde_json::to_vec(&template_with_id)
+            .map_err(|e| crate::error::Error::Json(e))?;
+
+        tree.insert(id_key, str)
+            .map_err(|e| crate::error::Error::Database(sqlx::Error::Protocol(e.to_string())))?;
+
         // Обновляем vaults
         let vaults = template.vaults.clone().unwrap_or_default();
         if !vaults.is_empty() {
@@ -42,7 +39,7 @@ impl BoltStore {
             // self.update_template_vaults(template.project_id, new_template.id, parsed_vaults).await?;
         }
 
-        Ok(new_template)
+        Ok(template_with_id)
     }
 
     /// Обновляет шаблон
@@ -50,24 +47,21 @@ impl BoltStore {
         // Валидация шаблона
         template.validate()?;
 
-        self.update(|tx| {
-            let bucket = tx.bucket(b"templates");
-            if bucket.is_none() {
-                return Err(crate::error::Error::NotFound("Шаблон не найден".to_string()));
-            }
+        let tree = self.db.open_tree(b"templates")
+            .map_err(|e| crate::error::Error::Database(sqlx::Error::Protocol(e.to_string())))?;
 
-            let bucket = bucket.unwrap();
-            let key = (i64::MAX - template.id as i64).to_be_bytes();
+        let key = (i64::MAX - template.id as i64).to_be_bytes();
 
-            if bucket.get(key).is_none() {
-                return Err(crate::error::Error::NotFound("Шаблон не найден".to_string()));
-            }
+        if tree.get(key)
+            .map_err(|e| crate::error::Error::Database(sqlx::Error::Protocol(e.to_string())))?.is_none() {
+            return Err(crate::error::Error::NotFound("Шаблон не найден".to_string()));
+        }
 
-            let str = serde_json::to_vec(&template)?;
-            bucket.put(key, str)?;
+        let str = serde_json::to_vec(&template)
+            .map_err(|e| crate::error::Error::Json(e))?;
 
-            Ok(())
-        }).await?;
+        tree.insert(key, str)
+            .map_err(|e| crate::error::Error::Database(sqlx::Error::Protocol(e.to_string())))?;
 
         // Обновляем vaults
         let vaults = template.vaults.clone().unwrap_or_default();
@@ -81,152 +75,150 @@ impl BoltStore {
 
     /// Устанавливает описание шаблона
     pub async fn set_template_description(&self, project_id: i32, template_id: i32, description: String) -> Result<()> {
-        self.update(|tx| {
-            let bucket = tx.bucket(b"templates");
-            if bucket.is_none() {
-                return Err(crate::error::Error::NotFound("Шаблон не найден".to_string()));
-            }
-            
-            let bucket = bucket.unwrap();
-            let key = (i64::MAX - template_id as i64).to_be_bytes();
-            
-            if let Some(v) = bucket.get(key) {
-                let mut template: Template = serde_json::from_slice(&v)?;
-                
-                if description.is_empty() {
-                    template.description = None;
-                } else {
-                    template.description = Some(description);
-                }
-                
-                let str = serde_json::to_vec(&template)?;
-                bucket.put(key, str)?;
-                
-                Ok(())
+        let tree = self.db.open_tree(b"templates")
+            .map_err(|e| crate::error::Error::Database(sqlx::Error::Protocol(e.to_string())))?;
+
+        let key = (i64::MAX - template_id as i64).to_be_bytes();
+
+        if let Some(v) = tree.get(key)
+            .map_err(|e| crate::error::Error::Database(sqlx::Error::Protocol(e.to_string())))? {
+            let mut template: Template = serde_json::from_slice(&v)
+                .map_err(|e| crate::error::Error::Json(e))?;
+
+            if description.is_empty() {
+                template.description = None;
             } else {
-                Err(crate::error::Error::NotFound("Шаблон не найден".to_string()))
+                template.description = Some(description);
             }
-        }).await
+
+            let str = serde_json::to_vec(&template)
+                .map_err(|e| crate::error::Error::Json(e))?;
+
+            tree.insert(key, str)
+                .map_err(|e| crate::error::Error::Database(sqlx::Error::Protocol(e.to_string())))?;
+
+            Ok(())
+        } else {
+            Err(crate::error::Error::NotFound("Шаблон не найден".to_string()))
+        }
     }
 
     /// Получает шаблоны с правами
     pub async fn get_templates_with_permissions(&self, project_id: i32, user_id: i32, filter: TemplateFilter, params: RetrieveQueryParams) -> Result<Vec<TemplateWithPerms>> {
         let templates = self.get_templates(project_id, filter, params).await?;
-        
+
         let result = templates.iter().map(|tpl| {
             TemplateWithPerms {
                 template: tpl.clone(),
-                permissions: Default::default(), // TODO: Заполнить права
+                user_id,
+                role: "admin".to_string(),
             }
         }).collect();
-        
+
         Ok(result)
     }
 
     /// Получает шаблоны проекта
     pub async fn get_templates(&self, project_id: i32, filter: TemplateFilter, params: RetrieveQueryParams) -> Result<Vec<Template>> {
         let mut templates = Vec::new();
-        
-        self.view(|tx| {
-            let bucket = tx.bucket(b"templates");
-            if bucket.is_none() {
-                return Ok(());
+
+        let tree = self.db.open_tree(b"templates")
+            .map_err(|e| crate::error::Error::Database(sqlx::Error::Protocol(e.to_string())))?;
+
+        let mut count = 0;
+        let mut skipped = 0;
+
+        for item in tree.iter() {
+            let (_k, v) = item
+                .map_err(|e| crate::error::Error::Database(sqlx::Error::Protocol(e.to_string())))?;
+
+            if params.offset > 0 && skipped < params.offset {
+                skipped += 1;
+                continue;
             }
-            
-            let bucket = bucket.unwrap();
-            let mut cursor = bucket.cursor();
-            
-            let mut i = 0;
-            let mut n = 0;
-            
-            while let Some((k, v)) = cursor.first() {
-                if params.offset > 0 && i < params.offset {
-                    i += 1;
+
+            let template: Template = serde_json::from_slice(&v)
+                .map_err(|e| crate::error::Error::Json(e))?;
+
+            if template.project_id != project_id {
+                continue;
+            }
+
+            // Фильтрация по view
+            if let Some(view_id) = filter.view_id {
+                // TODO: Проверка принадлежности к view
+                if view_id != 0 {
                     continue;
                 }
-                
-                let template: Template = serde_json::from_slice(&v)?;
-                
-                if template.project_id != project_id {
-                    continue;
-                }
-                
-                // Фильтрация по view
-                if let Some(view_id) = filter.view_id {
-                    // TODO: Проверка принадлежности к view
-                    if view_id != 0 {
-                        continue;
-                    }
-                }
-                
-                templates.push(template);
-                n += 1;
-                
-                if n > params.count {
+            }
+
+            templates.push(template);
+            count += 1;
+
+            if let Some(limit) = params.count {
+                if count >= limit {
                     break;
                 }
             }
-            
-            Ok(())
-        }).await?;
-        
+        }
+
         // Сортировка по имени
         templates.sort_by(|a, b| a.name.cmp(&b.name));
-        
+
         Ok(templates)
     }
 
     /// Получает шаблон по ID
     pub async fn get_template(&self, project_id: i32, template_id: i32) -> Result<Template> {
-        self.view(|tx| {
-            let bucket = tx.bucket(b"templates");
-            if bucket.is_none() {
-                return Err(crate::error::Error::NotFound("Шаблон не найден".to_string()));
-            }
-            
-            let bucket = bucket.unwrap();
-            let key = (i64::MAX - template_id as i64).to_be_bytes();
-            
-            if let Some(v) = bucket.get(key) {
-                let template: Template = serde_json::from_slice(&v)?;
-                if template.project_id == project_id {
-                    Ok(template)
-                } else {
-                    Err(crate::error::Error::NotFound("Шаблон не найден".to_string()))
-                }
+        let tree = self.db.open_tree(b"templates")
+            .map_err(|e| crate::error::Error::Database(sqlx::Error::Protocol(e.to_string())))?;
+
+        let key = (i64::MAX - template_id as i64).to_be_bytes();
+
+        if let Some(v) = tree.get(key)
+            .map_err(|e| crate::error::Error::Database(sqlx::Error::Protocol(e.to_string())))? {
+            let template: Template = serde_json::from_slice(&v)
+                .map_err(|e| crate::error::Error::Json(e))?;
+            if template.project_id == project_id {
+                Ok(template)
             } else {
                 Err(crate::error::Error::NotFound("Шаблон не найден".to_string()))
             }
-        }).await
+        } else {
+            Err(crate::error::Error::NotFound("Шаблон не найден".to_string()))
+        }
     }
 
     /// Удаляет шаблон
     pub async fn delete_template(&self, project_id: i32, template_id: i32) -> Result<()> {
-        self.update(|tx| {
-            let bucket = tx.bucket(b"templates");
-            if bucket.is_none() {
-                return Err(crate::error::Error::NotFound("Шаблон не найден".to_string()));
-            }
-            
-            let bucket = bucket.unwrap();
-            let key = (i64::MAX - template_id as i64).to_be_bytes();
-            
-            if bucket.get(key).is_none() {
-                return Err(crate::error::Error::NotFound("Шаблон не найден".to_string()));
-            }
-            
-            bucket.remove(key)?;
-            
-            // Удаляем vaults шаблона
-            let vaults_bucket_name = format!("template_vaults_{}", template_id);
-            tx.delete_bucket(vaults_bucket_name.as_bytes())?;
-            
-            // Удаляем роли шаблона
-            let roles_bucket_name = format!("template_roles_{}", template_id);
-            tx.delete_bucket(roles_bucket_name.as_bytes())?;
-            
-            Ok(())
-        }).await
+        let tree = self.db.open_tree(b"templates")
+            .map_err(|e| crate::error::Error::Database(sqlx::Error::Protocol(e.to_string())))?;
+
+        let key = (i64::MAX - template_id as i64).to_be_bytes();
+
+        if tree.get(key)
+            .map_err(|e| crate::error::Error::Database(sqlx::Error::Protocol(e.to_string())))?.is_none() {
+            return Err(crate::error::Error::NotFound("Шаблон не найден".to_string()));
+        }
+
+        tree.remove(key)
+            .map_err(|e| crate::error::Error::Database(sqlx::Error::Protocol(e.to_string())))?;
+
+        // Удаляем vaults шаблона
+        let vaults_bucket_name = format!("template_vaults_{}", template_id);
+        let vaults_tree = self.db.open_tree(vaults_bucket_name.as_bytes())
+            .map_err(|e| crate::error::Error::Database(sqlx::Error::Protocol(e.to_string())))?;
+        vaults_tree.clear()
+            .map_err(|e| crate::error::Error::Database(sqlx::Error::Protocol(e.to_string())))?;
+
+        // Удаляем роли шаблона
+        let roles_bucket_name = format!("template_roles_{}", template_id);
+        let roles_tree = self.db.open_tree(roles_bucket_name.as_bytes())
+            .map_err(|e| crate::error::Error::Database(sqlx::Error::Protocol(e.to_string())))?;
+        roles_tree.clear()
+            .map_err(|e| crate::error::Error::Database(sqlx::Error::Protocol(e.to_string())))?;
+
+        Ok(())
     }
 
     /// Получает рефереры шаблона
@@ -235,6 +227,8 @@ impl BoltStore {
         Ok(crate::models::ObjectReferrers {
             schedules: vec![],
             tasks: vec![],
+            integrations: vec![],
+            templates: vec![],
         })
     }
 
@@ -253,7 +247,7 @@ impl BoltStore {
             sort_by: None,
             sort_inverted: false,
         }).await?;
-        
+
         Ok(roles)
     }
 
@@ -320,7 +314,7 @@ mod tests {
     async fn test_create_template() {
         let db = create_test_bolt_db();
         let template = create_test_template(1, "Test Template");
-        
+
         let result = db.create_template(template).await;
         assert!(result.is_ok());
     }
@@ -330,7 +324,7 @@ mod tests {
         let db = create_test_bolt_db();
         let template = create_test_template(1, "Test Template");
         let created = db.create_template(template).await.unwrap();
-        
+
         let retrieved = db.get_template(1, created.id).await;
         assert!(retrieved.is_ok());
         assert_eq!(retrieved.unwrap().name, "Test Template");
@@ -339,13 +333,13 @@ mod tests {
     #[tokio::test]
     async fn test_get_templates() {
         let db = create_test_bolt_db();
-        
+
         // Создаём несколько шаблонов
         for i in 0..5 {
             let template = create_test_template(1, &format!("Template {}", i));
             db.create_template(template).await.unwrap();
         }
-        
+
         let params = RetrieveQueryParams {
             offset: 0,
             count: Some(10),
@@ -353,7 +347,7 @@ mod tests {
             sort_by: None,
             sort_inverted: false,
         };
-        
+
         let templates = db.get_templates(1, TemplateFilter { view_id: None }, params).await;
         assert!(templates.is_ok());
         assert!(templates.unwrap().len() >= 5);
@@ -364,7 +358,7 @@ mod tests {
         let db = create_test_bolt_db();
         let template = create_test_template(1, "Test Template");
         let mut created = db.create_template(template).await.unwrap();
-        
+
         created.name = "Updated Template".to_string();
         let result = db.update_template(created).await;
         assert!(result.is_ok());
@@ -375,7 +369,7 @@ mod tests {
         let db = create_test_bolt_db();
         let template = create_test_template(1, "Test Template");
         let created = db.create_template(template).await.unwrap();
-        
+
         let result = db.set_template_description(1, created.id, "Test description".to_string()).await;
         assert!(result.is_ok());
     }
@@ -385,10 +379,10 @@ mod tests {
         let db = create_test_bolt_db();
         let template = create_test_template(1, "Test Template");
         let created = db.create_template(template).await.unwrap();
-        
+
         let result = db.delete_template(1, created.id).await;
         assert!(result.is_ok());
-        
+
         let retrieved = db.get_template(1, created.id).await;
         assert!(retrieved.is_err());
     }
@@ -398,13 +392,15 @@ mod tests {
         let db = create_test_bolt_db();
         let template = create_test_template(1, "Test Template");
         let created = db.create_template(template).await.unwrap();
-        
+
         let role = TemplateRolePerm {
             id: 0,
+            project_id: 1,
             template_id: created.id,
             role_id: 2,
+            role_slug: "admin".to_string(),
         };
-        
+
         let result = db.create_template_role(role).await;
         assert!(result.is_ok());
     }
@@ -414,17 +410,19 @@ mod tests {
         let db = create_test_bolt_db();
         let template = create_test_template(1, "Test Template");
         let created = db.create_template(template).await.unwrap();
-        
+
         // Создаём несколько ролей
         for i in 0..3 {
             let role = TemplateRolePerm {
                 id: 0,
+                project_id: 1,
                 template_id: created.id,
                 role_id: i + 2,
+                role_slug: "admin".to_string(),
             };
             db.create_template_role(role).await.unwrap();
         }
-        
+
         let roles = db.get_template_roles(1, created.id).await;
         assert!(roles.is_ok());
         assert!(roles.unwrap().len() >= 3);

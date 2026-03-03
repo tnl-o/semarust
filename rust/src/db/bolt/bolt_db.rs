@@ -220,6 +220,111 @@ impl BoltStore {
             .map_err(|e| Error::Database(sqlx::Error::Protocol(e.to_string())))?;
         Ok(())
     }
+
+    /// Получает ссылки на объект (где он используется)
+    pub async fn get_object_refs(
+        &self,
+        project_id: i32,
+        object_type: &str,
+        object_id: i32,
+    ) -> Result<crate::models::ObjectReferrers> {
+        use crate::models::{ObjectReferrers, Template, Task, Schedule, Integration};
+        
+        let mut refs = ObjectReferrers::new();
+
+        // Проверяем шаблоны
+        let templates = self.get_objects::<Template>(project_id, "templates", RetrieveQueryParams {
+            offset: 0,
+            count: Some(1000),
+            filter: None,
+            sort_by: None,
+            sort_inverted: false,
+        }).await?;
+
+        for tpl in templates {
+            let mut found = false;
+            // Проверяем разные поля в зависимости от типа объекта
+            match object_type {
+                "inventories" => {
+                    if tpl.inventory_id == Some(object_id) {
+                        found = true;
+                    }
+                }
+                "repositories" => {
+                    if tpl.repository_id == Some(object_id) {
+                        found = true;
+                    }
+                }
+                "environments" => {
+                    if tpl.environment_id == Some(object_id) {
+                        found = true;
+                    }
+                }
+                "access_keys" => {
+                    if tpl.vault_key_id == Some(object_id) || tpl.become_key_id == Some(object_id) {
+                        found = true;
+                    }
+                }
+                _ => {}
+            }
+            
+            if found {
+                refs.templates.push(tpl.id);
+            }
+        }
+
+        // Проверяем задачи
+        let tasks = self.get_objects::<Task>(project_id, "tasks", RetrieveQueryParams {
+            offset: 0,
+            count: Some(1000),
+            filter: None,
+            sort_by: None,
+            sort_inverted: false,
+        }).await?;
+
+        for task in tasks {
+            let mut found = false;
+            match object_type {
+                "templates" => {
+                    if task.template_id == Some(object_id) {
+                        found = true;
+                    }
+                }
+                _ => {}
+            }
+            
+            if found {
+                refs.tasks.push(task.id);
+            }
+        }
+
+        // Проверяем расписания
+        let schedules = self.get_objects::<Schedule>(project_id, "schedules", RetrieveQueryParams {
+            offset: 0,
+            count: Some(1000),
+            filter: None,
+            sort_by: None,
+            sort_inverted: false,
+        }).await?;
+
+        for schedule in schedules {
+            let mut found = false;
+            match object_type {
+                "templates" => {
+                    if schedule.template_id == object_id {
+                        found = true;
+                    }
+                }
+                _ => {}
+            }
+            
+            if found {
+                refs.schedules.push(schedule.id);
+            }
+        }
+
+        Ok(refs)
+    }
 }
 
 // ============================================================================

@@ -2,7 +2,6 @@
 //!
 //! Аналог db/bolt/task.go из Go версии
 
-use std::sync::Arc;
 use crate::db::bolt::BoltStore;
 use crate::error::Result;
 use crate::models::{Task, TaskWithTpl, TaskOutput, TaskStage, TaskStageWithResult, RetrieveQueryParams};
@@ -12,56 +11,51 @@ impl BoltStore {
     /// Создаёт новую задачу
     pub async fn create_task(&self, mut task: Task, max_tasks: i32) -> Result<Task> {
         task.created = Utc::now();
-        
+
         let task_clone = task.clone();
-        
-        let new_task = self.update(|tx| {
-            let bucket = tx.create_bucket_if_not_exists(b"tasks")?;
-            
-            let str = serde_json::to_vec(&task_clone)?;
-            
-            let id = bucket.next_sequence()?;
-            let id = i64::MAX - id as i64;
-            
-            let mut task_with_id = task_clone;
-            task_with_id.id = id as i32;
-            
-            let str = serde_json::to_vec(&task_with_id)?;
-            bucket.put(id.to_be_bytes(), str)?;
-            
-            Ok(task_with_id)
-        }).await?;
-        
+
+        let tree = self.db.open_tree(b"tasks")
+            .map_err(|e| crate::error::Error::Database(sqlx::Error::Protocol(e.to_string())))?;
+
+        let id = self.get_next_id("tasks")?;
+        let id_key = (i64::MAX - id as i64).to_be_bytes();
+
+        let mut task_with_id = task_clone;
+        task_with_id.id = id as i32;
+
+        let str = serde_json::to_vec(&task_with_id)
+            .map_err(|e| crate::error::Error::Json(e))?;
+
+        tree.insert(id_key, str)
+            .map_err(|e| crate::error::Error::Database(sqlx::Error::Protocol(e.to_string())))?;
+
         // Очищаем старые задачи если нужно
         if max_tasks > 0 {
             self.clear_tasks(task.project_id, task.template_id, max_tasks).await?;
         }
-        
-        Ok(new_task)
+
+        Ok(task_with_id)
     }
 
     /// Получает задачу по ID
     pub async fn get_task(&self, project_id: i32, task_id: i32) -> Result<Task> {
-        self.view(|tx| {
-            let bucket = tx.bucket(b"tasks");
-            if bucket.is_none() {
-                return Err(crate::error::Error::NotFound("Задача не найдена".to_string()));
-            }
-            
-            let bucket = bucket.unwrap();
-            let key = (i64::MAX - task_id as i64).to_be_bytes();
-            
-            if let Some(v) = bucket.get(key) {
-                let task: Task = serde_json::from_slice(&v)?;
-                if task.project_id == project_id {
-                    Ok(task)
-                } else {
-                    Err(crate::error::Error::NotFound("Задача не найдена".to_string()))
-                }
+        let tree = self.db.open_tree(b"tasks")
+            .map_err(|e| crate::error::Error::Database(sqlx::Error::Protocol(e.to_string())))?;
+
+        let key = (i64::MAX - task_id as i64).to_be_bytes();
+
+        if let Some(v) = tree.get(key)
+            .map_err(|e| crate::error::Error::Database(sqlx::Error::Protocol(e.to_string())))? {
+            let task: Task = serde_json::from_slice(&v)
+                .map_err(|e| crate::error::Error::Json(e))?;
+            if task.project_id == project_id {
+                Ok(task)
             } else {
                 Err(crate::error::Error::NotFound("Задача не найдена".to_string()))
             }
-        }).await
+        } else {
+            Err(crate::error::Error::NotFound("Задача не найдена".to_string()))
+        }
     }
 
     /// Получает задачи шаблона
@@ -76,76 +70,78 @@ impl BoltStore {
 
     /// Обновляет задачу
     pub async fn update_task(&self, task: Task) -> Result<()> {
-        self.update(|tx| {
-            let bucket = tx.bucket(b"tasks");
-            if bucket.is_none() {
-                return Err(crate::error::Error::NotFound("Задача не найдена".to_string()));
-            }
-            
-            let bucket = bucket.unwrap();
-            let key = (i64::MAX - task.id as i64).to_be_bytes();
-            
-            if bucket.get(key).is_none() {
-                return Err(crate::error::Error::NotFound("Задача не найдена".to_string()));
-            }
-            
-            let str = serde_json::to_vec(&task)?;
-            bucket.put(key, str)?;
-            
-            Ok(())
-        }).await
+        let tree = self.db.open_tree(b"tasks")
+            .map_err(|e| crate::error::Error::Database(sqlx::Error::Protocol(e.to_string())))?;
+
+        let key = (i64::MAX - task.id as i64).to_be_bytes();
+
+        if tree.get(key)
+            .map_err(|e| crate::error::Error::Database(sqlx::Error::Protocol(e.to_string())))?.is_none() {
+            return Err(crate::error::Error::NotFound("Задача не найдена".to_string()));
+        }
+
+        let str = serde_json::to_vec(&task)
+            .map_err(|e| crate::error::Error::Json(e))?;
+
+        tree.insert(key, str)
+            .map_err(|e| crate::error::Error::Database(sqlx::Error::Protocol(e.to_string())))?;
+
+        Ok(())
     }
 
     /// Удаляет задачу с выводами
     pub async fn delete_task_with_outputs(&self, project_id: i32, task_id: i32) -> Result<()> {
-        self.update(|tx| {
-            let bucket = tx.bucket(b"tasks");
-            if bucket.is_none() {
-                return Err(crate::error::Error::NotFound("Задача не найдена".to_string()));
-            }
-            
-            let bucket = bucket.unwrap();
-            let key = (i64::MAX - task_id as i64).to_be_bytes();
-            
-            if bucket.get(key).is_none() {
-                return Err(crate::error::Error::NotFound("Задача не найдена".to_string()));
-            }
-            
-            bucket.remove(key)?;
-            
-            // Удаляем выводы задачи
-            let outputs_bucket_name = format!("task_outputs_{}", task_id);
-            tx.delete_bucket(outputs_bucket_name.as_bytes())?;
-            
-            // Удаляем стадии задачи
-            let stages_bucket_name = format!("task_stages_{}", task_id);
-            tx.delete_bucket(stages_bucket_name.as_bytes())?;
-            
-            Ok(())
-        }).await
+        let tree = self.db.open_tree(b"tasks")
+            .map_err(|e| crate::error::Error::Database(sqlx::Error::Protocol(e.to_string())))?;
+
+        let key = (i64::MAX - task_id as i64).to_be_bytes();
+
+        if tree.get(key)
+            .map_err(|e| crate::error::Error::Database(sqlx::Error::Protocol(e.to_string())))?.is_none() {
+            return Err(crate::error::Error::NotFound("Задача не найдена".to_string()));
+        }
+
+        tree.remove(key)
+            .map_err(|e| crate::error::Error::Database(sqlx::Error::Protocol(e.to_string())))?;
+
+        // Удаляем выводы задачи
+        let outputs_bucket_name = format!("task_outputs_{}", task_id);
+        let outputs_tree = self.db.open_tree(outputs_bucket_name.as_bytes())
+            .map_err(|e| crate::error::Error::Database(sqlx::Error::Protocol(e.to_string())))?;
+        outputs_tree.clear()
+            .map_err(|e| crate::error::Error::Database(sqlx::Error::Protocol(e.to_string())))?;
+
+        // Удаляем стадии задачи
+        let stages_bucket_name = format!("task_stages_{}", task_id);
+        let stages_tree = self.db.open_tree(stages_bucket_name.as_bytes())
+            .map_err(|e| crate::error::Error::Database(sqlx::Error::Protocol(e.to_string())))?;
+        stages_tree.clear()
+            .map_err(|e| crate::error::Error::Database(sqlx::Error::Protocol(e.to_string())))?;
+
+        Ok(())
     }
 
     /// Создаёт вывод задачи
     pub async fn create_task_output(&self, mut output: TaskOutput) -> Result<TaskOutput> {
         output.time = Utc::now();
-        
-        self.update(|tx| {
-            let bucket_name = format!("task_outputs_{}", output.task_id);
-            let bucket = tx.create_bucket_if_not_exists(bucket_name.as_bytes())?;
-            
-            let str = serde_json::to_vec(&output)?;
-            
-            let id = bucket.next_sequence()?;
-            let id = i64::MAX - id as i64;
-            
-            let mut output_with_id = output;
-            output_with_id.id = id as i32;
-            
-            let str = serde_json::to_vec(&output_with_id)?;
-            bucket.put(id.to_be_bytes(), str)?;
-            
-            Ok(output_with_id)
-        }).await
+
+        let bucket_name = format!("task_outputs_{}", output.task_id);
+        let tree = self.db.open_tree(bucket_name.as_bytes())
+            .map_err(|e| crate::error::Error::Database(sqlx::Error::Protocol(e.to_string())))?;
+
+        let id = self.get_next_id(&bucket_name)?;
+        let id_key = (i64::MAX - id as i64).to_be_bytes();
+
+        let mut output_with_id = output;
+        output_with_id.id = id as i32;
+
+        let str = serde_json::to_vec(&output_with_id)
+            .map_err(|e| crate::error::Error::Json(e))?;
+
+        tree.insert(id_key, str)
+            .map_err(|e| crate::error::Error::Database(sqlx::Error::Protocol(e.to_string())))?;
+
+        Ok(output_with_id)
     }
 
     /// Пакетная вставка выводов задач
@@ -160,39 +156,37 @@ impl BoltStore {
     pub async fn get_task_outputs(&self, project_id: i32, task_id: i32, params: RetrieveQueryParams) -> Result<Vec<TaskOutput>> {
         // Проверяем существование задачи
         self.get_task(project_id, task_id).await?;
-        
-        self.view(|tx| {
-            let bucket_name = format!("task_outputs_{}", task_id);
-            let bucket = tx.bucket(bucket_name.as_bytes());
-            
-            if bucket.is_none() {
-                return Ok(Vec::new());
+
+        let bucket_name = format!("task_outputs_{}", task_id);
+        let tree = self.db.open_tree(bucket_name.as_bytes())
+            .map_err(|e| crate::error::Error::Database(sqlx::Error::Protocol(e.to_string())))?;
+
+        let mut outputs = Vec::new();
+        let mut count = 0;
+        let mut skipped = 0;
+
+        for item in tree.iter() {
+            let (_k, v) = item
+                .map_err(|e| crate::error::Error::Database(sqlx::Error::Protocol(e.to_string())))?;
+
+            if params.offset > 0 && skipped < params.offset {
+                skipped += 1;
+                continue;
             }
-            
-            let bucket = bucket.unwrap();
-            let mut outputs = Vec::new();
-            
-            let mut cursor = bucket.cursor();
-            let mut i = 0;
-            let mut n = 0;
-            
-            while let Some((k, v)) = cursor.first() {
-                if params.offset > 0 && i < params.offset {
-                    i += 1;
-                    continue;
-                }
-                
-                let output: TaskOutput = serde_json::from_slice(&v)?;
-                outputs.push(output);
-                n += 1;
-                
-                if n > params.count {
+
+            let output: TaskOutput = serde_json::from_slice(&v)
+                .map_err(|e| crate::error::Error::Json(e))?;
+            outputs.push(output);
+            count += 1;
+
+            if let Some(limit) = params.count {
+                if count >= limit {
                     break;
                 }
             }
-            
-            Ok(outputs)
-        }).await
+        }
+
+        Ok(outputs)
     }
 
     /// Создаёт стадию задачи
@@ -205,7 +199,7 @@ impl BoltStore {
     pub async fn get_task_stages(&self, project_id: i32, task_id: i32) -> Result<Vec<TaskStageWithResult>> {
         // Проверяем существование задачи
         self.get_task(project_id, task_id).await?;
-        
+
         let stages = self.get_objects::<TaskStage>(task_id, "task_stages", RetrieveQueryParams {
             offset: 0,
             count: Some(1000),
@@ -213,18 +207,16 @@ impl BoltStore {
             sort_by: None,
             sort_inverted: false,
         }).await?;
-        
+
         // Конвертируем TaskStage в TaskStageWithResult
         let result = stages.iter().map(|stage| {
             TaskStageWithResult {
-                id: stage.id,
-                task_id: stage.task_id,
-                start: stage.start,
-                end: stage.end,
-                stage_type: stage.stage_type.clone(),
+                stage: stage.clone(),
+                start_output: None,
+                end_output: None,
             }
         }).collect();
-        
+
         Ok(result)
     }
 
@@ -237,14 +229,14 @@ impl BoltStore {
             sort_by: None,
             sort_inverted: false,
         }).await?;
-        
+
         for mut stage in stages {
             if stage.id == stage_id {
                 stage.end = Some(end);
                 return self.update_object(task_id, "task_stages", stage).await;
             }
         }
-        
+
         Err(crate::error::Error::NotFound("Стадия не найдена".to_string()))
     }
 
@@ -277,58 +269,61 @@ impl BoltStore {
         let mut tasks_with_tpl = Vec::new();
 
         // Сначала получаем все задачи из БД
-        let tasks: Vec<Task> = self.view(|tx| {
-            let bucket = tx.bucket(b"tasks");
-            if bucket.is_none() {
-                return Ok(Vec::new());
+        let tree = self.db.open_tree(b"tasks")
+            .map_err(|e| crate::error::Error::Database(sqlx::Error::Protocol(e.to_string())))?;
+
+        let mut tasks = Vec::new();
+        let mut count = 0;
+        let mut skipped = 0;
+
+        for item in tree.iter() {
+            let (_k, v) = item
+                .map_err(|e| crate::error::Error::Database(sqlx::Error::Protocol(e.to_string())))?;
+
+            if params.offset > 0 && skipped < params.offset {
+                skipped += 1;
+                continue;
             }
 
-            let bucket = bucket.unwrap();
-            let mut cursor = bucket.cursor();
+            let task: Task = serde_json::from_slice(&v)
+                .map_err(|e| crate::error::Error::Json(e))?;
 
-            let mut i = 0;
-            let mut n = 0;
-            let mut result = Vec::new();
+            if task.project_id != project_id {
+                continue;
+            }
 
-            while let Some((k, v)) = cursor.first() {
-                if params.offset > 0 && i < params.offset {
-                    i += 1;
+            if let Some(tid) = template_id {
+                if task.template_id != tid {
                     continue;
                 }
+            }
 
-                let task: Task = serde_json::from_slice(&v)?;
+            tasks.push(task);
+            count += 1;
 
-                if task.project_id != project_id {
-                    continue;
-                }
-
-                if let Some(tid) = template_id {
-                    if task.template_id != tid {
-                        continue;
-                    }
-                }
-
-                result.push(task);
-                n += 1;
-
-                if n > params.count {
+            if let Some(limit) = params.count {
+                if count >= limit {
                     break;
                 }
             }
-
-            Ok(result)
-        })?;
+        }
 
         // Затем получаем информацию о шаблонах
         for task in tasks {
-            let template_name = match self.get_template(project_id, task.template_id).await {
-                Ok(tpl) => tpl.name,
-                Err(_) => String::new(),
+            let template = self.get_template(project_id, task.template_id).await;
+            
+            let (tpl_playbook, tpl_alias) = match template {
+                Ok(tpl) => (tpl.playbook, tpl.name),
+                Err(_) => (String::new(), String::new()),
             };
 
             let task_with_tpl = TaskWithTpl {
                 task,
-                template_name,
+                tpl_playbook,
+                tpl_alias,
+                tpl_type: None,
+                tpl_app: None,
+                user_name: None,
             };
 
             tasks_with_tpl.push(task_with_tpl);
@@ -347,17 +342,17 @@ impl BoltStore {
             sort_by: None,
             sort_inverted: false,
         }).await?;
-        
+
         if tasks.len() <= max_tasks as usize {
             return Ok(());
         }
-        
+
         // Удаляем старые задачи
         let to_delete = tasks.len() - max_tasks as usize;
         for task in tasks.iter().take(to_delete) {
             self.delete_task_with_outputs(project_id, task.task.id).await?;
         }
-        
+
         Ok(())
     }
 
@@ -409,7 +404,7 @@ mod tests {
     async fn test_create_task() {
         let db = create_test_bolt_db();
         let task = create_test_task(1, 1);
-        
+
         let result = db.create_task(task, 0).await;
         assert!(result.is_ok());
     }
@@ -419,7 +414,7 @@ mod tests {
         let db = create_test_bolt_db();
         let task = create_test_task(1, 1);
         let created = db.create_task(task, 0).await.unwrap();
-        
+
         let retrieved = db.get_task(1, created.id).await;
         assert!(retrieved.is_ok());
         assert_eq!(retrieved.unwrap().id, created.id);
@@ -428,13 +423,13 @@ mod tests {
     #[tokio::test]
     async fn test_get_template_tasks() {
         let db = create_test_bolt_db();
-        
+
         // Создаём несколько задач для шаблона
         for i in 0..5 {
             let task = create_test_task(1, 1);
             db.create_task(task, 0).await.unwrap();
         }
-        
+
         let params = RetrieveQueryParams {
             offset: 0,
             count: Some(10),
@@ -442,7 +437,7 @@ mod tests {
             sort_by: None,
             sort_inverted: false,
         };
-        
+
         let tasks = db.get_template_tasks(1, 1, params).await;
         assert!(tasks.is_ok());
         assert!(tasks.unwrap().len() >= 5);
@@ -453,7 +448,7 @@ mod tests {
         let db = create_test_bolt_db();
         let task = create_test_task(1, 1);
         let mut created = db.create_task(task, 0).await.unwrap();
-        
+
         created.message = "Updated message".to_string();
         let result = db.update_task(created).await;
         assert!(result.is_ok());
@@ -464,10 +459,10 @@ mod tests {
         let db = create_test_bolt_db();
         let task = create_test_task(1, 1);
         let created = db.create_task(task, 0).await.unwrap();
-        
+
         let result = db.delete_task_with_outputs(1, created.id).await;
         assert!(result.is_ok());
-        
+
         let retrieved = db.get_task(1, created.id).await;
         assert!(retrieved.is_err());
     }
@@ -477,14 +472,14 @@ mod tests {
         let db = create_test_bolt_db();
         let task = create_test_task(1, 1);
         let created_task = db.create_task(task, 0).await.unwrap();
-        
+
         let output = TaskOutput {
             id: 0,
             task_id: created_task.id,
             output: "Test output".to_string(),
             time: Utc::now(),
         };
-        
+
         let result = db.create_task_output(output).await;
         assert!(result.is_ok());
     }
@@ -494,7 +489,7 @@ mod tests {
         let db = create_test_bolt_db();
         let task = create_test_task(1, 1);
         let created_task = db.create_task(task, 0).await.unwrap();
-        
+
         // Создаём несколько выводов
         for i in 0..5 {
             let output = TaskOutput {
@@ -505,7 +500,7 @@ mod tests {
             };
             db.create_task_output(output).await.unwrap();
         }
-        
+
         let params = RetrieveQueryParams {
             offset: 0,
             count: Some(10),
@@ -513,7 +508,7 @@ mod tests {
             sort_by: None,
             sort_inverted: false,
         };
-        
+
         let outputs = db.get_task_outputs(1, created_task.id, params).await;
         assert!(outputs.is_ok());
         assert!(outputs.unwrap().len() >= 5);
@@ -524,15 +519,15 @@ mod tests {
         let db = create_test_bolt_db();
         let task = create_test_task(1, 1);
         let created_task = db.create_task(task, 0).await.unwrap();
-        
+
         let stage = TaskStage {
             id: 0,
             task_id: created_task.id,
             start: Utc::now(),
             end: None,
-            stage_type: crate::models::TaskStageType::InstallRoles,
+            r#type: crate::models::TaskStageType::InstallRoles,
         };
-        
+
         let result = db.create_task_stage(stage).await;
         assert!(result.is_ok());
     }
@@ -542,7 +537,7 @@ mod tests {
         let db = create_test_bolt_db();
         let task = create_test_task(1, 1);
         let created_task = db.create_task(task, 0).await.unwrap();
-        
+
         // Создаём несколько стадий
         for _ in 0..3 {
             let stage = TaskStage {
@@ -550,11 +545,11 @@ mod tests {
                 task_id: created_task.id,
                 start: Utc::now(),
                 end: None,
-                stage_type: crate::models::TaskStageType::InstallRoles,
+                r#type: crate::models::TaskStageType::InstallRoles,
             };
             db.create_task_stage(stage).await.unwrap();
         }
-        
+
         let stages = db.get_task_stages(1, created_task.id).await;
         assert!(stages.is_ok());
         assert!(stages.unwrap().len() >= 3);
