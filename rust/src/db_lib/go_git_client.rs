@@ -75,7 +75,8 @@ impl GitClient for GoGitClient {
         if let Some(reference) = reference {
             git_repo.set_head(reference.name().unwrap())?;
         } else {
-            git_repo.set_head(object.id())?;
+            // object.id() возвращает Oid, нужно установить HEAD в detached state
+            git_repo.set_head_detached(object.id())?;
         }
 
         Ok(())
