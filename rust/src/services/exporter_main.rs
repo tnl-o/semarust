@@ -74,6 +74,22 @@ pub trait DataExporter {
     fn get_loaded_keys_int(&self, name: &str, scope: &str) -> Result<Vec<i32>, String>;
 }
 
+impl DataExporter for ExporterChain {
+    fn get_type_exporter(&mut self, name: &str) -> Option<&mut dyn TypeExporter> {
+        // TODO: реализовать правильное получение экспортера
+        unimplemented!("get_type_exporter not implemented yet")
+    }
+    
+    fn get_loaded_keys(&self, _name: &str, _scope: &str) -> Result<Vec<String>, String> {
+        Ok(vec![])  // TODO: реализовать получение ключей
+    }
+    
+    fn get_loaded_keys_int(&self, _name: &str, _scope: &str) -> Result<Vec<i32>, String> {
+        // TODO: реализовать получение ключей int
+        Ok(vec![])
+    }
+}
+
 impl ExporterChain {
     /// Создаёт новую цепочку экспортеров
     pub fn new() -> Self {

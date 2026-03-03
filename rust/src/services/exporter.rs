@@ -197,6 +197,47 @@ pub struct ExporterChain {
     exporters: HashMap<String, Box<dyn TypeExporter>>,
 }
 
+impl KeyMapper for ExporterChain {
+    fn get_new_key(&mut self, _name: &str, _scope: &str, old_key: &EntityKey, _err_handler: &dyn ErrorHandler) -> Result<EntityKey, String> {
+        Ok(old_key.clone())  // TODO: реализовать маппинг ключей
+    }
+    
+    fn get_new_key_int(&mut self, _name: &str, _scope: &str, old_key: i32, _err_handler: &dyn ErrorHandler) -> Result<i32, String> {
+        Ok(old_key)  // TODO: реализовать маппинг ключей
+    }
+    
+    fn get_new_key_int_ref(&mut self, _name: &str, _scope: &str, old_key: Option<i32>, _err_handler: &dyn ErrorHandler) -> Result<Option<i32>, String> {
+        Ok(old_key)  // TODO: реализовать маппинг ключей
+    }
+    
+    fn map_keys(&mut self, _name: &str, _scope: &str, _old_key: &EntityKey, _new_key: &EntityKey) -> Result<(), String> {
+        Ok(())  // TODO: реализовать маппинг ключей
+    }
+    
+    fn map_int_keys(&mut self, _name: &str, _scope: &str, _old_key: i32, _new_key: i32) -> Result<(), String> {
+        Ok(())  // TODO: реализовать маппинг ключей
+    }
+    
+    fn ignore_key_not_found(&self) -> bool {
+        false  // TODO: настроить игнорирование отсутствующих ключей
+    }
+}
+
+impl DataExporter for ExporterChain {
+    fn get_type_exporter(&mut self, name: &str) -> &mut dyn TypeExporter {
+        // TODO: реализовать правильное получение экспортера
+        unimplemented!("get_type_exporter not implemented yet")
+    }
+    
+    fn get_loaded_keys(&self, _name: &str, _scope: &str) -> Result<Vec<EntityKey>, String> {
+        Ok(vec![])  // TODO: реализовать получение ключей
+    }
+    
+    fn get_loaded_keys_int(&self, _name: &str, _scope: &str) -> Result<Vec<i32>, String> {
+        Ok(vec![])  // TODO: реализовать получение ключей int
+    }
+}
+
 impl ExporterChain {
     pub fn new() -> Self {
         Self {

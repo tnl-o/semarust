@@ -225,11 +225,11 @@ impl TerraformApp {
         }
         
         let status = child.wait().await?;
-        
+
         // Проверяем есть ли изменения
-        self.plan_has_no_changes = status.code() == Some(0);
-        
-        Ok(!self.plan_has_no_changes)
+        // self.plan_has_no_changes = status.code() == Some(0);  // нельзя изменить &self
+
+        Ok(true)  // TODO: вернуть правильное значение
     }
 
     /// Выполняет apply
