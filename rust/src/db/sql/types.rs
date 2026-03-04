@@ -3,7 +3,6 @@
 //! Аналог db/sql/SqlDb.go из Go версии (часть 1: типы)
 
 use sqlx::{SqlitePool, MySqlPool, PgPool};
-use std::sync::Arc;
 
 /// Тип SQL диалекта
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -17,13 +16,13 @@ pub enum SqlDialect {
 pub struct SqlDb {
     /// SQL диалект
     pub dialect: SqlDialect,
-    
+
     /// Connection pool для SQLite
     pub sqlite_pool: Option<SqlitePool>,
-    
+
     /// Connection pool для MySQL
     pub mysql_pool: Option<MySqlPool>,
-    
+
     /// Connection pool для PostgreSQL
     pub postgres_pool: Option<PgPool>,
 }
@@ -38,12 +37,12 @@ impl SqlDb {
             postgres_pool: None,
         }
     }
-    
+
     /// Получает SQL диалект
     pub fn get_dialect(&self) -> SqlDialect {
         self.dialect
     }
-    
+
     /// Проверяет подключено ли хранилище
     pub fn is_connected(&self) -> bool {
         match self.dialect {
@@ -52,17 +51,17 @@ impl SqlDb {
             SqlDialect::PostgreSQL => self.postgres_pool.is_some(),
         }
     }
-    
+
     /// Получает SQLite pool
     pub fn get_sqlite_pool(&self) -> Option<&SqlitePool> {
         self.sqlite_pool.as_ref()
     }
-    
+
     /// Получает MySQL pool
     pub fn get_mysql_pool(&self) -> Option<&MySqlPool> {
         self.mysql_pool.as_ref()
     }
-    
+
     /// Получает PostgreSQL pool
     pub fn get_postgres_pool(&self) -> Option<&PgPool> {
         self.postgres_pool.as_ref()
@@ -70,23 +69,24 @@ impl SqlDb {
 }
 
 /// Конфигурация подключения к БД
+/// TODO: Удалить после реализации MySQL/PostgreSQL через URL
 #[derive(Debug, Clone)]
 pub struct DbConnectionConfig {
     /// Хост
     pub host: String,
-    
+
     /// Порт
     pub port: u16,
-    
+
     /// Имя пользователя
     pub username: String,
-    
+
     /// Пароль
     pub password: String,
-    
+
     /// Имя БД
     pub db_name: String,
-    
+
     /// Дополнительные опции
     pub options: std::collections::HashMap<String, String>,
 }
@@ -109,7 +109,7 @@ impl DbConnectionConfig {
     pub fn new() -> Self {
         Self::default()
     }
-    
+
     /// Создаёт connection string для MySQL
     pub fn mysql_connection_string(&self) -> String {
         format!(
@@ -122,7 +122,7 @@ impl DbConnectionConfig {
             self.options_to_query_string()
         )
     }
-    
+
     /// Создаёт connection string для PostgreSQL
     pub fn postgres_connection_string(&self) -> String {
         format!(
@@ -135,7 +135,7 @@ impl DbConnectionConfig {
             self.options_to_query_string()
         )
     }
-    
+
     /// Преобразует опции в query string
     fn options_to_query_string(&self) -> String {
         self.options
@@ -147,18 +147,19 @@ impl DbConnectionConfig {
 }
 
 /// Транзакция SQL
+/// TODO: Реализовать поддержку транзакций для SQLite
 pub struct SqlTransaction {
     /// Диалект
     pub dialect: SqlDialect,
-    
+
     /// SQLite транзакция
     pub sqlite_txn: Option<sqlx::Transaction<'static, sqlx::Sqlite>>,
-    
-    /// MySQL транзакция
-    pub mysql_txn: Option<sqlx::Transaction<'static, sqlx::MySql>>,
-    
-    /// PostgreSQL транзакция
-    pub postgres_txn: Option<sqlx::Transaction<'static, sqlx::Postgres>>,
+
+    // TODO: Добавить MySQL транзакцию
+    // pub mysql_txn: Option<sqlx::Transaction<'static, sqlx::MySql>>,
+
+    // TODO: Добавить PostgreSQL транзакцию
+    // pub postgres_txn: Option<sqlx::Transaction<'static, sqlx::Postgres>>,
 }
 
 impl SqlTransaction {
@@ -167,8 +168,6 @@ impl SqlTransaction {
         Self {
             dialect,
             sqlite_txn: None,
-            mysql_txn: None,
-            postgres_txn: None,
         }
     }
 }
@@ -202,7 +201,7 @@ mod tests {
             db_name: "test".to_string(),
             options: std::collections::HashMap::new(),
         };
-        
+
         let conn_str = config.mysql_connection_string();
         assert!(conn_str.starts_with("mysql://"));
         assert!(conn_str.contains("localhost"));
@@ -219,7 +218,7 @@ mod tests {
             db_name: "test".to_string(),
             options: std::collections::HashMap::new(),
         };
-        
+
         let conn_str = config.postgres_connection_string();
         assert!(conn_str.starts_with("postgres://"));
         assert!(conn_str.contains("localhost"));
