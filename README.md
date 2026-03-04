@@ -2,9 +2,10 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Rust](https://img.shields.io/badge/Rust-1.75+-blue.svg)](https://www.rust-lang.org)
-[![Tests](https://img.shields.io/badge/tests-350%20passed-brightgreen.svg)]()
+[![Tests](https://img.shields.io/badge/tests-475%20passed-brightgreen.svg)]()
 [![Build Status](https://img.shields.io/badge/build-passing-brightgreen.svg)]()
 [![Migration](https://img.shields.io/badge/migration-100%25-brightgreen.svg)]()
+[![Frontend](https://img.shields.io/badge/frontend-vanilla%20JS-brightgreen.svg)]()
 [![Production Ready](https://img.shields.io/badge/status-production%20ready-brightgreen.svg)]()
 
 **Полная миграция Semaphore UI на Rust** - высокопроизводительная, безопасная и надёжная система автоматизации для Ansible, Terraform, OpenTofu, Terragrunt, PowerShell и других DevOps-инструментов.
@@ -139,6 +140,45 @@ cargo run -- project import --file backup.json
 cargo run -- version
 ```
 
+## 🚀 Быстрый Запуск через Скрипты
+
+Проект включает скрипты для запуска с различными базами данных:
+
+```bash
+# SQLite (продакшен)
+./scripts/run-sqlite.sh
+
+# SQLite (тестовая БД в /tmp)
+./scripts/run-test.sh
+
+# MySQL
+./scripts/run-mysql.sh
+
+# PostgreSQL
+./scripts/run-postgres.sh
+```
+
+### Настройка через переменные окружения
+
+```bash
+# Для SQLite
+export SEMAPHORE_DB_PATH=/var/lib/semaphore/semaphore.db
+./scripts/run-sqlite.sh
+
+# Для MySQL
+export SEMAPHORE_DB_HOST=db.example.com
+export SEMAPHORE_DB_USER=myuser
+export SEMAPHORE_DB_PASS=mypassword
+./scripts/run-mysql.sh
+
+# Для PostgreSQL
+export SEMAPHORE_DB_HOST=db.example.com
+export SEMAPHORE_DB_PORT=5433
+./scripts/run-postgres.sh
+```
+
+📖 **Подробная документация:** [scripts/README.md](scripts/README.md)
+
 ## 🧪 Тестирование
 
 ```bash
@@ -227,6 +267,7 @@ tracing-subscriber = "0.3"
 - **[Аутентификация](AUTH.md)** - руководство по аутентификации и авторизации
 - **[Middleware](MIDDLEWARE.md)** - описание middleware компонентов
 - **[CRUD операции](CRUD_COMPLETE.md)** - статус CRUD операций
+- **[Скрипты запуска](scripts/README.md)** - руководство по скриптам запуска
 
 ### 🔒 Безопасность
 
