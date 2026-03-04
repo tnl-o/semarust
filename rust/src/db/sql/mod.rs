@@ -46,6 +46,14 @@ pub struct SqlStore {
 impl SqlStore {
     /// Создаёт новое SQL-хранилище
     pub async fn new(database_url: &str) -> Result<Self> {
+        // Проверка типа БД - пока поддерживается только SQLite
+        if database_url.starts_with("postgres:") || database_url.starts_with("postgresql:") {
+            return Err(Error::Other("PostgreSQL requires refactoring SqlStore to use enum with PgPool. This is work in progress.".to_string()));
+        }
+        if database_url.starts_with("mysql:") {
+            return Err(Error::Other("MySQL requires refactoring SqlStore to use enum with MySqlPool. This is work in progress.".to_string()));
+        }
+        
         let pool = SqlitePool::connect(database_url)
             .await
             .map_err(|e| Error::Database(e))?;

@@ -1,5 +1,47 @@
 # Настройка PostgreSQL для Semaphore
 
+## ⚠️ Текущее состояние
+
+Поддержка PostgreSQL находится в процессе разработки. 
+
+**Что уже готово:**
+- ✅ Парсинг PostgreSQL connection string (`postgres://user:pass@host:port/db`)
+- ✅ Файл миграции `db/postgres/init.sql` для инициализации БД
+- ✅ Docker Compose для запуска PostgreSQL
+- ✅ Базовая инфраструктура подключения
+
+**Что требует доработки:**
+- ❌ `SqlStore` в `rust/src/db/sql/mod.rs` использует только `SqlitePool`
+- ❌ Для полноценной поддержки нужно рефакторить `SqlStore` на enum с `PgPool`/`MySqlPool`
+
+## Временное решение
+
+Пока используйте SQLite для разработки:
+
+```bash
+# .env
+SEMAPHORE_DB_DIALECT=sqlite
+SEMAPHORE_DB_PATH=./data/semaphore.db
+```
+
+## Для разработчиков
+
+Если вы хотите помочь с реализацией PostgreSQL, нужно:
+
+1. Изменить `SqlStore` на enum:
+```rust
+pub enum SqlStore {
+    Sqlite(SqlitePool),
+    Postgres(PgPool),
+    MySql(MySqlPool),
+}
+```
+
+2. Обновить все методы для поддержки разных диалектов
+3. Заменить `?` параметры на `$1` для PostgreSQL
+
+---
+
 ## Созданные файлы
 
 | Файл | Описание |
@@ -38,7 +80,7 @@ docker exec -it semaphore_postgres psql -U semaphore -d semaphore -c "\dt"
 Создайте `.env` файл в корне проекта:
 
 ```env
-SEMAPHORE_DB_URL=postgres://semaphore:semaphore_pass@localhost:5433/semaphore?sslmode=disable
+SEMAPHORE_DB_URL=postgres://semaphore:semaphore_pass@localhost:5433/semaphore
 SEMAPHORE_HTTP_PORT=3000
 SEMAPHORE_ADMIN=admin
 SEMAPHORE_ADMIN_PASSWORD=changeme

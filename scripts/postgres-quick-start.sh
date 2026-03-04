@@ -60,7 +60,14 @@ echo
 echo "=== Готово! ==="
 echo
 echo "Connection string для Semaphore:"
-echo "  postgres://${DB_USER}:${DB_PASS}@localhost:${DB_PORT}/${DB_NAME}?sslmode=disable"
+echo "  postgres://${DB_USER}:${DB_PASS}@localhost:${DB_PORT}/${DB_NAME}"
+echo
+echo "Для запуска Semaphore выполните:"
+echo "  export SEMAPHORE_DB_URL=\"postgres://${DB_USER}:${DB_PASS}@localhost:${DB_PORT}/${DB_NAME}\""
+echo "  cargo run --manifest-path=rust/Cargo.toml -- server"
+echo
+echo "Или в одной команде:"
+echo "  SEMAPHORE_DB_URL=\"postgres://${DB_USER}:${DB_PASS}@localhost:${DB_PORT}/${DB_NAME}\" cargo run --manifest-path=rust/Cargo.toml -- server"
 echo
 echo "Для остановки: docker stop ${CONTAINER_NAME}"
 echo "Для удаления: docker rm -f ${CONTAINER_NAME}"

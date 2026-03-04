@@ -318,6 +318,11 @@ struct SetupArgs {
 impl Cli {
     /// Выполняет команду CLI
     pub fn run(self) -> anyhow::Result<()> {
+        // Загрузка .env файла из текущего каталога и из родительских директорий
+        let _ = dotenvy::dotenv();
+        let _ = dotenvy::from_path("../.env");
+        let _ = dotenvy::from_path("../../.env");
+
         // Инициализация логирования
         crate::init_logging();
 

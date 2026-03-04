@@ -56,7 +56,7 @@ cargo run -- server
 Или с готовым connection string:
 
 ```bash
-export DATABASE_URL="postgres://semaphore:semaphore_pass@localhost:5433/semaphore?sslmode=disable"
+export DATABASE_URL="postgres://semaphore:semaphore_pass@localhost:5433/semaphore"
 cargo run -- server
 ```
 
