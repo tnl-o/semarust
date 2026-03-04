@@ -34,14 +34,21 @@ use crate::db::store::*;
 use crate::models::{User, Project, Task, TaskWithTpl, TaskOutput, TaskStage, Template, Inventory, Repository, Environment, AccessKey, Integration, Schedule, Session, APIToken, Event, Runner, View, Role, ProjectInvite, ProjectInviteWithUser, ProjectUser, RetrieveQueryParams, TerraformInventoryAlias, TerraformInventoryState, SecretStorage};
 use crate::error::{Error, Result};
 use crate::services::task_logger::TaskStatus;
-use crate::db::sql::types::SqlDb;
+use crate::db::sql::types::{SqlDb, SqlDialect};
 use async_trait::async_trait;
-use sqlx::{SqlitePool, Row};
+use sqlx::{SqlitePool, PgPool, MySqlPool, Row};
 use std::collections::HashMap;
 
 /// SQL-хранилище данных (на базе SQLite, MySQL, PostgreSQL)
 pub struct SqlStore {
     db: SqlDb,
+}
+
+/// Pool для разных типов БД
+pub enum DbPool {
+    Sqlite(SqlitePool),
+    Postgres(PgPool),
+    Mysql(MySqlPool),
 }
 
 impl SqlStore {
@@ -53,10 +60,27 @@ impl SqlStore {
         Ok(Self { db })
     }
 
-    /// Получает SQLite pool (для обратной совместимости)
-    fn get_pool(&self) -> Result<&SqlitePool> {
+    /// Получает диалект БД
+    fn get_dialect(&self) -> SqlDialect {
+        self.db.get_dialect()
+    }
+
+    /// Получает SQLite pool
+    fn get_sqlite_pool(&self) -> Result<&SqlitePool> {
         self.db.get_sqlite_pool()
-            .ok_or_else(|| Error::Other("SQLite pool not found. Only SQLite is currently supported in SqlStore.".to_string()))
+            .ok_or_else(|| Error::Other("SQLite pool not found".to_string()))
+    }
+
+    /// Получает PostgreSQL pool
+    fn get_postgres_pool(&self) -> Result<&PgPool> {
+        self.db.get_postgres_pool()
+            .ok_or_else(|| Error::Other("PostgreSQL pool not found".to_string()))
+    }
+
+    /// Получает MySQL pool
+    fn get_mysql_pool(&self) -> Result<&MySqlPool> {
+        self.db.get_mysql_pool()
+            .ok_or_else(|| Error::Other("MySQL pool not found".to_string()))
     }
 }
 
@@ -67,7 +91,11 @@ impl ConnectionManager for SqlStore {
     }
 
     async fn close(&self) -> Result<()> {
-        self.get_pool()?.close().await;
+        match self.get_dialect() {
+            SqlDialect::SQLite => self.get_sqlite_pool()?.close().await,
+            SqlDialect::PostgreSQL => self.get_postgres_pool()?.close().await,
+            SqlDialect::MySQL => self.get_mysql_pool()?.close().await,
+        }
         Ok(())
     }
 
@@ -79,37 +107,105 @@ impl ConnectionManager for SqlStore {
 #[async_trait]
 impl MigrationManager for SqlStore {
     fn get_dialect(&self) -> &str {
-        "sqlite"
+        match self.db.get_dialect() {
+            SqlDialect::SQLite => "sqlite",
+            SqlDialect::MySQL => "mysql",
+            SqlDialect::PostgreSQL => "postgresql",
+        }
     }
 
     async fn is_initialized(&self) -> Result<bool> {
-        let query = "SELECT name FROM sqlite_master WHERE type='table' AND name='migration'";
-        let result = sqlx::query(query)
-            .fetch_optional(self.get_pool()?)
-            .await
-            .map_err(|e| Error::Database(e))?;
-        Ok(result.is_some())
+        match self.get_dialect() {
+            SqlDialect::SQLite => {
+                let query = "SELECT name FROM sqlite_master WHERE type='table' AND name='migration'";
+                let result = sqlx::query(query)
+                    .fetch_optional(self.get_sqlite_pool()?)
+                    .await
+                    .map_err(|e| Error::Database(e))?;
+                Ok(result.is_some())
+            }
+            SqlDialect::PostgreSQL => {
+                let query = "SELECT table_name FROM information_schema.tables WHERE table_type = 'BASE TABLE' AND table_name = 'migration'";
+                let result = sqlx::query(query)
+                    .fetch_optional(self.get_postgres_pool()?)
+                    .await
+                    .map_err(|e| Error::Database(e))?;
+                Ok(result.is_some())
+            }
+            SqlDialect::MySQL => {
+                let query = "SELECT table_name FROM information_schema.tables WHERE table_type = 'BASE TABLE' AND table_name = 'migration'";
+                let result = sqlx::query(query)
+                    .fetch_optional(self.get_mysql_pool()?)
+                    .await
+                    .map_err(|e| Error::Database(e))?;
+                Ok(result.is_some())
+            }
+        }
     }
 
     async fn apply_migration(&self, version: i64, name: String) -> Result<()> {
-        let query = "INSERT INTO migration (version, name) VALUES (?, ?)";
-        sqlx::query(query)
-            .bind(version)
-            .bind(name)
-            .execute(self.get_pool()?)
-            .await
-            .map_err(|e| Error::Database(e))?;
+        match self.get_dialect() {
+            SqlDialect::SQLite => {
+                let query = "INSERT INTO migration (version, name) VALUES (?, ?)";
+                sqlx::query(query)
+                    .bind(version)
+                    .bind(name)
+                    .execute(self.get_sqlite_pool()?)
+                    .await
+                    .map_err(|e| Error::Database(e))?;
+            }
+            SqlDialect::PostgreSQL => {
+                let query = "INSERT INTO migration (version, name) VALUES ($1, $2)";
+                sqlx::query(query)
+                    .bind(version)
+                    .bind(name)
+                    .execute(self.get_postgres_pool()?)
+                    .await
+                    .map_err(|e| Error::Database(e))?;
+            }
+            SqlDialect::MySQL => {
+                let query = "INSERT INTO migration (version, name) VALUES (?, ?)";
+                sqlx::query(query)
+                    .bind(version)
+                    .bind(name)
+                    .execute(self.get_mysql_pool()?)
+                    .await
+                    .map_err(|e| Error::Database(e))?;
+            }
+        }
         Ok(())
     }
 
     async fn is_migration_applied(&self, version: i64) -> Result<bool> {
-        let query = "SELECT COUNT(*) FROM migration WHERE version = ?";
-        let count: i64 = sqlx::query_scalar(query)
-            .bind(version)
-            .fetch_one(self.get_pool()?)
-            .await
-            .map_err(|e| Error::Database(e))?;
-        Ok(count > 0)
+        match self.get_dialect() {
+            SqlDialect::SQLite => {
+                let query = "SELECT COUNT(*) FROM migration WHERE version = ?";
+                let count: i64 = sqlx::query_scalar(query)
+                    .bind(version)
+                    .fetch_one(self.get_sqlite_pool()?)
+                    .await
+                    .map_err(|e| Error::Database(e))?;
+                Ok(count > 0)
+            }
+            SqlDialect::PostgreSQL => {
+                let query = "SELECT COUNT(*) FROM migration WHERE version = $1";
+                let count: i64 = sqlx::query_scalar(query)
+                    .bind(version)
+                    .fetch_one(self.get_postgres_pool()?)
+                    .await
+                    .map_err(|e| Error::Database(e))?;
+                Ok(count > 0)
+            }
+            SqlDialect::MySQL => {
+                let query = "SELECT COUNT(*) FROM migration WHERE version = ?";
+                let count: i64 = sqlx::query_scalar(query)
+                    .bind(version)
+                    .fetch_one(self.get_mysql_pool()?)
+                    .await
+                    .map_err(|e| Error::Database(e))?;
+                Ok(count > 0)
+            }
+        }
     }
 }
 
