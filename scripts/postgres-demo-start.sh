@@ -7,6 +7,11 @@
 #   2. Создаёт .env файл для Semaphore
 #   3. Экспортирует переменные окружения
 #   4. Запускает Semaphore сервер
+#
+# Использование:
+#   ./scripts/postgres-demo-start.sh          # Запуск с demo-данными
+#   ./scripts/postgres-demo-start.sh --clean  # Запуск с полной очисткой
+#   ./scripts/postgres-demo-start.sh --cleanup # Только очистка (остановка и удаление)
 # ==============================================================================
 
 set -e
@@ -50,6 +55,43 @@ get_compose_cmd() {
 }
 
 COMPOSE_CMD=$(get_compose_cmd)
+
+# Режим только очистки (cleanup)
+if [ "$1" == "--cleanup" ]; then
+    echo -e "${YELLOW}[1/3] Остановка контейнера semaphore_postgres...${NC}"
+    if docker ps -q -f name=semaphore_postgres 2>/dev/null | grep -q .; then
+        docker stop semaphore_postgres
+        echo -e "${GREEN}✓ Контейнер остановлен${NC}"
+    else
+        echo -e "${YELLOW}⚠ Контейнер semaphore_postgres не запущен${NC}"
+    fi
+
+    echo -e "${YELLOW}[2/3] Удаление контейнера...${NC}"
+    if docker ps -aq -f name=semaphore_postgres 2>/dev/null | grep -q .; then
+        docker rm semaphore_postgres
+        echo -e "${GREEN}✓ Контейнер удален${NC}"
+    else
+        echo -e "${YELLOW}⚠ Контейнер semaphore_postgres не существует${NC}"
+    fi
+
+    echo -e "${YELLOW}[3/3] Удаление volume с данными...${NC}"
+    if docker volume ls -q -f name=semaphore_postgres_data 2>/dev/null | grep -q .; then
+        docker volume rm semaphore_postgres_data
+        echo -e "${GREEN}✓ Volume удален${NC}"
+    else
+        echo -e "${YELLOW}⚠ Volume semaphore_postgres_data не существует${NC}"
+    fi
+
+    echo ""
+    echo -e "${GREEN}==============================================================================${NC}"
+    echo -e "${GREEN}Очистка завершена!${NC}"
+    echo -e "${GREEN}==============================================================================${NC}"
+    echo ""
+    echo -e "${BLUE}Для запуска нового экземпляра выполните:${NC}"
+    echo -e "  ${GREEN}./scripts/postgres-demo-start.sh${NC}"
+    echo ""
+    exit 0
+fi
 
 # Остановка существующих контейнеров
 echo -e "${YELLOW}[1/6] Остановка существующих контейнеров...${NC}"
@@ -181,9 +223,11 @@ echo -e "  4. Security & Compliance"
 echo ""
 echo -e "${BLUE}Полезные команды (в другом терминале):${NC}"
 echo -e "  - Остановить PostgreSQL: ${GREEN}docker-compose -f docker-compose.postgres.yml down${NC}"
+echo -e "  - Очистить и перезапустить: ${GREEN}./scripts/postgres-demo-start.sh --clean${NC}"
+echo -e "  - Только очистка (остановка и удаление): ${GREEN}./scripts/postgres-demo-start.sh --cleanup${NC}"
 echo -e "  - Логи PostgreSQL: ${GREEN}docker logs semaphore_postgres${NC}"
 echo -e "  - Подключиться к БД: ${GREEN}docker exec -it semaphore_postgres psql -U semaphore -d semaphore${NC}"
-echo -e "  - Очистить и перезапустить: ${GREEN}./scripts/postgres-demo-start.sh --clean${NC}"
+echo -e "  - Отдельный скрипт очистки: ${GREEN}./scripts/postgres-cleanup.sh${NC}"
 echo ""
 echo -e "${YELLOW}Нажмите Ctrl+C для остановки сервера${NC}"
 echo ""
