@@ -2,16 +2,20 @@
 
 ## Быстрый старт с Docker Compose
 
-### 1. Запуск PostgreSQL
+### 1. Запуск PostgreSQL с демонстрационными данными
 
 ```bash
+# Вариант 1: Использование скрипта (рекомендуется)
+./scripts/postgres-demo-start.sh
+
+# Вариант 2: Вручную через docker-compose
 docker-compose -f docker-compose.postgres.yml up -d
 ```
 
 Это создаст:
 - Контейнер `semaphore_postgres` на порту **5433** (чтобы не конфликтовал с 5432)
 - БД `semaphore` с пользователем `semaphore` / паролем `semaphore_pass`
-- Применит минимальную миграцию из `db/postgres/init.sql`
+- Применит полную схему и демонстрационные данные из `db/postgres/init-demo.sql`
 
 ### 2. Проверка подключения
 
@@ -22,11 +26,60 @@ docker exec -it semaphore_postgres psql -U semaphore -d semaphore
 Внутри psql:
 ```sql
 \dt              # показать таблицы
-SELECT * FROM migration;  # проверить таблицу миграций
+SELECT * FROM "user";  # показать пользователей
+SELECT * FROM project;  # показать проекты
+SELECT * FROM template;  # показать шаблоны
 \q               # выйти
 ```
 
-### 3. Запуск Semaphore с PostgreSQL
+### 3. Демонстрационные данные
+
+База данных инициализируется следующими данными:
+
+**Пользователи** (пароль для всех: `demo123`):
+| Username | Name | Role |
+|----------|------|------|
+| admin | Administrator | администратор |
+| john.doe | John Doe | менеджер |
+| jane.smith | Jane Smith | менеджер |
+| devops | DevOps Engineer | исполнитель |
+
+**Проекты**:
+1. Demo Infrastructure
+2. Web Application Deployment
+3. Database Management
+4. Security & Compliance
+
+**Шаблоны** (12 шт.):
+- Deploy Infrastructure
+- Update Servers
+- Staging Deploy
+- Deploy Web App
+- Rollback Web App
+- Backup Databases
+- Security Scan
+- и другие...
+
+**Расписания** (4 шт.):
+- Weekly Server Update
+- Daily Database Backup
+- Weekly Security Scan
+- Daily Compliance Check
+
+### 4. Запуск Semaphore с PostgreSQL
+
+**Автоматический запуск** (рекомендуется):
+
+```bash
+./scripts/postgres-demo-start.sh
+```
+
+Скрипт автоматически:
+- Запустит PostgreSQL с демонстрационными данными
+- Создаст `.env` файл
+- Проверит готовность БД
+
+**Ручной запуск**:
 
 Создайте `.env` файл:
 
@@ -113,20 +166,44 @@ docker-compose -f docker-compose.postgres.yml down
 
 # Остановить и удалить данные (volume)
 docker-compose -f docker-compose.postgres.yml down -v
+
+# Очистить и перезапустить демонстрационные данные
+./scripts/postgres-demo-start.sh --clean
 ```
 
 ## Структура БД
 
-Минимальная схема включает:
+Полная схема включает следующие таблицы:
 
 | Таблица | Описание |
 |---------|----------|
-| `migration` | Таблица версионирования миграций |
 | `user` | Пользователи системы |
 | `project` | Проекты |
 | `project_user` | Связи пользователей с проектами |
+| `template` | Шаблоны задач (плейбуки) |
+| `inventory` | Инвентари (хосты) |
+| `repository` | Git репозитории |
+| `environment` | Переменные окружения |
+| `access_key` | Ключи доступа (SSH, login/password) |
+| `task` | Задачи |
+| `task_output` | Вывод задач |
+| `schedule` | Расписания |
+| `session` | Сессии пользователей |
+| `api_token` | API токены |
+| `event` | События |
+| `option` | Опции системы |
+| `migration` | Миграции БД |
 
-Полная схема применяется автоматически при первом запуске Semaphore.
+Демонстрационные данные включают:
+- 4 пользователя
+- 4 проекта
+- 5 ключей доступа
+- 5 инвентарей
+- 5 репозиториев
+- 5 окружений
+- 12 шаблонов
+- 4 расписания
+- 6 задач (включая выполненные и запущенные)
 
 ## Troubleshooting
 

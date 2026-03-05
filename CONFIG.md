@@ -1,5 +1,31 @@
 # Конфигурация Semaphore UI
 
+## 🎯 Демонстрационное окружение
+
+Для быстрого старта используйте демонстрационное окружение с готовыми данными:
+
+```bash
+# Запуск PostgreSQL с демонстрационными данными
+./scripts/postgres-demo-start.sh
+```
+
+**Переменные окружения для demo:**
+```bash
+SEMAPHORE_DB_URL=postgres://semaphore:semaphore_pass@localhost:5433/semaphore
+SEMAPHORE_HTTP_PORT=3000
+SEMAPHORE_WEB_HOST=http://localhost:3000
+RUST_LOG=info
+```
+
+**Доступ к системе:**
+- URL: http://localhost:3000
+- Логин: `admin`, `john.doe`, `jane.smith`, `devops`
+- Пароль: `demo123` (для всех)
+
+📖 **Подробная документация**: [db/postgres/DEMO.md](db/postgres/DEMO.md)
+
+---
+
 ## Переменные окружения
 
 ### Основные
@@ -14,6 +40,7 @@
 
 | Переменная | Описание | По умолчанию |
 |------------|----------|--------------|
+| `SEMAPHORE_DB_URL` | Connection string для БД (postgres://, mysql://, sqlite:) | - |
 | `SEMAPHORE_DB_DIALECT` | Тип БД: `bolt`, `sqlite`, `mysql`, `postgres` | bolt |
 | `SEMAPHORE_DB_PATH` | Путь к файлу БД (для bolt/sqlite) | - |
 | `SEMAPHORE_DB_HOST` | Хост БД (для mysql/postgres) | localhost |
@@ -21,6 +48,18 @@
 | `SEMAPHORE_DB_USER` | Пользователь БД | - |
 | `SEMAPHORE_DB_PASS` | Пароль БД | - |
 | `SEMAPHORE_DB_NAME` | Имя базы данных | semaphore |
+
+**Примеры connection string:**
+```bash
+# PostgreSQL
+postgres://semaphore:semaphore_pass@localhost:5433/semaphore?sslmode=disable
+
+# MySQL
+mysql://semaphore:semaphore_pass@localhost:3306/semaphore
+
+# SQLite
+sqlite:/var/lib/semaphore/semaphore.db
+```
 
 ### Администратор
 
@@ -48,6 +87,19 @@
 
 ## Примеры конфигурации
 
+### Docker (PostgreSQL с demo-данными)
+
+```bash
+# Запуск с демонстрационными данными
+./scripts/postgres-demo-start.sh
+
+# Или вручную
+docker run -p 3000:3000 \
+  -e SEMAPHORE_DB_URL="postgres://semaphore:semaphore_pass@localhost:5433/semaphore" \
+  -e SEMAPHORE_HTTP_PORT=3000 \
+  semaphoreui/semaphore:rust
+```
+
 ### Docker (SQLite)
 
 ```bash
@@ -59,13 +111,13 @@ docker run -p 3000:3000 \
   semaphoreui/semaphore:rust
 ```
 
-### Docker (MySQL)
+### Docker (PostgreSQL)
 
 ```bash
 docker run -p 3000:3000 \
-  -e SEMAPHORE_DB_DIALECT=mysql \
-  -e SEMAPHORE_DB_HOST=mysql \
-  -e SEMAPHORE_DB_PORT=3306 \
+  -e SEMAPHORE_DB_DIALECT=postgres \
+  -e SEMAPHORE_DB_HOST=postgres \
+  -e SEMAPHORE_DB_PORT=5432 \
   -e SEMAPHORE_DB_USER=semaphore \
   -e SEMAPHORE_DB_PASS=secret \
   -e SEMAPHORE_DB_NAME=semaphore \

@@ -27,6 +27,7 @@
 | **Безопасность** | Garbage Collector | Гарантии компилятора |
 | **Производительность** | Хорошая | Отличная |
 | **Поддержка БД** | SQLite, MySQL, PostgreSQL, BoltDB | SQLite, MySQL, PostgreSQL ✅ |
+| **Demo-окружение** | ❌ | ✅ Встроено |
 
 📖 **Подробное сравнение**: [BUILD_ERRORS.md](BUILD_ERRORS.md), [CHANGELOG.md](CHANGELOG.md)
 
@@ -60,6 +61,31 @@
 - (Опционально) Docker для контейнеризации
 - (Опционально) PostgreSQL/MySQL для продакшена
 
+### 🎯 Демонстрационное окружение (рекомендуется)
+
+Для быстрого знакомства с Semaphore используйте демонстрационное окружение с готовыми данными:
+
+```bash
+# Запуск PostgreSQL с демонстрационными данными
+./scripts/postgres-demo-start.sh
+```
+
+**Доступ к системе:**
+- URL: http://localhost:3000
+- Логин: `admin` (или `john.doe`, `jane.smith`, `devops`)
+- Пароль: `demo123` (для всех пользователей)
+
+**Что включено:**
+- ✅ 4 проекта (Infrastructure, Web App, Database, Security)
+- ✅ 12 шаблонов задач
+- ✅ 5 инвентарей
+- ✅ 5 репозиториев
+- ✅ 5 окружений
+- ✅ 4 расписания
+- ✅ 6 задач (выполненные, запущенные, ожидающие)
+
+📖 **Подробная документация**: [db/postgres/DEMO.md](db/postgres/DEMO.md)
+
 ### Установка
 
 ```bash
@@ -83,19 +109,22 @@ export SEMAPHORE_WEB_PATH=./web/public
 cargo run -- server
 ```
 
-#### PostgreSQL (продакшен)
+#### PostgreSQL (продакшен + demo)
 
 ```bash
-# Запуск PostgreSQL через Docker
+# Вариант 1: Запуск с демонстрационными данными (рекомендуется)
+./scripts/postgres-demo-start.sh
+
+# Вариант 2: Чистый PostgreSQL через Docker
 docker run -d --name semaphore-postgres \
   -e POSTGRES_USER=semaphore \
   -e POSTGRES_PASSWORD=semaphore_pass \
   -e POSTGRES_DB=semaphore \
-  -p 5432:5432 \
-  postgres:15
+  -p 5433:5432 \
+  postgres:16-alpine
 
 # Запуск Semaphore
-export SEMAPHORE_DB_URL="postgres://semaphore:semaphore_pass@localhost:5432/semaphore"
+export SEMAPHORE_DB_URL="postgres://semaphore:semaphore_pass@localhost:5433/semaphore"
 cargo run -- server
 ```
 
@@ -116,7 +145,7 @@ export SEMAPHORE_DB_URL="mysql://semaphore:semaphore_pass@localhost:3306/semapho
 cargo run -- server
 ```
 
-📖 **Подробная инструкция**: [POSTGRES_SETUP.md](POSTGRES_SETUP.md), [scripts/README.md](scripts/README.md)
+📖 **Подробная инструкция**: [POSTGRES_SETUP.md](POSTGRES_SETUP.md), [db/postgres/DEMO.md](db/postgres/DEMO.md), [scripts/README.md](scripts/README.md)
 
 ### Создание Первого Пользователя
 
@@ -140,9 +169,12 @@ cargo run -- user add \
 
 Frontend доступен по умолчанию при запуске сервера на `http://localhost:3000`
 
-**Тестовые учётные данные** (для тестовой БД):
-- Логин: `admin`
-- Пароль: `admin123`
+**Тестовые учётные данные:**
+
+| Окружение | Логин | Пароль |
+|-----------|-------|--------|
+| Demo (PostgreSQL) | `admin`, `john.doe`, `jane.smith`, `devops` | `demo123` |
+| Тестовая БД (SQLite) | `admin` | `admin123` |
 
 ## 📚 Основные Команды CLI
 
@@ -191,6 +223,9 @@ cargo run -- version
 
 # PostgreSQL
 ./scripts/run-postgres.sh
+
+# PostgreSQL с демонстрационными данными (рекомендуется)
+./scripts/postgres-demo-start.sh
 ```
 
 ### Настройка через переменные окружения
@@ -239,6 +274,22 @@ cargo build --release
 ```
 
 ## 🔒 Безопасность
+
+### Демо-окружение
+
+Для демонстрационных целей используйте встроенное demo-окружение:
+
+```bash
+./scripts/postgres-demo-start.sh
+```
+
+**Учетные данные** (пароль для всех: `demo123`):
+- `admin` — полный доступ ко всем проектам
+- `john.doe` — менеджер Web Application Deployment
+- `jane.smith` — менеджер Database Management
+- `devops` — исполнитель задач
+
+📖 **Подробная документация**: [db/postgres/DEMO.md](db/postgres/DEMO.md)
 
 ### Хеширование Паролей
 

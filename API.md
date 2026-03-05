@@ -2,6 +2,41 @@
 
 REST API для управления Semaphore UI.
 
+## 🎯 Демонстрационное окружение
+
+Для тестирования API используйте демонстрационное окружение:
+
+```bash
+# Запуск PostgreSQL с демонстрационными данными
+./scripts/postgres-demo-start.sh
+```
+
+**Учетные данные для входа:**
+| Логин | Пароль | Роль |
+|-------|--------|------|
+| `admin` | `demo123` | Администратор |
+| `john.doe` | `demo123` | Менеджер |
+| `jane.smith` | `demo123` | Менеджер |
+| `devops` | `demo123` | Исполнитель |
+
+**Быстрый тест API:**
+```bash
+# Вход и получение токена
+curl -X POST http://localhost:3000/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"username":"admin","password":"demo123"}'
+
+# Ответ: {"token":"eyJ...","token_type":"Bearer","expires_in":86400}
+
+# Использование токена
+curl -H "Authorization: Bearer eyJ..." \
+  http://localhost:3000/api/projects
+```
+
+📖 **Подробная документация**: [db/postgres/DEMO.md](db/postgres/DEMO.md)
+
+---
+
 ## Базовый URL
 
 ```
@@ -22,6 +57,29 @@ Authorization: Bearer <token>
 
 ### Быстрый старт через API
 
+**Для демонстрационного окружения:**
+```bash
+# 1. Вход и получение токена
+curl -X POST http://localhost:3000/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"username":"admin","password":"demo123"}'
+
+# Ответ: {"token":"eyJ...","token_type":"Bearer","expires_in":86400}
+
+# 2. Использование токена
+curl -H "Authorization: Bearer eyJ..." \
+  http://localhost:3000/api/projects
+
+# 3. Получить все проекты
+curl -H "Authorization: Bearer eyJ..." \
+  http://localhost:3000/api/projects
+
+# 4. Получить шаблоны проекта
+curl -H "Authorization: Bearer eyJ..." \
+  http://localhost:3000/api/project/1/templates
+```
+
+**Для тестовой БД (SQLite):**
 ```bash
 # 1. Вход и получение токена
 curl -X POST http://localhost:3000/api/auth/login \
@@ -53,13 +111,25 @@ curl -H "Authorization: Bearer eyJ..." \
 
 ### Вход в систему
 
+**Для демонстрационного окружения:**
 ```http
 POST /api/auth/login
 Content-Type: application/json
 
 {
   "username": "admin",
-  "password": "changeme"
+  "password": "demo123"
+}
+```
+
+**Для тестовой БД (SQLite):**
+```http
+POST /api/auth/login
+Content-Type: application/json
+
+{
+  "username": "admin",
+  "password": "admin123"
 }
 ```
 

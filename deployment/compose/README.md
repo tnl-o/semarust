@@ -7,6 +7,29 @@ combinations.
 Some of the snippets define environment variables which could be optionally
 overwritten if needed.
 
+## 🎯 Quick Start with Demo Data
+
+For a quick demonstration with pre-populated data:
+
+```bash
+# From project root
+./scripts/postgres-demo-start.sh
+```
+
+This will:
+- Start PostgreSQL with demo database
+- Create `.env` file with proper configuration
+- Pre-populate with 4 users, 4 projects, 12 templates, and more
+
+**Access:**
+- URL: http://localhost:3000
+- Login: `admin`, `john.doe`, `jane.smith`, `devops`
+- Password: `demo123`
+
+📖 **More info**: [../../db/postgres/DEMO.md](../../db/postgres/DEMO.md)
+
+---
+
 ## Server
 
 First of all we need the server definition and we need to decide if we want to
@@ -121,6 +144,13 @@ docker-compose <server/runner from above> -f deployment/compose/store/mysql.yml 
 This simply starts an additional container for a PostgreSQL instance used as a
 database backend including the required credentials.
 
+**With demo data (recommended for testing):**
+```console
+# From project root
+./scripts/postgres-demo-start.sh
+```
+
+**Standard setup:**
 ```console
 docker-compose <server/runner from above> -f deployment/compose/store/postgres.yml up
 ```

@@ -14,7 +14,6 @@ use crate::models::Project;
 use crate::error::Error;
 use crate::api::middleware::ErrorResponse;
 use crate::db::store::{ProjectStore, UserManager};
-use crate::services::demo_project;
 use crate::services::backup::BackupFormat;
 
 /// Получает проекты пользователя
@@ -57,34 +56,14 @@ pub async fn add_project(
     State(state): State<Arc<AppState>>,
     Json(payload): Json<Project>,
 ) -> std::result::Result<(StatusCode, Json<Project>), (StatusCode, Json<ErrorResponse>)> {
-    let created = if payload.demo == Some(true) {
-        // Создание демо-проекта с предзаполненными ресурсами
-        let project_name = if payload.name.is_empty() {
-            "Demo".to_string()
-        } else {
-            payload.name.clone()
-        };
-        let backup = demo_project::demo_backup(&project_name);
-        backup
-            .restore_demo(&state.store)
-            .await
-            .map_err(|e| (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                Json(ErrorResponse::new(e.to_string())),
-            ))?
-    } else {
-        // Обычное создание проекта
-        let mut project = payload;
-        project.demo = None;
-        state
-            .store
-            .create_project(project)
-            .await
-            .map_err(|e| (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                Json(ErrorResponse::new(e.to_string())),
-            ))?
-    };
+    let created = state
+        .store
+        .create_project(payload)
+        .await
+        .map_err(|e| (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(ErrorResponse::new(e.to_string())),
+        ))?;
 
     Ok((StatusCode::CREATED, Json(created)))
 }
