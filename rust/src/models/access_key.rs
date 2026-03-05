@@ -251,6 +251,7 @@ impl AccessKey {
             secret_storage_id: None,
             owner: None,
             environment_id: None,
+            created: None,
         }
     }
 
@@ -271,6 +272,7 @@ impl AccessKey {
             secret_storage_id: None,
             owner: None,
             environment_id: None,
+            created: None,
         }
     }
 
@@ -291,6 +293,7 @@ impl AccessKey {
             secret_storage_id: None,
             owner: None,
             environment_id: None,
+            created: None,
         }
     }
 

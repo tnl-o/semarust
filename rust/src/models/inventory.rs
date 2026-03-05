@@ -158,6 +158,7 @@ impl Inventory {
             ssh_key_id: None,
             become_key_id: None,
             vaults: None,
+            created: None,
         }
     }
 
@@ -177,6 +178,7 @@ impl Inventory {
             ssh_key_id: None,
             become_key_id: None,
             vaults: None,
+            created: None,
         }
     }
 }

@@ -102,6 +102,7 @@ impl Environment {
             json,
             secret_storage_id: None,
             secrets: None,
+            created: None,
         }
     }
 
@@ -114,6 +115,7 @@ impl Environment {
             json: String::new(),
             secret_storage_id: None,
             secrets: None,
+            created: None,
         }
     }
 

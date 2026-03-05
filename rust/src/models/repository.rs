@@ -104,6 +104,7 @@ impl Repository {
             git_branch: None,
             key_id: 0,
             git_path: None,
+            created: None,
         }
     }
 
@@ -118,6 +119,7 @@ impl Repository {
             git_branch: None,
             key_id: 0,
             git_path: None,
+            created: None,
         }
     }
 
