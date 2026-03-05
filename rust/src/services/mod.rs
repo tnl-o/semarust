@@ -8,7 +8,6 @@ pub mod exporter;
 pub mod exporter_main;
 pub mod executor;
 pub mod git_repository;
-pub mod job;
 pub mod local_job;
 pub mod restore;
 pub mod scheduler;
