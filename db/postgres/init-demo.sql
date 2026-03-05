@@ -378,7 +378,7 @@ mysql2 ansible_host=192.168.10.21',
       ansible_host: 192.168.100.2
     target3:
       ansible_host: 192.168.100.3',
-5, 'root', 22, NOW());
+1, 5, 'root', 22, NOW());
 
 -- Репозитории
 INSERT INTO repository (id, project_id, name, git_url, git_type, git_branch, key_id, created) VALUES
