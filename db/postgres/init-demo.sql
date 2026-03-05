@@ -114,8 +114,9 @@ CREATE TABLE IF NOT EXISTS environment (
     id SERIAL PRIMARY KEY,
     project_id INTEGER NOT NULL REFERENCES project(id) ON DELETE CASCADE,
     name VARCHAR(255) NOT NULL,
-    description TEXT,
     json TEXT NOT NULL,
+    secret_storage_id INTEGER,
+    secrets TEXT,
     created TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
@@ -134,6 +135,7 @@ CREATE TABLE IF NOT EXISTS access_key (
     access_key_secret_key TEXT,
     secret_storage_id INTEGER,
     environment_id INTEGER,
+    owner VARCHAR(50) DEFAULT 'project',
     created TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
@@ -300,7 +302,7 @@ NhAAAAAwEAAQAAAIEA2Z3VS5+X5X5X5X5X5X5X5X5X5X5X5X5X5X5X5X5X5X5X5X5X5X5X
 -----END OPENSSH PRIVATE KEY-----', NULL, NULL, NOW());
 
 -- Инвентари
-INSERT INTO inventory (id, project_id, name, inventory_type, inventory_data, ssh_key_id, ssh_login, ssh_port, created) VALUES
+INSERT INTO inventory (id, project_id, name, inventory_type, inventory_data, key_id, ssh_key_id, ssh_login, ssh_port, created) VALUES
 (1, 1, 'Production Servers', 'static',
 'all:
   children:
@@ -325,7 +327,7 @@ INSERT INTO inventory (id, project_id, name, inventory_type, inventory_data, ssh
         monitor1.example.com:
           ansible_user: ansible
           ansible_port: 22',
-1, 'root', 22, NOW()),
+1, 1, 'root', 22, NOW()),
 (2, 1, 'Staging Environment', 'static',
 '[staging]
 staging-web1 ansible_host=192.168.1.100 ansible_user=ubuntu
@@ -334,7 +336,7 @@ staging-app1 ansible_host=192.168.1.101 ansible_user=ubuntu
 [staging:vars]
 ansible_port=22
 ansible_ssh_private_key_file=~/.ssh/staging_key',
-1, 'ubuntu', 22, NOW()),
+1, 1, 'ubuntu', 22, NOW()),
 (3, 2, 'Web App Cluster', 'static',
 'all:
   children:
@@ -354,7 +356,7 @@ ansible_ssh_private_key_file=~/.ssh/staging_key',
       hosts:
         lb1:
           ansible_host: 10.0.0.10',
-3, 'root', 22, NOW()),
+1, 3, 'root', 22, NOW()),
 (4, 3, 'Database Cluster', 'static',
 '[postgres_primary]
 pg-primary ansible_host=192.168.10.10
@@ -366,7 +368,7 @@ pg-replica2 ansible_host=192.168.10.12
 [mysql_cluster]
 mysql1 ansible_host=192.168.10.20
 mysql2 ansible_host=192.168.10.21',
-4, 'postgres', 22, NOW()),
+1, 4, 'postgres', 22, NOW()),
 (5, 4, 'Security Scan Targets', 'static',
 'security_targets:
   hosts:
