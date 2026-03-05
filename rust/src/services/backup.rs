@@ -250,9 +250,9 @@ impl BackupDB {
                 playbook: tpl.playbook.clone(),
                 arguments: tpl.arguments.clone(),
                 template_type: tpl.template_type.as_ref().map(|t| t.to_string()).unwrap_or_default(),
-                inventory: inventory_map.get(&tpl.inventory_id).cloned(),
-                repository: repository_map.get(&tpl.repository_id).cloned(),
-                environment: environment_map.get(&tpl.environment_id).cloned(),
+                inventory: tpl.inventory_id.and_then(|id| inventory_map.get(&id).cloned()),
+                repository: tpl.repository_id.and_then(|id| repository_map.get(&id).cloned()),
+                environment: tpl.environment_id.and_then(|id| environment_map.get(&id).cloned()),
                 cron: schedule,
             });
         }

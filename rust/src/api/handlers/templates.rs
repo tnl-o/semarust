@@ -54,7 +54,7 @@ pub async fn create_template(
         r#type: TemplateType::Default,
         template_type: None,
         app: TemplateApp::Ansible,
-        git_branch: "main".to_string(),
+        git_branch: Some("main".to_string()),
         deleted: false,
         created: Utc::now(),
         arguments: None,
@@ -167,9 +167,12 @@ pub async fn delete_template(
 pub struct TemplateCreatePayload {
     pub name: String,
     pub playbook: String,
-    pub inventory_id: i32,
-    pub repository_id: i32,
-    pub environment_id: i32,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub inventory_id: Option<i32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub repository_id: Option<i32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub environment_id: Option<i32>,
 }
 
 /// Payload для обновления шаблона
