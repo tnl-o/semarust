@@ -61,26 +61,26 @@
 - (Опционально) Docker для контейнеризации
 - (Опционально) PostgreSQL/MySQL для продакшена
 
-### 🐳 Запуск через Docker (рекомендуется)
+### 🐳 Запуск через Docker (demo)
 
-**Одна команда для запуска всего стека:**
+**Frontend + PostgreSQL (backend отдельно):**
 
 ```bash
+# 1. Запуск frontend и БД
 ./start.sh
+
+# 2. Запуск backend (отдельно)
+./start.sh --backend
+# или
+cd rust && cargo run -- server
 ```
 
-Это автоматически:
-- ✅ Соберет frontend (если не собран)
-- ✅ Соберет Docker-образы
-- ✅ Запустит PostgreSQL с демо-данными
-- ✅ Запустит backend на Rust
+**Доступ:**
+- Frontend: http://localhost
+- Backend API: http://localhost:3000/api
+- Логин: `admin` / `admin123`
 
-**Доступ к системе:**
-- URL: http://localhost:3000
-- Логин: `admin`
-- Пароль: `admin123`
-
-📖 **Подробная документация**: [DOCKER_RUN.md](DOCKER_RUN.md)
+📖 **Подробная документация**: [DOCKER_DEMO.md](DOCKER_DEMO.md)
 
 ### 🎯 Демонстрационное окружение
 

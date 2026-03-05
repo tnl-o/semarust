@@ -1,24 +1,21 @@
 #!/bin/bash
 
 # ============================================================================
-# Скрипт запуска Semaphore UI (полный стек через Docker)
+# Скрипт запуска демонстрационного окружения Semaphore UI
 # ============================================================================
+# Только frontend (Nginx) + PostgreSQL с демо-данными
+# Backend запускается отдельно через cargo
+#
 # Использование: ./start.sh [OPTIONS]
 #
 # Опции:
-#   --build, -b      Пересобрать образы перед запуском
+#   --build, -b      Пересобрать образы
 #   --clean, -c      Очистить volumes (удалить данные БД)
 #   --stop, -s       Остановить сервисы
 #   --restart, -r    Перезапустить сервисы
 #   --logs, -l       Показать логи
+#   --backend        Запустить backend через cargo
 #   --help, -h       Показать эту справку
-#
-# Примеры:
-#   ./start.sh                    # Запуск сервиса
-#   ./start.sh --build            # Запуск с пересборкой образов
-#   ./start.sh --clean --build    # Полный сброс и запуск
-#   ./start.sh --stop             # Остановка сервисов
-#   ./start.sh --logs             # Просмотр логов
 # ============================================================================
 
 set -e
@@ -39,6 +36,7 @@ CLEAN=false
 STOP=false
 RESTART=false
 LOGS=false
+BACKEND=false
 
 # Парсинг аргументов
 while [[ $# -gt 0 ]]; do
@@ -63,8 +61,12 @@ while [[ $# -gt 0 ]]; do
             LOGS=true
             shift
             ;;
+        --backend)
+            BACKEND=true
+            shift
+            ;;
         --help|-h)
-            head -20 "$0" | tail -17
+            head -22 "$0" | tail -20
             exit 0
             ;;
         *)
@@ -95,9 +97,19 @@ else
 fi
 
 echo -e "${BLUE}╔════════════════════════════════════════════════════════╗${NC}"
-echo -e "${BLUE}║        Semaphore UI - Запуск через Docker              ║${NC}"
+echo -e "${BLUE}║     Semaphore UI - Demo (Frontend + PostgreSQL)        ║${NC}"
 echo -e "${BLUE}╚════════════════════════════════════════════════════════╝${NC}"
 echo ""
+
+# Запуск backend через cargo
+if [ "$BACKEND" = true ]; then
+    echo -e "${YELLOW}🚀 Запуск backend (Rust)...${NC}"
+    cd "$SCRIPT_DIR/rust"
+    cargo run -- server --host 0.0.0.0 --port 3000 &
+    BACKEND_PID=$!
+    echo -e "${GREEN}✓ Backend запущен (PID: $BACKEND_PID)${NC}"
+    echo ""
+fi
 
 # Обработка команды остановки
 if [ "$STOP" = true ]; then
@@ -138,7 +150,7 @@ if [ ! -f "$SCRIPT_DIR/web/public/app.js" ] || [ ! -s "$SCRIPT_DIR/web/public/ap
         "$SCRIPT_DIR/web/build.sh"
     else
         echo -e "${RED}❌ Скрипт web/build.sh не найден${NC}"
-        echo -e "${YELLOW}💡 Соберите frontend вручную: cd web && npm install && npm run build${NC}"
+        echo -e "${YELLOW}💡 Соберите frontend: cd web && ./build.sh${NC}"
         exit 1
     fi
 else
@@ -150,10 +162,10 @@ echo ""
 # Пересборка образов
 if [ "$BUILD" = true ]; then
     echo -e "${YELLOW}🔨 Пересборка Docker образов...${NC}"
-    $COMPOSE_CMD -f "$COMPOSE_FILE" build --no-cache
-else
-    echo -e "${YELLOW}🔨 Сборка Docker образов...${NC}"
     $COMPOSE_CMD -f "$COMPOSE_FILE" build
+else
+    echo -e "${YELLOW}🔨 Проверка Docker образов...${NC}"
+    $COMPOSE_CMD -f "$COMPOSE_FILE" pull
 fi
 
 echo ""
@@ -164,13 +176,13 @@ $COMPOSE_CMD -f "$COMPOSE_FILE" up -d
 
 echo ""
 echo -e "${BLUE}╔════════════════════════════════════════════════════════╗${NC}"
-echo -e "${BLUE}║              Semaphore UI запущен!                     ║${NC}"
+echo -e "${BLUE}║         Semaphore UI Demo запущен!                     ║${NC}"
 echo -e "${BLUE}╚════════════════════════════════════════════════════════╝${NC}"
 echo ""
 
 # Ожидание готовности сервисов
 echo -e "${YELLOW}⏳ Ожидание готовности сервисов...${NC}"
-sleep 10
+sleep 5
 
 # Проверка статуса
 echo ""
@@ -178,17 +190,17 @@ echo -e "${BLUE}📊 Статус сервисов:${NC}"
 $COMPOSE_CMD -f "$COMPOSE_FILE" ps
 
 echo ""
-echo -e "${GREEN}✅ Semaphore UI готов к работе!${NC}"
+echo -e "${GREEN}✅ Frontend и БД готовы!${NC}"
 echo ""
 echo -e "${BLUE}📋 Информация:${NC}"
-echo -e "   🌐 URL: ${GREEN}http://localhost:3000${NC}"
-echo -e "   👤 Логин: ${GREEN}admin${NC}"
-echo -e "   🔑 Пароль: ${GREEN}admin123${NC}"
+echo -e "   🌐 Frontend: ${GREEN}http://localhost${NC}"
+echo -e "   💾 PostgreSQL: ${GREEN}localhost:5432${NC}"
+echo -e "   🔧 Backend (запустите отдельно): ${YELLOW}cargo run -- server${NC}"
 echo ""
-echo -e "${YELLOW}💡 Демо-пользователи:${NC}"
-echo -e "   - john.doe / demo123"
-echo -e "   - jane.smith / demo123"
-echo -e "   - devops / demo123"
+echo -e "${YELLOW}💡 Для запуска backend выполните:${NC}"
+echo -e "   ./start.sh --backend"
+echo -e "   или"
+echo -e "   cd rust && cargo run -- server --host 0.0.0.0 --port 3000"
 echo ""
 echo -e "${YELLOW}📚 Полезные команды:${NC}"
 echo -e "   ./start.sh --logs       # Просмотр логов"

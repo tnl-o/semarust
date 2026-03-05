@@ -1,18 +1,26 @@
 # ⚡ Быстрый старт Semaphore UI
 
-## 🐳 Запуск через Docker (рекомендуется)
+## 🐳 Запуск через Docker (demo)
 
-### Одна команда
+### 1. Frontend + БД
 
 ```bash
 ./start.sh
 ```
 
-### Доступ к системе
+### 2. Backend (отдельно)
 
-- **URL**: http://localhost:3000
-- **Логин**: `admin`
-- **Пароль**: `admin123`
+```bash
+./start.sh --backend
+# или
+cd rust && cargo run -- server
+```
+
+### Доступ
+
+- **Frontend**: http://localhost
+- **Backend**: http://localhost:3000
+- **Логин**: `admin` / `admin123`
 
 ### Управление
 
@@ -31,8 +39,8 @@
 
 | Компонент | Технология | Описание |
 |-----------|------------|----------|
-| **Frontend** | Vue 2 + Vuetify 2 | Все ресурсы локальные |
-| **Backend** | Rust (Axum) | Высокая производительность |
+| **Frontend** | Vue 2 + Nginx | Все ресурсы локальные |
+| **Backend** | Rust (Axum) | Запускается отдельно |
 | **БД** | PostgreSQL 15 | Демонстрационные данные |
 
 ---
