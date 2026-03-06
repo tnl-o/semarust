@@ -102,6 +102,7 @@ pub fn create_default_config() -> Config {
                 enable: false,
                 allow_recovery: false,
             },
+            oidc_providers: Vec::new(),
         },
         ha: HAConfig {
             enable: false,

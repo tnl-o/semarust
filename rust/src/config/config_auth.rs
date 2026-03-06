@@ -3,6 +3,7 @@
 //! Типы конфигурации приложения
 
 use serde::{Deserialize, Serialize};
+use crate::config::config_oidc::OidcProvider;
 
 /// Конфигурация reCAPTCHA
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
@@ -41,6 +42,9 @@ pub struct AuthConfig {
 
     #[serde(default)]
     pub email: Option<EmailAuthConfig>,
+
+    #[serde(default)]
+    pub oidc_providers: Vec<OidcProvider>,
 }
 
 // ============================================================================

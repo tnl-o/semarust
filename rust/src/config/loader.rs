@@ -137,6 +137,7 @@ fn merge_auth_configs(first: AuthConfig, second: AuthConfig) -> AuthConfig {
             enable: second.totp.enable || first.totp.enable,
             allow_recovery: second.totp.allow_recovery || first.totp.allow_recovery,
         },
+        oidc_providers: if !second.oidc_providers.is_empty() { second.oidc_providers } else { first.oidc_providers },
     }
 }
 

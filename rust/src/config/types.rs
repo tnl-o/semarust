@@ -264,12 +264,16 @@ impl Default for TotpConfig {
 pub struct AuthConfig {
     #[serde(default)]
     pub totp: TotpConfig,
+
+    #[serde(default)]
+    pub oidc_providers: Vec<crate::config::config_oidc::OidcProvider>,
 }
 
 impl Default for AuthConfig {
     fn default() -> Self {
         Self {
             totp: TotpConfig::default(),
+            oidc_providers: Vec::new(),
         }
     }
 }

@@ -3,6 +3,7 @@
 //! Разбит на подмодули для лучшей организации кода
 
 pub mod auth;
+pub mod oidc;
 #[cfg(test)]
 mod tests;
 pub mod users;
@@ -18,6 +19,7 @@ pub mod mailer;
 
 // Ре-экспорт всех handlers для удобства
 pub use auth::*;
+pub use oidc::*;
 pub use users::*;
 pub use projects::project::*;
 pub use templates::*;

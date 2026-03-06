@@ -17,9 +17,14 @@ pub fn api_routes() -> Router<Arc<AppState>> {
 
         // Аутентификация
         .route("/api/auth/login", post(handlers::login))
+        .route("/api/auth/login", get(handlers::get_login_metadata))
         .route("/api/auth/logout", post(handlers::logout))
         .route("/api/auth/verify", post(handlers::verify_session))
         .route("/api/auth/recovery", post(handlers::recovery_session))
+        
+        // OIDC
+        .route("/api/auth/oidc/{provider}", get(handlers::oidc_login))
+        .route("/api/auth/oidc/{provider}/callback", get(handlers::oidc_callback))
 
         // Текущий пользователь
         .route("/api/user", get(handlers::get_current_user))

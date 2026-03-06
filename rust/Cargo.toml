@@ -74,6 +74,9 @@ regex = "1"
 # Парсинг Cron
 cron = "0.15"
 
+# OIDC / OAuth2
+oauth2 = "5.0"
+
 # Git2 (для работы с Git)
 git2 = { version = "0.20", features = ["ssh"] }
 
