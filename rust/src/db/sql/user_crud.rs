@@ -1,6 +1,8 @@
 //! User CRUD - операции с пользователями
 //!
 //! Аналог db/sql/user.go из Go версии (часть 1: CRUD)
+//!
+//! DEPRECATED: Используйте модули sqlite::user, postgres::user, mysql::user
 
 use crate::db::sql::types::SqlDb;
 use crate::error::{Error, Result};
@@ -47,37 +49,92 @@ impl SqlDb {
     pub async fn get_users(&self, params: &RetrieveQueryParams) -> Result<Vec<User>> {
         match self.get_dialect() {
             crate::db::sql::types::SqlDialect::SQLite => {
-                let mut query = String::from("SELECT * FROM user");
+                let pool = self.get_sqlite_pool().ok_or(Error::Other("SQLite pool not found".to_string()))?;
+                crate::db::sql::sqlite::user::get_users(pool, params).await
+            }
+            crate::db::sql::types::SqlDialect::PostgreSQL => {
+                let pool = self.get_postgres_pool().ok_or(Error::Other("PostgreSQL pool not found".to_string()))?;
+                crate::db::sql::postgres::user::get_users(pool, params).await
+            }
+            crate::db::sql::types::SqlDialect::MySQL => {
+                let pool = self.get_mysql_pool().ok_or(Error::Other("MySQL pool not found".to_string()))?;
+                crate::db::sql::mysql::user::get_users(pool, params).await
+            }
+        }
+    }
 
-                // Добавляем фильтр если указан
-                if let Some(ref filter) = params.filter {
-                    if !filter.is_empty() {
-                        query.push_str(" WHERE username LIKE ? OR name LIKE ? OR email LIKE ?");
-                    }
-                }
+    /// Получает пользователя по ID
+    pub async fn get_user(&self, user_id: i32) -> Result<User> {
+        match self.get_dialect() {
+            crate::db::sql::types::SqlDialect::SQLite => {
+                let pool = self.get_sqlite_pool().ok_or(Error::Other("SQLite pool not found".to_string()))?;
+                crate::db::sql::sqlite::user::get_user(pool, user_id).await
+            }
+            crate::db::sql::types::SqlDialect::PostgreSQL => {
+                let pool = self.get_postgres_pool().ok_or(Error::Other("PostgreSQL pool not found".to_string()))?;
+                crate::db::sql::postgres::user::get_user(pool, user_id).await
+            }
+            crate::db::sql::types::SqlDialect::MySQL => {
+                let pool = self.get_mysql_pool().ok_or(Error::Other("MySQL pool not found".to_string()))?;
+                crate::db::sql::mysql::user::get_user(pool, user_id).await
+            }
+        }
+    }
 
-                // Добавляем лимит и оффсет
-                if let Some(count) = params.count {
-                    query.push_str(&format!(" LIMIT {} OFFSET {}", count, params.offset));
-                }
+    /// Создаёт пользователя
+    pub async fn create_user(&self, user: User) -> Result<User> {
+        match self.get_dialect() {
+            crate::db::sql::types::SqlDialect::SQLite => {
+                let pool = self.get_sqlite_pool().ok_or(Error::Other("SQLite pool not found".to_string()))?;
+                crate::db::sql::sqlite::user::create_user(pool, user).await
+            }
+            crate::db::sql::types::SqlDialect::PostgreSQL => {
+                let pool = self.get_postgres_pool().ok_or(Error::Other("PostgreSQL pool not found".to_string()))?;
+                crate::db::sql::postgres::user::create_user(pool, user).await
+            }
+            crate::db::sql::types::SqlDialect::MySQL => {
+                let pool = self.get_mysql_pool().ok_or(Error::Other("MySQL pool not found".to_string()))?;
+                crate::db::sql::mysql::user::create_user(pool, user).await
+            }
+        }
+    }
 
-                let users = if params.filter.as_ref().map_or(false, |f| !f.is_empty()) {
-                    let filter_pattern = format!("%{}%", params.filter.as_ref().unwrap());
-                    sqlx::query_as::<_, UserRow>(&query)
-                        .bind(&filter_pattern)
-                        .bind(&filter_pattern)
-                        .bind(&filter_pattern)
-                        .fetch_all(self.get_sqlite_pool().ok_or(Error::Other("SQLite pool not found".to_string()))?)
-                        .await
-                        .map_err(|e| Error::Database(e))?
-                        .into_iter()
-                        .map(|r| r.into())
-                        .collect()
-                } else {
-                    sqlx::query_as::<_, UserRow>(&query)
-                        .fetch_all(self.get_sqlite_pool().ok_or(Error::Other("SQLite pool not found".to_string()))?)
-                        .await
-                        .map_err(|e| Error::Database(e))?
+    /// Обновляет пользователя
+    pub async fn update_user(&self, user: User) -> Result<()> {
+        match self.get_dialect() {
+            crate::db::sql::types::SqlDialect::SQLite => {
+                let pool = self.get_sqlite_pool().ok_or(Error::Other("SQLite pool not found".to_string()))?;
+                crate::db::sql::sqlite::user::update_user(pool, user).await
+            }
+            crate::db::sql::types::SqlDialect::PostgreSQL => {
+                let pool = self.get_postgres_pool().ok_or(Error::Other("PostgreSQL pool not found".to_string()))?;
+                crate::db::sql::postgres::user::update_user(pool, user).await
+            }
+            crate::db::sql::types::SqlDialect::MySQL => {
+                let pool = self.get_mysql_pool().ok_or(Error::Other("MySQL pool not found".to_string()))?;
+                crate::db::sql::mysql::user::update_user(pool, user).await
+            }
+        }
+    }
+
+    /// Удаляет пользователя
+    pub async fn delete_user(&self, user_id: i32) -> Result<()> {
+        match self.get_dialect() {
+            crate::db::sql::types::SqlDialect::SQLite => {
+                let pool = self.get_sqlite_pool().ok_or(Error::Other("SQLite pool not found".to_string()))?;
+                crate::db::sql::sqlite::user::delete_user(pool, user_id).await
+            }
+            crate::db::sql::types::SqlDialect::PostgreSQL => {
+                let pool = self.get_postgres_pool().ok_or(Error::Other("PostgreSQL pool not found".to_string()))?;
+                crate::db::sql::postgres::user::delete_user(pool, user_id).await
+            }
+            crate::db::sql::types::SqlDialect::MySQL => {
+                let pool = self.get_mysql_pool().ok_or(Error::Other("MySQL pool not found".to_string()))?;
+                crate::db::sql::mysql::user::delete_user(pool, user_id).await
+            }
+        }
+    }
+}
                         .into_iter()
                         .map(|r| r.into())
                         .collect()
