@@ -6,6 +6,7 @@ use std::collections::HashMap;
 use serde_json::{Map, Value};
 
 use crate::error::Result;
+use crate::models::template::TemplateType;
 use crate::services::local_job::LocalJob;
 
 impl LocalJob {
@@ -37,14 +38,14 @@ impl LocalJob {
         details.insert("repository_name".to_string(), Value::String(self.repository.name.clone()));
         details.insert("repository_id".to_string(), Value::Number(self.repository.id.into()));
 
-        if self.template.template_type != Some(crate::models::TemplateType::Task) {
-            details.insert("type".to_string(), Value::String(self.template.template_type.as_ref().map(|t| t.to_string()).unwrap_or_default()));
+        if self.template.r#type != TemplateType::Task {
+            details.insert("type".to_string(), Value::String(self.template.r#type.to_string()));
 
             if let Some(ver) = incoming_version {
                 details.insert("incoming_version".to_string(), Value::String(ver.to_string()));
             }
 
-            if self.template.template_type == Some(crate::models::TemplateType::Build) {
+            if self.template.r#type == TemplateType::Build {
                 if let Some(ref ver) = self.task.version {
                     details.insert("target_version".to_string(), Value::String(ver.clone()));
                 }
@@ -209,7 +210,7 @@ mod tests {
         template.name = "Test Template".to_string();
         template.project_id = 1;
         template.playbook = "test.yml".to_string();
-        template.template_type = Some(crate::models::TemplateType::Task);
+        template.r#type = TemplateType::Task);
 
         LocalJob::new(
             task,
