@@ -1113,6 +1113,116 @@ function loadPageData(pageId) {
 }
 
 // ============================================================================
+// Schedules CRUD
+// ============================================================================
+
+async function loadSchedules() {
+    if (!CURRENT_PROJECT_ID) {
+        document.getElementById('schedules-list').innerHTML = `
+            <div class="empty-state">
+                <p>Выберите проект для просмотра расписаний</p>
+            </div>
+        `;
+        return [];
+    }
+    
+    try {
+        const schedules = await apiRequest(`/project/${CURRENT_PROJECT_ID}/schedule`);
+        renderSchedules(schedules);
+        updateStats('schedules', schedules.length);
+        document.getElementById('schedules-count').textContent = schedules.length;
+        return schedules;
+    } catch (error) {
+        showToast('Ошибка загрузки расписаний: ' + error.message, 'error');
+        return [];
+    }
+}
+
+function renderSchedules(schedules) {
+    const container = document.getElementById('schedules-list');
+    
+    if (schedules.length === 0) {
+        container.innerHTML = `
+            <div class="empty-state">
+                <div class="empty-state-icon">🕐</div>
+                <h3>Нет расписаний</h3>
+                <p>Добавьте первое расписание</p>
+            </div>
+        `;
+        return;
+    }
+    
+    container.innerHTML = schedules.map(schedule => `
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">${escapeHtml(schedule.name)}</h3>
+                <span class="status-badge ${schedule.active ? 'status-success' : 'status-waiting'}">
+                    ${schedule.active ? 'Активно' : 'Неактивно'}
+                </span>
+            </div>
+            <div class="card-body">
+                <p><strong>Cron:</strong> <code>${escapeHtml(schedule.cron)}</code></p>
+                <p><strong>Шаблон:</strong> ${schedule.template_id}</p>
+                <p><strong>ID:</strong> ${schedule.id}</p>
+            </div>
+            <div class="card-footer">
+                <div class="card-actions">
+                    <button class="card-btn" onclick="editSchedule(${schedule.id})">✏️</button>
+                    <button class="card-btn delete" onclick="deleteSchedule(${schedule.id})">🗑️</button>
+                </div>
+            </div>
+        </div>
+    `).join('');
+}
+
+async function createSchedule(scheduleData) {
+    try {
+        const schedule = await apiRequest(`/project/${CURRENT_PROJECT_ID}/schedule`, {
+            method: 'POST',
+            body: JSON.stringify(scheduleData),
+        });
+        showToast('Расписание успешно создано', 'success');
+        await loadSchedules();
+        await loadDashboardStats();
+        return schedule;
+    } catch (error) {
+        showToast('Ошибка создания расписания: ' + error.message, 'error');
+        throw error;
+    }
+}
+
+async function updateSchedule(scheduleId, scheduleData) {
+    try {
+        await apiRequest(`/project/${CURRENT_PROJECT_ID}/schedule/${scheduleId}`, {
+            method: 'PUT',
+            body: JSON.stringify(scheduleData),
+        });
+        showToast('Расписание успешно обновлено', 'success');
+        await loadSchedules();
+    } catch (error) {
+        showToast('Ошибка обновления расписания: ' + error.message, 'error');
+        throw error;
+    }
+}
+
+async function deleteSchedule(scheduleId) {
+    if (!confirm('Вы уверены, что хотите удалить это расписание?')) {
+        return;
+    }
+    
+    try {
+        await apiRequest(`/project/${CURRENT_PROJECT_ID}/schedule/${scheduleId}`, {
+            method: 'DELETE',
+        });
+        showToast('Расписание успешно удалено', 'success');
+        await loadSchedules();
+    } catch (error) {
+        showToast('Ошибка удаления расписания: ' + error.message, 'error');
+        throw error;
+    }
+}
+
+// ============================================================================
 // Utility Functions
 // ============================================================================
 
@@ -1134,6 +1244,39 @@ function formatDate(dateString) {
         minute: '2-digit',
     });
 }
+
+// ============================================================================
+// Edit Functions (заглушки для будущего расширения)
+// ============================================================================
+
+// Эти функции будут реализованы аналогично create, но с загрузкой текущих данных
+window.editProject = function(id) {
+    showToast('Функция редактирования в разработке', 'info');
+};
+
+window.editTemplate = function(id) {
+    showToast('Функция редактирования в разработке', 'info');
+};
+
+window.editInventory = function(id) {
+    showToast('Функция редактирования в разработке', 'info');
+};
+
+window.editRepository = function(id) {
+    showToast('Функция редактирования в разработке', 'info');
+};
+
+window.editEnvironment = function(id) {
+    showToast('Функция редактирования в разработке', 'info');
+};
+
+window.editKey = function(id) {
+    showToast('Функция редактирования в разработке', 'info');
+};
+
+window.editSchedule = function(id) {
+    showToast('Функция редактирования в разработке', 'info');
+};
 
 // ============================================================================
 // Initialization
@@ -1184,6 +1327,11 @@ async function init() {
     // Add buttons
     document.getElementById('add-project-btn')?.addEventListener('click', showCreateProjectModal);
     document.getElementById('add-template-btn')?.addEventListener('click', showCreateTemplateModal);
+    document.getElementById('add-inventory-btn')?.addEventListener('click', showCreateInventoryModal);
+    document.getElementById('add-repository-btn')?.addEventListener('click', showCreateRepositoryModal);
+    document.getElementById('add-environment-btn')?.addEventListener('click', showCreateEnvironmentModal);
+    document.getElementById('add-key-btn')?.addEventListener('click', showCreateKeyModal);
+    document.getElementById('add-schedule-btn')?.addEventListener('click', showCreateScheduleModal);
     
     // Modal close handlers
     document.querySelector('.modal-close')?.addEventListener('click', closeModal);
