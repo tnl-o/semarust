@@ -3,6 +3,7 @@
 //! Аналог services/tasks/local_job_run.go из Go версии
 
 use crate::error::Result;
+use crate::models::template::TemplateType;
 use crate::services::local_job::LocalJob;
 use crate::services::task_logger::TaskStatus;
 
@@ -67,18 +68,18 @@ impl LocalJob {
         self.log("Preparing to run task...");
 
         // Получаем аргументы в зависимости от типа шаблона
-        match self.template.template_type {
-            Some(crate::models::TemplateType::Ansible) => {
+        match self.template.r#type {
+            TemplateType::Ansible => {
                 self.log("Preparing Ansible playbook...");
                 // TODO: Создать AnsibleApp
                 // let args = self.get_playbook_args(username, incoming_version)?;
             }
-            Some(crate::models::TemplateType::Terraform) => {
+            TemplateType::Terraform => {
                 self.log("Preparing Terraform...");
                 // TODO: Создать TerraformApp
                 // let args = self.get_terraform_args(username, incoming_version)?;
             }
-            Some(crate::models::TemplateType::Shell) => {
+            TemplateType::Shell => {
                 self.log("Preparing Shell script...");
                 // TODO: Создать ShellApp
                 // let args = self.get_shell_args(username, incoming_version)?;
