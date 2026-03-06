@@ -84,6 +84,7 @@ pub fn api_routes() -> Router<Arc<AppState>> {
         .route("/api/projects/{project_id}/schedules/{id}", get(schedules::get_schedule))
         .route("/api/projects/{project_id}/schedules/{id}", put(schedules::update_schedule))
         .route("/api/projects/{project_id}/schedules/{id}", delete(schedules::delete_schedule))
+        .route("/api/projects/{project_id}/schedules/validate", post(schedules::validate_schedule_cron_format))
 
         // Представления (Views)
         .route("/api/projects/{project_id}/views", get(views::get_views))

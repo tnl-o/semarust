@@ -8,6 +8,7 @@ use axum::{
     Json,
 };
 use std::sync::Arc;
+use serde::{Deserialize, Serialize};
 use crate::api::state::AppState;
 use crate::models::Schedule;
 use crate::error::{Error, Result};
@@ -102,6 +103,42 @@ pub async fn delete_schedule(
         ))?;
 
     Ok(StatusCode::NO_CONTENT)
+}
+
+/// Валидирует cron-выражение
+///
+/// POST /api/projects/{project_id}/schedules/validate
+pub async fn validate_schedule_cron_format(
+    Path(_project_id): Path<i32>,
+    Json(payload): Json<ValidateCronPayload>,
+) -> std::result::Result<Json<ValidateCronResponse>, (StatusCode, Json<ErrorResponse>)> {
+    // Пытаемся распарсить cron выражение
+    let result = payload.cron.parse::<cron::Schedule>();
+    
+    let response = ValidateCronResponse {
+        valid: result.is_ok(),
+        error: result.err().map(|e| e.to_string()),
+    };
+
+    Ok(Json(response))
+}
+
+// ============================================================================
+// Types
+// ============================================================================
+
+/// Payload для валидации cron
+#[derive(Debug, Serialize, Deserialize)]
+pub struct ValidateCronPayload {
+    pub cron: String,
+}
+
+/// Response валидации cron
+#[derive(Debug, Serialize, Deserialize)]
+pub struct ValidateCronResponse {
+    pub valid: bool,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub error: Option<String>,
 }
 
 // ============================================================================
