@@ -51,69 +51,59 @@ impl SqlDb {
             crate::db::sql::types::SqlDialect::SQLite => {
                 let result = sqlx::query(
                     "INSERT INTO template (
-                        project_id, name, playbook, arguments, type, 
+                        project_id, name, playbook, arguments, type,
                         inventory_id, repository_id, environment_id,
-                        start_version, build_version, description,
-                        survey_vars, vaults, tasks, created
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+                        description, created, vault_key_id
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
                 )
                 .bind(template.project_id)
                 .bind(&template.name)
                 .bind(&template.playbook)
                 .bind(&template.arguments)
-                .bind(template.template_type.as_ref().map(|t| t.to_string()).unwrap_or_default())
+                .bind(&template.r#type)
                 .bind(template.inventory_id)
                 .bind(template.repository_id)
                 .bind(template.environment_id)
-                .bind(&template.start_version)
-                .bind(&template.build_version)
                 .bind(&template.description)
-                .bind(&template.survey_vars)
-                .bind(&template.vaults)
-                .bind(template.tasks.unwrap_or(0))
                 .bind(template.created)
+                .bind(template.vault_key_id)
                 .execute(self.get_sqlite_pool().ok_or(Error::Other("SQLite pool not found".to_string()))?)
                 .await
                 .map_err(|e| Error::Database(e))?;
-                
+
                 template.id = result.last_insert_rowid() as i32;
                 Ok(template)
             }
             _ => Err(Error::Other("Only SQLite supported for now".to_string()))
         }
     }
-    
+
     /// Обновляет шаблон
     pub async fn update_template(&self, template: Template) -> Result<()> {
         match self.get_dialect() {
             crate::db::sql::types::SqlDialect::SQLite => {
                 sqlx::query(
-                    "UPDATE template SET 
+                    "UPDATE template SET
                         name = ?, playbook = ?, arguments = ?, type = ?,
                         inventory_id = ?, repository_id = ?, environment_id = ?,
-                        start_version = ?, build_version = ?, description = ?,
-                        survey_vars = ?, vaults = ?, tasks = ?
+                        description = ?, vault_key_id = ?
                     WHERE id = ? AND project_id = ?"
                 )
                 .bind(&template.name)
                 .bind(&template.playbook)
                 .bind(&template.arguments)
-                .bind(template.template_type.as_ref().map(|t| t.to_string()).unwrap_or_default())
+                .bind(&template.r#type)
                 .bind(template.inventory_id)
                 .bind(template.repository_id)
                 .bind(template.environment_id)
-                .bind(&template.start_version)
-                .bind(&template.build_version)
                 .bind(&template.description)
-                .bind(&template.survey_vars)
-                .bind(&template.vaults)
-                .bind(template.tasks.unwrap_or(0))
+                .bind(&template.vault_key_id)
                 .bind(template.id)
                 .bind(template.project_id)
                 .execute(self.get_sqlite_pool().ok_or(Error::Other("SQLite pool not found".to_string()))?)
                 .await
                 .map_err(|e| Error::Database(e))?;
-                
+
                 Ok(())
             }
             _ => Err(Error::Other("Only SQLite supported for now".to_string()))
