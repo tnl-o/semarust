@@ -52,18 +52,11 @@ pub async fn create_template(
         repository_id: payload.repository_id,
         environment_id: payload.environment_id,
         r#type: TemplateType::Default,
-        template_type: None,
         app: TemplateApp::Ansible,
         git_branch: Some("main".to_string()),
         created: Utc::now(),
         arguments: None,
-        start_version: None,
-        build_version: None,
-        survey_vars: None,
-        vaults: None,
-        tasks: None,
         vault_key_id: None,
-        become_key_id: None,
     };
 
     let created = state.store.create_template(template)

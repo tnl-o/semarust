@@ -54,11 +54,22 @@ pub async fn get_project(
 /// Создаёт новый проект
 pub async fn add_project(
     State(state): State<Arc<AppState>>,
-    Json(payload): Json<Project>,
+    Json(payload): Json<CreateProjectPayload>,
 ) -> std::result::Result<(StatusCode, Json<Project>), (StatusCode, Json<ErrorResponse>)> {
+    let project = Project {
+        id: 0,
+        created: chrono::Utc::now(),
+        name: payload.name,
+        alert: payload.alert.unwrap_or(false),
+        alert_chat: payload.alert_chat,
+        max_parallel_tasks: payload.max_parallel_tasks.unwrap_or(0),
+        r#type: payload.r#type.unwrap_or_else(|| "default".to_string()),
+        default_secret_storage_id: payload.default_secret_storage_id,
+    };
+
     let created = state
         .store
-        .create_project(payload)
+        .create_project(project)
         .await
         .map_err(|e| (
             StatusCode::INTERNAL_SERVER_ERROR,
@@ -66,6 +77,22 @@ pub async fn add_project(
         ))?;
 
     Ok((StatusCode::CREATED, Json(created)))
+}
+
+/// Payload для создания проекта
+#[derive(Debug, Deserialize)]
+pub struct CreateProjectPayload {
+    pub name: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub alert: Option<bool>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub alert_chat: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub max_parallel_tasks: Option<i32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub r#type: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub default_secret_storage_id: Option<i32>,
 }
 
 /// Обновляет проект
