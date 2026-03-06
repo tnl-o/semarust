@@ -232,10 +232,50 @@ Frontend в `web/public/` и Vue ожидают Rust-пути (plural). Go front
 
 ---
 
-## 11. Рекомендуемые действия
+## 11. Декомпозиция DB/SQL ✅
+
+**Статус:** 100% завершено
+
+В ходе рефакторинга монолитный файл `db/sql/mod.rs` (~4500 строк) был декомпозирован на модули:
+
+### Созданные модули:
+
+| Диалект | user | template | project | inventory | repository | environment |
+|---------|------|----------|---------|-----------|------------|-------------|
+| **SQLite** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| **PostgreSQL** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| **MySQL** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+
+**Всего:** 18 модулей (~2000 строк)
+
+### Адаптеры:
+
+| Файл | Строк | Сокращение |
+|------|-------|------------|
+| template_crud.rs | ~100 | -63% |
+| user_crud.rs | ~150 | -73% |
+| inventory.rs | ~100 | -70% |
+| repository.rs | ~100 | -70% |
+| environment.rs | ~100 | -70% |
+| project.rs | ~100 | -70% |
+
+**Документация:** `rust/src/db/sql/README.md`
+
+### Преимущества:
+
+- ✅ Читаемость: файлы по 100-150 строк вместо 4500
+- ✅ Поддержка: легко найти код для конкретного БД
+- ✅ Тестирование: можно тестировать каждый диалект отдельно
+- ✅ Расширяемость: легко добавить новый БД
+- ✅ Параллельная работа: разные разработчики могут работать с разными БД
+
+---
+
+## 12. Рекомендуемые действия
 
 1. ✅ **Выполнено:** Добавить маршруты в routes.rs для существующих handlers: schedules, views, integrations, secret_storages, project users, events, apps, options, runners, cache, info, stop_task, user tokens, get_user_role.
-2. Реализовать отсутствующие: auth/verify, auth/recovery, GET /api/auth/login (metadata), confirm/reject task, notifications/test, views/positions, schedules/validate.
-3. Реализовать GET /api/projects/{id}/tasks/{id}/output (Фаза 1.5).
-4. Реализовать OIDC flow (login, verify, recovery).
-5. Реализовать mailer (если нужен).
+2. ✅ **Выполнено:** Декомпозиция DB/SQL модуля (100% завершено).
+3. Реализовать отсутствующие: auth/verify, auth/recovery, GET /api/auth/login (metadata), confirm/reject task, notifications/test, views/positions, schedules/validate.
+4. Реализовать GET /api/projects/{id}/tasks/{id}/output (Фаза 1.5).
+5. Реализовать OIDC flow (login, verify, recovery).
+6. Реализовать mailer (если нужен).
