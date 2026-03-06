@@ -107,6 +107,73 @@ pub async fn stop_task(
     Ok(StatusCode::OK)
 }
 
+/// Подтверждает задачу
+///
+/// POST /api/projects/{project_id}/tasks/{task_id}/confirm
+pub async fn confirm_task(
+    State(state): State<Arc<AppState>>,
+    Path((project_id, task_id)): Path<(i32, i32)>,
+) -> std::result::Result<StatusCode, (StatusCode, Json<ErrorResponse>)> {
+    let mut task = state.store.get_task(project_id, task_id)
+        .await
+        .map_err(|e| match e {
+            Error::NotFound(_) => (
+                StatusCode::NOT_FOUND,
+                Json(ErrorResponse::new("Task not found".to_string()))
+            ),
+            _ => (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(ErrorResponse::new(e.to_string()))
+            )
+        })?;
+
+    // Подтверждение задачи - перевод в статус Waiting
+    task.status = TaskStatus::Waiting;
+    
+    state.store.update_task(task)
+        .await
+        .map_err(|e| (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(ErrorResponse::new(e.to_string()))
+        ))?;
+
+    Ok(StatusCode::OK)
+}
+
+/// Отклоняет задачу
+///
+/// POST /api/projects/{project_id}/tasks/{task_id}/reject
+pub async fn reject_task(
+    State(state): State<Arc<AppState>>,
+    Path((project_id, task_id)): Path<(i32, i32)>,
+) -> std::result::Result<StatusCode, (StatusCode, Json<ErrorResponse>)> {
+    let mut task = state.store.get_task(project_id, task_id)
+        .await
+        .map_err(|e| match e {
+            Error::NotFound(_) => (
+                StatusCode::NOT_FOUND,
+                Json(ErrorResponse::new("Task not found".to_string()))
+            ),
+            _ => (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(ErrorResponse::new(e.to_string()))
+            )
+        })?;
+
+    // Отклонение задачи - перевод в статус Rejected
+    task.status = TaskStatus::Rejected;
+    task.end = Some(chrono::Utc::now());
+    
+    state.store.update_task(task)
+        .await
+        .map_err(|e| (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(ErrorResponse::new(e.to_string()))
+        ))?;
+
+    Ok(StatusCode::OK)
+}
+
 /// Удаляет задачу
 pub async fn delete_task(
     State(state): State<Arc<AppState>>,
