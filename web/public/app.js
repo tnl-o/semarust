@@ -59,34 +59,34 @@ function showDashboard() {
 // Login
 loginForm.addEventListener('submit', async (e) => {
     e.preventDefault();
-    
+
     const username = document.getElementById('username').value;
     const password = document.getElementById('password').value;
-    
+
     try {
-        const res = await fetch(`${API_BASE}/login`, {
+        const res = await fetch(`${API_BASE}/auth/login`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ login: username, password })
+            body: JSON.stringify({ username, password })
         });
-        
+
         const data = await res.json();
-        
+
         if (res.ok && data.token) {
             token = data.token;
             localStorage.setItem('semaphore_token', token);
             loginError.textContent = '';
-            
+
             // Получить информацию о пользователе
             const userRes = await fetch(`${API_BASE}/user`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             currentUser = await userRes.json();
-            
+
             showDashboard();
             loadProjects();
         } else {
-            loginError.textContent = data.message || 'Ошибка авторизации';
+            loginError.textContent = data.error || 'Ошибка авторизации';
         }
     } catch (e) {
         console.error('Login failed:', e);
@@ -141,16 +141,96 @@ document.querySelectorAll('.nav-link').forEach(link => {
     link.addEventListener('click', (e) => {
         e.preventDefault();
         const page = link.dataset.page;
-        
+
         document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
         document.querySelectorAll('.page').forEach(p => p.classList.add('hidden'));
-        
+
         link.classList.add('active');
         document.getElementById(`${page}-page`).classList.remove('hidden');
-        
+
         if (page === 'projects') loadProjects();
     });
 });
+
+// ============================================================================
+// Обработчики кнопок "Добавить"
+// ============================================================================
+
+// Добавить проект
+const addProjectBtn = document.getElementById('add-project-btn');
+if (addProjectBtn) {
+    addProjectBtn.addEventListener('click', () => {
+        const name = prompt('Введите название проекта:');
+        if (name) {
+            createProject(name);
+        }
+    });
+}
+
+// Создать проект
+async function createProject(name) {
+    try {
+        const res = await fetch(`${API_BASE}/projects`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ name })
+        });
+
+        if (res.ok) {
+            alert('Проект создан!');
+            loadProjects();
+        } else {
+            const error = await res.json();
+            alert(`Ошибка: ${error.error || 'Не удалось создать проект'}`);
+        }
+    } catch (e) {
+        console.error('Failed to create project:', e);
+        alert('Ошибка соединения с сервером');
+    }
+}
+
+// Добавить шаблон
+const addTemplateBtn = document.getElementById('add-template-btn');
+if (addTemplateBtn) {
+    addTemplateBtn.addEventListener('click', () => {
+        alert('Создание шаблона - в разработке');
+    });
+}
+
+// Добавить инвентарь
+const addInventoryBtn = document.getElementById('add-inventory-btn');
+if (addInventoryBtn) {
+    addInventoryBtn.addEventListener('click', () => {
+        alert('Создание инвентаря - в разработке');
+    });
+}
+
+// Добавить репозиторий
+const addRepositoryBtn = document.getElementById('add-repository-btn');
+if (addRepositoryBtn) {
+    addRepositoryBtn.addEventListener('click', () => {
+        alert('Создание репозитория - в разработке');
+    });
+}
+
+// Добавить окружение
+const addEnvironmentBtn = document.getElementById('add-environment-btn');
+if (addEnvironmentBtn) {
+    addEnvironmentBtn.addEventListener('click', () => {
+        alert('Создание окружения - в разработке');
+    });
+}
+
+// Добавить ключ доступа
+const addKeyBtn = document.getElementById('add-key-btn');
+if (addKeyBtn) {
+    addKeyBtn.addEventListener('click', () => {
+        alert('Создание ключа доступа - в разработке');
+    });
+}
 
 // Инициализация
 checkAuth();

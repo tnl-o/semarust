@@ -223,10 +223,6 @@ pub struct Template {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub git_branch: Option<String>,
 
-    /// Флаг удаления
-    #[serde(skip_serializing)]
-    pub deleted: bool,
-
     /// Дата создания
     pub created: DateTime<Utc>,
     
@@ -295,7 +291,6 @@ pub struct TemplateFilter {
     pub project_id: Option<i32>,
     pub r#type: Option<TemplateType>,
     pub app: Option<TemplateApp>,
-    pub deleted: Option<bool>,
     pub view_id: Option<i32>,
 }
 
@@ -314,7 +309,6 @@ impl Template {
             r#type: TemplateType::Default,
             app: TemplateApp::Default,
             git_branch: None,
-            deleted: false,
             created: Utc::now(),
             arguments: None,
             template_type: None,

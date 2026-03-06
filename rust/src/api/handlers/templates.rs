@@ -55,7 +55,6 @@ pub async fn create_template(
         template_type: None,
         app: TemplateApp::Ansible,
         git_branch: Some("main".to_string()),
-        deleted: false,
         created: Utc::now(),
         arguments: None,
         start_version: None,

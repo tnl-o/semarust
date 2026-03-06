@@ -17,20 +17,20 @@ pub struct Project {
     pub name: String,
 
     /// Включить уведомления
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub alert: Option<bool>,
+    #[serde(default)]
+    pub alert: bool,
 
     /// Chat ID для уведомлений
     #[serde(skip_serializing_if = "Option::is_none")]
     pub alert_chat: Option<String>,
 
     /// Максимальное количество параллельных задач
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub max_parallel_tasks: Option<i32>,
+    #[serde(default)]
+    pub max_parallel_tasks: i32,
 
     /// Тип проекта
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub r#type: Option<String>,
+    #[serde(default)]
+    pub r#type: String,
 
     /// ID хранилища секретов по умолчанию
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -51,10 +51,10 @@ impl Project {
             id: 0, // Будет установлен базой данных
             created: Utc::now(),
             name,
-            alert: None,
+            alert: false,
             alert_chat: None,
-            max_parallel_tasks: None,
-            r#type: None,
+            max_parallel_tasks: 0,
+            r#type: "default".to_string(),
             default_secret_storage_id: None,
         }
     }

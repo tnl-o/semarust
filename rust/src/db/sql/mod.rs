@@ -1285,7 +1285,7 @@ impl TemplateManager for SqlStore {
     async fn get_templates(&self, project_id: i32) -> Result<Vec<Template>> {
         match self.get_dialect() {
             SqlDialect::SQLite => {
-                let query = "SELECT * FROM template WHERE project_id = ? AND deleted = 0 ORDER BY name";
+                let query = "SELECT * FROM template WHERE project_id = ? ORDER BY name";
                 let rows = sqlx::query(query)
                     .bind(project_id)
                     .fetch_all(self.get_sqlite_pool()?)
@@ -1304,7 +1304,6 @@ impl TemplateManager for SqlStore {
                     r#type: row.get("type"),
                     app: row.get("app"),
                     git_branch: row.try_get("git_branch").ok().flatten(),
-                    deleted: row.get("deleted"),
                     created: row.get("created"),
                     arguments: row.get("arguments"),
                     template_type: row.get("template_type"),
@@ -1318,7 +1317,7 @@ impl TemplateManager for SqlStore {
                 }).collect())
             }
             SqlDialect::PostgreSQL => {
-                let query = "SELECT * FROM template WHERE project_id = $1 AND deleted = false ORDER BY name";
+                let query = "SELECT * FROM template WHERE project_id = $1 ORDER BY name";
                 let rows = sqlx::query(query)
                     .bind(project_id)
                     .fetch_all(self.get_postgres_pool()?)
@@ -1337,7 +1336,6 @@ impl TemplateManager for SqlStore {
                     r#type: row.get("type"),
                     app: row.get("app"),
                     git_branch: row.try_get("git_branch").ok().flatten(),
-                    deleted: row.get("deleted"),
                     created: row.get("created"),
                     arguments: row.get("arguments"),
                     template_type: row.get("template_type"),
@@ -1351,7 +1349,7 @@ impl TemplateManager for SqlStore {
                 }).collect())
             }
             SqlDialect::MySQL => {
-                let query = "SELECT * FROM `template` WHERE project_id = ? AND deleted = 0 ORDER BY name";
+                let query = "SELECT * FROM `template` WHERE project_id = ? ORDER BY name";
                 let rows = sqlx::query(query)
                     .bind(project_id)
                     .fetch_all(self.get_mysql_pool()?)
@@ -1389,7 +1387,7 @@ impl TemplateManager for SqlStore {
     async fn get_template(&self, project_id: i32, template_id: i32) -> Result<Template> {
         match self.get_dialect() {
             SqlDialect::SQLite => {
-                let query = "SELECT * FROM template WHERE id = ? AND project_id = ? AND deleted = 0";
+                let query = "SELECT * FROM template WHERE id = ? AND project_id = ?";
                 let row = sqlx::query(query)
                     .bind(template_id)
                     .bind(project_id)
@@ -1412,7 +1410,6 @@ impl TemplateManager for SqlStore {
                     r#type: row.get("type"),
                     app: row.get("app"),
                     git_branch: row.get("git_branch"),
-                    deleted: row.get("deleted"),
                     created: row.get("created"),
                     arguments: row.get("arguments"),
                     template_type: row.get("template_type"),
@@ -1426,7 +1423,7 @@ impl TemplateManager for SqlStore {
                 })
             }
             SqlDialect::PostgreSQL => {
-                let query = "SELECT * FROM template WHERE id = $1 AND project_id = $2 AND deleted = false";
+                let query = "SELECT * FROM template WHERE id = $1 AND project_id = $2";
                 let row = sqlx::query(query)
                     .bind(template_id)
                     .bind(project_id)
@@ -1449,7 +1446,6 @@ impl TemplateManager for SqlStore {
                     r#type: row.get("type"),
                     app: row.get("app"),
                     git_branch: row.get("git_branch"),
-                    deleted: row.get("deleted"),
                     created: row.get("created"),
                     arguments: row.get("arguments"),
                     template_type: row.get("template_type"),
@@ -1463,7 +1459,7 @@ impl TemplateManager for SqlStore {
                 })
             }
             SqlDialect::MySQL => {
-                let query = "SELECT * FROM `template` WHERE id = ? AND project_id = ? AND deleted = 0";
+                let query = "SELECT * FROM `template` WHERE id = ? AND project_id = ?";
                 let row = sqlx::query(query)
                     .bind(template_id)
                     .bind(project_id)

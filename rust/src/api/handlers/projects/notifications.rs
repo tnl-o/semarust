@@ -37,7 +37,7 @@ pub async fn send_test_notification(
         })?;
 
     // Проверяем, включены ли уведомления
-    if !project.alert.unwrap_or(false) {
+    if !project.alert {
         return Err((
             StatusCode::BAD_REQUEST,
             Json(ErrorResponse::new("Notifications are disabled for this project".to_string()))

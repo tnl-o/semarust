@@ -365,7 +365,6 @@ impl RestoreEntryAsync for BackupTemplate {
             r#type: self.template_type.parse().unwrap_or(TemplateType::Default),
             app: TemplateApp::Default,
             git_branch: None,
-            deleted: false,
             created: chrono::Utc::now(),
             arguments: self.arguments.clone(),
             template_type: None,
@@ -435,11 +434,11 @@ impl BackupFormat {
             id: 0,
             name: format!("{} (Restored)", self.project.name),
             created: chrono::Utc::now(),
-            alert: self.project.alert,
+            alert: self.project.alert.unwrap_or(false),
             alert_chat: self.project.alert_chat.clone(),
-            max_parallel_tasks: self.project.max_parallel_tasks,
-            r#type: None,  // BackupProject не содержит type
-            default_secret_storage_id: None,  // BackupProject не содержит default_secret_storage_id
+            max_parallel_tasks: self.project.max_parallel_tasks.unwrap_or(0),
+            r#type: self.project.r#type.clone().unwrap_or_else(|| "default".to_string()),
+            default_secret_storage_id: None,
         };
 
         let new_project = store.create_project(project).await?;
