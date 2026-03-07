@@ -1316,28 +1316,376 @@ window.editProject = async function(id) {
     }
 };
 
-window.editTemplate = function(id) {
-    showToast('Функция редактирования в разработке', 'info');
+window.editTemplate = async function(id) {
+    try {
+        const template = await apiRequest(`/project/${CURRENT_PROJECT_ID}/templates/${id}`);
+        
+        document.getElementById('modal-title').textContent = 'Редактировать шаблон';
+        document.getElementById('modal-body').innerHTML = `
+            <form id="edit-template-form">
+                <input type="hidden" id="edit-template-id" value="${template.id}">
+                <div class="form-group">
+                    <label for="edit-template-name">Название</label>
+                    <input type="text" id="edit-template-name" value="${escapeHtml(template.name)}" required>
+                </div>
+                <div class="form-group">
+                    <label for="edit-template-playbook">Playbook</label>
+                    <input type="text" id="edit-template-playbook" value="${escapeHtml(template.playbook)}" required>
+                </div>
+                <div class="form-group">
+                    <label for="edit-template-description">Описание</label>
+                    <textarea id="edit-template-description" rows="3">${escapeHtml(template.description || '')}</textarea>
+                </div>
+                <div class="form-group">
+                    <label for="edit-template-type">Тип</label>
+                    <select id="edit-template-type">
+                        <option value="ansible" ${template.type === 'ansible' ? 'selected' : ''}>Ansible</option>
+                        <option value="terraform" ${template.type === 'terraform' ? 'selected' : ''}>Terraform</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="edit-template-app">App</label>
+                    <select id="edit-template-app">
+                        <option value="ansible" ${template.app === 'ansible' ? 'selected' : ''}>Ansible</option>
+                        <option value="terraform" ${template.app === 'terraform' ? 'selected' : ''}>Terraform</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="edit-template-git-branch">Git ветка</label>
+                    <input type="text" id="edit-template-git-branch" value="${escapeHtml(template.git_branch || 'main')}">
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary modal-close">Отмена</button>
+                    <button type="submit" class="btn btn-primary">Сохранить</button>
+                </div>
+            </form>
+        `;
+        
+        document.getElementById('modal').classList.remove('hidden');
+        
+        document.getElementById('edit-template-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const updatedData = {
+                name: document.getElementById('edit-template-name').value,
+                playbook: document.getElementById('edit-template-playbook').value,
+                description: document.getElementById('edit-template-description').value,
+                type: document.getElementById('edit-template-type').value,
+                app: document.getElementById('edit-template-app').value,
+                git_branch: document.getElementById('edit-template-git-branch').value,
+            };
+            
+            await updateTemplate(id, updatedData);
+            document.getElementById('modal').classList.add('hidden');
+            await loadTemplates();
+        });
+        
+        document.querySelector('.modal-close').addEventListener('click', () => {
+            document.getElementById('modal').classList.add('hidden');
+        });
+        
+    } catch (error) {
+        showToast('Ошибка загрузки шаблона: ' + error.message, 'error');
+    }
 };
 
-window.editInventory = function(id) {
-    showToast('Функция редактирования в разработке', 'info');
+window.editInventory = async function(id) {
+    try {
+        const inventory = await apiRequest(`/project/${CURRENT_PROJECT_ID}/inventories/${id}`);
+        
+        document.getElementById('modal-title').textContent = 'Редактировать инвентарь';
+        document.getElementById('modal-body').innerHTML = `
+            <form id="edit-inventory-form">
+                <input type="hidden" id="edit-inventory-id" value="${inventory.id}">
+                <div class="form-group">
+                    <label for="edit-inventory-name">Название</label>
+                    <input type="text" id="edit-inventory-name" value="${escapeHtml(inventory.name)}" required>
+                </div>
+                <div class="form-group">
+                    <label for="edit-inventory-type">Тип</label>
+                    <select id="edit-inventory-type">
+                        <option value="static" ${inventory.inventory_type === 'static' ? 'selected' : ''}>Static</option>
+                        <option value="file" ${inventory.inventory_type === 'file' ? 'selected' : ''}>File</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="edit-inventory-data">Данные инвентаря</label>
+                    <textarea id="edit-inventory-data" rows="8">${escapeHtml(inventory.inventory_data || '')}</textarea>
+                </div>
+                <div class="form-group">
+                    <label for="edit-inventory-ssh-login">SSH логин</label>
+                    <input type="text" id="edit-inventory-ssh-login" value="${escapeHtml(inventory.ssh_login || '')}">
+                </div>
+                <div class="form-group">
+                    <label for="edit-inventory-ssh-port">SSH порт</label>
+                    <input type="number" id="edit-inventory-ssh-port" value="${inventory.ssh_port || 22}" min="1" max="65535">
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary modal-close">Отмена</button>
+                    <button type="submit" class="btn btn-primary">Сохранить</button>
+                </div>
+            </form>
+        `;
+        
+        document.getElementById('modal').classList.remove('hidden');
+        
+        document.getElementById('edit-inventory-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const updatedData = {
+                name: document.getElementById('edit-inventory-name').value,
+                inventory_type: document.getElementById('edit-inventory-type').value,
+                inventory_data: document.getElementById('edit-inventory-data').value,
+                ssh_login: document.getElementById('edit-inventory-ssh-login').value,
+                ssh_port: parseInt(document.getElementById('edit-inventory-ssh-port').value),
+            };
+            
+            await updateInventory(id, updatedData);
+            document.getElementById('modal').classList.add('hidden');
+            await loadInventories();
+        });
+        
+        document.querySelector('.modal-close').addEventListener('click', () => {
+            document.getElementById('modal').classList.add('hidden');
+        });
+        
+    } catch (error) {
+        showToast('Ошибка загрузки инвентаря: ' + error.message, 'error');
+    }
 };
 
-window.editRepository = function(id) {
-    showToast('Функция редактирования в разработке', 'info');
+window.editRepository = async function(id) {
+    try {
+        const repo = await apiRequest(`/project/${CURRENT_PROJECT_ID}/repositories/${id}`);
+        
+        document.getElementById('modal-title').textContent = 'Редактировать репозиторий';
+        document.getElementById('modal-body').innerHTML = `
+            <form id="edit-repository-form">
+                <input type="hidden" id="edit-repository-id" value="${repo.id}">
+                <div class="form-group">
+                    <label for="edit-repository-name">Название</label>
+                    <input type="text" id="edit-repository-name" value="${escapeHtml(repo.name)}" required>
+                </div>
+                <div class="form-group">
+                    <label for="edit-repository-url">Git URL</label>
+                    <input type="url" id="edit-repository-url" value="${escapeHtml(repo.git_url)}" required>
+                </div>
+                <div class="form-group">
+                    <label for="edit-repository-type">Тип</label>
+                    <select id="edit-repository-type">
+                        <option value="git" ${repo.git_type === 'git' ? 'selected' : ''}>Git</option>
+                        <option value="github" ${repo.git_type === 'github' ? 'selected' : ''}>GitHub</option>
+                        <option value="gitlab" ${repo.git_type === 'gitlab' ? 'selected' : ''}>GitLab</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="edit-repository-branch">Ветка</label>
+                    <input type="text" id="edit-repository-branch" value="${escapeHtml(repo.git_branch || 'main')}">
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary modal-close">Отмена</button>
+                    <button type="submit" class="btn btn-primary">Сохранить</button>
+                </div>
+            </form>
+        `;
+        
+        document.getElementById('modal').classList.remove('hidden');
+        
+        document.getElementById('edit-repository-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const updatedData = {
+                name: document.getElementById('edit-repository-name').value,
+                git_url: document.getElementById('edit-repository-url').value,
+                git_type: document.getElementById('edit-repository-type').value,
+                git_branch: document.getElementById('edit-repository-branch').value,
+            };
+            
+            await updateRepository(id, updatedData);
+            document.getElementById('modal').classList.add('hidden');
+            await loadRepositories();
+        });
+        
+        document.querySelector('.modal-close').addEventListener('click', () => {
+            document.getElementById('modal').classList.add('hidden');
+        });
+        
+    } catch (error) {
+        showToast('Ошибка загрузки репозитория: ' + error.message, 'error');
+    }
 };
 
-window.editEnvironment = function(id) {
-    showToast('Функция редактирования в разработке', 'info');
+window.editEnvironment = async function(id) {
+    try {
+        const env = await apiRequest(`/project/${CURRENT_PROJECT_ID}/environments/${id}`);
+        
+        document.getElementById('modal-title').textContent = 'Редактировать окружение';
+        document.getElementById('modal-body').innerHTML = `
+            <form id="edit-environment-form">
+                <input type="hidden" id="edit-environment-id" value="${env.id}">
+                <div class="form-group">
+                    <label for="edit-environment-name">Название</label>
+                    <input type="text" id="edit-environment-name" value="${escapeHtml(env.name)}" required>
+                </div>
+                <div class="form-group">
+                    <label for="edit-environment-json">JSON переменные</label>
+                    <textarea id="edit-environment-json" rows="8">${escapeHtml(env.json || '{}')}</textarea>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary modal-close">Отмена</button>
+                    <button type="submit" class="btn btn-primary">Сохранить</button>
+                </div>
+            </form>
+        `;
+        
+        document.getElementById('modal').classList.remove('hidden');
+        
+        document.getElementById('edit-environment-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const updatedData = {
+                name: document.getElementById('edit-environment-name').value,
+                json: document.getElementById('edit-environment-json').value,
+            };
+            
+            await updateEnvironment(id, updatedData);
+            document.getElementById('modal').classList.add('hidden');
+            await loadEnvironments();
+        });
+        
+        document.querySelector('.modal-close').addEventListener('click', () => {
+            document.getElementById('modal').classList.add('hidden');
+        });
+        
+    } catch (error) {
+        showToast('Ошибка загрузки окружения: ' + error.message, 'error');
+    }
 };
 
-window.editKey = function(id) {
-    showToast('Функция редактирования в разработке', 'info');
+window.editKey = async function(id) {
+    try {
+        const key = await apiRequest(`/project/${CURRENT_PROJECT_ID}/keys/${id}`);
+        
+        document.getElementById('modal-title').textContent = 'Редактировать ключ доступа';
+        document.getElementById('modal-body').innerHTML = `
+            <form id="edit-key-form">
+                <input type="hidden" id="edit-key-id" value="${key.id}">
+                <div class="form-group">
+                    <label for="edit-key-name">Название</label>
+                    <input type="text" id="edit-key-name" value="${escapeHtml(key.name)}" required>
+                </div>
+                <div class="form-group">
+                    <label for="edit-key-type">Тип</label>
+                    <select id="edit-key-type">
+                        <option value="ssh" ${key.type === 'ssh' ? 'selected' : ''}>SSH Key</option>
+                        <option value="login_password" ${key.type === 'login_password' ? 'selected' : ''}>Login/Password</option>
+                    </select>
+                </div>
+                <div class="form-group" id="edit-key-ssh-group">
+                    <label for="edit-key-ssh">SSH Private Key</label>
+                    <textarea id="edit-key-ssh" rows="6">${escapeHtml(key.ssh_key || '')}</textarea>
+                </div>
+                <div class="form-group" id="edit-key-login-group">
+                    <label for="edit-key-login">Логин</label>
+                    <input type="text" id="edit-key-login" value="${escapeHtml(key.login_password_login || '')}">
+                </div>
+                <div class="form-group" id="edit-key-password-group">
+                    <label for="edit-key-password">Пароль</label>
+                    <input type="password" id="edit-key-password" value="${escapeHtml(key.login_password_password || '')}">
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary modal-close">Отмена</button>
+                    <button type="submit" class="btn btn-primary">Сохранить</button>
+                </div>
+            </form>
+        `;
+        
+        // Переключение видимости полей в зависимости от типа
+        function toggleKeyFields() {
+            const type = document.getElementById('edit-key-type').value;
+            document.getElementById('edit-key-ssh-group').style.display = type === 'ssh' ? 'block' : 'none';
+            document.getElementById('edit-key-login-group').style.display = type === 'login_password' ? 'block' : 'none';
+            document.getElementById('edit-key-password-group').style.display = type === 'login_password' ? 'block' : 'none';
+        }
+        
+        toggleKeyFields();
+        document.getElementById('edit-key-type').addEventListener('change', toggleKeyFields);
+        
+        document.getElementById('modal').classList.remove('hidden');
+        
+        document.getElementById('edit-key-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const type = document.getElementById('edit-key-type').value;
+            const updatedData = {
+                name: document.getElementById('edit-key-name').value,
+                type: type,
+                ...(type === 'ssh' ? {
+                    ssh_key: document.getElementById('edit-key-ssh').value,
+                } : {
+                    login_password_login: document.getElementById('edit-key-login').value,
+                    login_password_password: document.getElementById('edit-key-password').value,
+                })
+            };
+            
+            await updateKey(id, updatedData);
+            document.getElementById('modal').classList.add('hidden');
+            await loadAccessKeys();
+        });
+        
+        document.querySelector('.modal-close').addEventListener('click', () => {
+            document.getElementById('modal').classList.add('hidden');
+        });
+        
+    } catch (error) {
+        showToast('Ошибка загрузки ключа: ' + error.message, 'error');
+    }
 };
 
-window.editSchedule = function(id) {
-    showToast('Функция редактирования в разработке', 'info');
+window.editSchedule = async function(id) {
+    try {
+        const schedule = await apiRequest(`/project/${CURRENT_PROJECT_ID}/schedules/${id}`);
+        
+        document.getElementById('modal-title').textContent = 'Редактировать расписание';
+        document.getElementById('modal-body').innerHTML = `
+            <form id="edit-schedule-form">
+                <input type="hidden" id="edit-schedule-id" value="${schedule.id}">
+                <div class="form-group">
+                    <label for="edit-schedule-name">Название</label>
+                    <input type="text" id="edit-schedule-name" value="${escapeHtml(schedule.name)}" required>
+                </div>
+                <div class="form-group">
+                    <label for="edit-schedule-cron">Cron выражение</label>
+                    <input type="text" id="edit-schedule-cron" value="${escapeHtml(schedule.cron)}" placeholder="0 2 * * *" required>
+                </div>
+                <div class="form-group">
+                    <label for="edit-schedule-active">Активно</label>
+                    <input type="checkbox" id="edit-schedule-active" ${schedule.active ? 'checked' : ''}>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary modal-close">Отмена</button>
+                    <button type="submit" class="btn btn-primary">Сохранить</button>
+                </div>
+            </form>
+        `;
+        
+        document.getElementById('modal').classList.remove('hidden');
+        
+        document.getElementById('edit-schedule-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const updatedData = {
+                name: document.getElementById('edit-schedule-name').value,
+                cron: document.getElementById('edit-schedule-cron').value,
+                active: document.getElementById('edit-schedule-active').checked,
+            };
+            
+            await updateSchedule(id, updatedData);
+            document.getElementById('modal').classList.add('hidden');
+            await loadSchedules();
+        });
+        
+        document.querySelector('.modal-close').addEventListener('click', () => {
+            document.getElementById('modal').classList.add('hidden');
+        });
+        
+    } catch (error) {
+        showToast('Ошибка загрузки расписания: ' + error.message, 'error');
+    }
 };
 
 // ============================================================================
