@@ -312,7 +312,7 @@ async function loadTemplates() {
     }
     
     try {
-        const templates = await apiRequest(`/project/${CURRENT_PROJECT_ID}/templates`);
+        const templates = await apiRequest(`/projects/${CURRENT_PROJECT_ID}/templates`);
         renderTemplates(templates);
         updateStats('templates', templates.length);
         document.getElementById('templates-count').textContent = templates.length;
@@ -362,7 +362,7 @@ function renderTemplates(templates) {
 
 async function createTemplate(templateData) {
     try {
-        const template = await apiRequest(`/project/${CURRENT_PROJECT_ID}/templates`, {
+        const template = await apiRequest(`/projects/${CURRENT_PROJECT_ID}/templates`, {
             method: 'POST',
             body: JSON.stringify(templateData),
         });
@@ -378,7 +378,7 @@ async function createTemplate(templateData) {
 
 async function updateTemplate(templateId, templateData) {
     try {
-        await apiRequest(`/project/${CURRENT_PROJECT_ID}/templates/${templateId}`, {
+        await apiRequest(`/projects/${CURRENT_PROJECT_ID}/templates/${templateId}`, {
             method: 'PUT',
             body: JSON.stringify(templateData),
         });
@@ -396,7 +396,7 @@ async function deleteTemplate(templateId) {
     }
     
     try {
-        await apiRequest(`/project/${CURRENT_PROJECT_ID}/templates/${templateId}`, {
+        await apiRequest(`/projects/${CURRENT_PROJECT_ID}/templates/${templateId}`, {
             method: 'DELETE',
         });
         showToast('Шаблон успешно удален', 'success');
@@ -420,7 +420,7 @@ async function loadTasks() {
     }
     
     try {
-        const tasks = await apiRequest(`/project/${CURRENT_PROJECT_ID}/tasks`);
+        const tasks = await apiRequest(`/projects/${CURRENT_PROJECT_ID}/tasks`);
         renderTasks(tasks);
         updateStats('tasks', tasks.length);
         document.getElementById('tasks-count').textContent = tasks.length;
@@ -470,7 +470,7 @@ function renderTasks(tasks) {
 
 async function createTask(taskData) {
     try {
-        const task = await apiRequest(`/project/${CURRENT_PROJECT_ID}/tasks`, {
+        const task = await apiRequest(`/projects/${CURRENT_PROJECT_ID}/tasks`, {
             method: 'POST',
             body: JSON.stringify(taskData),
         });
@@ -497,7 +497,7 @@ async function loadInventory() {
     }
     
     try {
-        const inventory = await apiRequest(`/project/${CURRENT_PROJECT_ID}/inventory`);
+        const inventory = await apiRequest(`/projects/${CURRENT_PROJECT_ID}/inventories`);
         renderInventory(inventory);
         updateStats('inventory', inventory.length);
         document.getElementById('inventory-count').textContent = inventory.length;
@@ -541,7 +541,7 @@ function renderInventory(inventory) {
 
 async function createInventory(inventoryData) {
     try {
-        const item = await apiRequest(`/project/${CURRENT_PROJECT_ID}/inventory`, {
+        const item = await apiRequest(`/projects/${CURRENT_PROJECT_ID}/inventories`, {
             method: 'POST',
             body: JSON.stringify(inventoryData),
         });
@@ -557,7 +557,7 @@ async function createInventory(inventoryData) {
 
 async function updateInventory(inventoryId, inventoryData) {
     try {
-        await apiRequest(`/project/${CURRENT_PROJECT_ID}/inventory/${inventoryId}`, {
+        await apiRequest(`/projects/${CURRENT_PROJECT_ID}/inventories/${inventoryId}`, {
             method: 'PUT',
             body: JSON.stringify(inventoryData),
         });
@@ -575,7 +575,7 @@ async function deleteInventory(inventoryId) {
     }
     
     try {
-        await apiRequest(`/project/${CURRENT_PROJECT_ID}/inventory/${inventoryId}`, {
+        await apiRequest(`/projects/${CURRENT_PROJECT_ID}/inventories/${inventoryId}`, {
             method: 'DELETE',
         });
         showToast('Инвентарь успешно удален', 'success');
@@ -599,7 +599,7 @@ async function loadRepositories() {
     }
     
     try {
-        const repos = await apiRequest(`/project/${CURRENT_PROJECT_ID}/repository`);
+        const repos = await apiRequest(`/projects/${CURRENT_PROJECT_ID}/repositories`);
         renderRepositories(repos);
         updateStats('repositories', repos.length);
         document.getElementById('repositories-count').textContent = repos.length;
@@ -644,7 +644,7 @@ function renderRepositories(repositories) {
 
 async function createRepository(repoData) {
     try {
-        const repo = await apiRequest(`/project/${CURRENT_PROJECT_ID}/repository`, {
+        const repo = await apiRequest(`/projects/${CURRENT_PROJECT_ID}/repositories`, {
             method: 'POST',
             body: JSON.stringify(repoData),
         });
@@ -660,7 +660,7 @@ async function createRepository(repoData) {
 
 async function updateRepository(repoId, repoData) {
     try {
-        await apiRequest(`/project/${CURRENT_PROJECT_ID}/repository/${repoId}`, {
+        await apiRequest(`/projects/${CURRENT_PROJECT_ID}/repositories/${repoId}`, {
             method: 'PUT',
             body: JSON.stringify(repoData),
         });
@@ -678,7 +678,7 @@ async function deleteRepository(repoId) {
     }
     
     try {
-        await apiRequest(`/project/${CURRENT_PROJECT_ID}/repository/${repoId}`, {
+        await apiRequest(`/projects/${CURRENT_PROJECT_ID}/repositories/${repoId}`, {
             method: 'DELETE',
         });
         showToast('Репозиторий успешно удален', 'success');
@@ -702,7 +702,7 @@ async function loadEnvironments() {
     }
     
     try {
-        const envs = await apiRequest(`/project/${CURRENT_PROJECT_ID}/environment`);
+        const envs = await apiRequest(`/projects/${CURRENT_PROJECT_ID}/environments`);
         renderEnvironments(envs);
         updateStats('environments', envs.length);
         document.getElementById('environments-count').textContent = envs.length;
@@ -745,7 +745,7 @@ function renderEnvironments(environments) {
 
 async function createEnvironment(envData) {
     try {
-        const env = await apiRequest(`/project/${CURRENT_PROJECT_ID}/environment`, {
+        const env = await apiRequest(`/projects/${CURRENT_PROJECT_ID}/environments`, {
             method: 'POST',
             body: JSON.stringify(envData),
         });
@@ -761,7 +761,7 @@ async function createEnvironment(envData) {
 
 async function updateEnvironment(envId, envData) {
     try {
-        await apiRequest(`/project/${CURRENT_PROJECT_ID}/environment/${envId}`, {
+        await apiRequest(`/projects/${CURRENT_PROJECT_ID}/environments/${envId}`, {
             method: 'PUT',
             body: JSON.stringify(envData),
         });
@@ -779,7 +779,7 @@ async function deleteEnvironment(envId) {
     }
     
     try {
-        await apiRequest(`/project/${CURRENT_PROJECT_ID}/environment/${envId}`, {
+        await apiRequest(`/projects/${CURRENT_PROJECT_ID}/environments/${envId}`, {
             method: 'DELETE',
         });
         showToast('Окружение успешно удалено', 'success');
@@ -803,7 +803,7 @@ async function loadKeys() {
     }
     
     try {
-        const keys = await apiRequest(`/project/${CURRENT_PROJECT_ID}/keys`);
+        const keys = await apiRequest(`/projects/${CURRENT_PROJECT_ID}/keys`);
         renderKeys(keys);
         updateStats('keys', keys.length);
         document.getElementById('keys-count').textContent = keys.length;
@@ -847,7 +847,7 @@ function renderKeys(keys) {
 
 async function createKey(keyData) {
     try {
-        const key = await apiRequest(`/project/${CURRENT_PROJECT_ID}/keys`, {
+        const key = await apiRequest(`/projects/${CURRENT_PROJECT_ID}/keys`, {
             method: 'POST',
             body: JSON.stringify(keyData),
         });
@@ -863,7 +863,7 @@ async function createKey(keyData) {
 
 async function updateKey(keyId, keyData) {
     try {
-        await apiRequest(`/project/${CURRENT_PROJECT_ID}/keys/${keyId}`, {
+        await apiRequest(`/projects/${CURRENT_PROJECT_ID}/keys/${keyId}`, {
             method: 'PUT',
             body: JSON.stringify(keyData),
         });
@@ -881,7 +881,7 @@ async function deleteKey(keyId) {
     }
     
     try {
-        await apiRequest(`/project/${CURRENT_PROJECT_ID}/keys/${keyId}`, {
+        await apiRequest(`/projects/${CURRENT_PROJECT_ID}/keys/${keyId}`, {
             method: 'DELETE',
         });
         showToast('Ключ успешно удален', 'success');
@@ -911,12 +911,12 @@ async function loadDashboardStats() {
         for (const project of projects) {
             try {
                 const [templates, tasks, inventory, repos, envs, keys] = await Promise.all([
-                    apiRequest(`/project/${project.id}/templates`),
-                    apiRequest(`/project/${project.id}/tasks`),
-                    apiRequest(`/project/${project.id}/inventory`),
-                    apiRequest(`/project/${project.id}/repository`),
-                    apiRequest(`/project/${project.id}/environment`),
-                    apiRequest(`/project/${project.id}/keys`),
+                    apiRequest(`/projects/${project.id}/templates`),
+                    apiRequest(`/projects/${project.id}/tasks`),
+                    apiRequest(`/projects/${project.id}/inventories`),
+                    apiRequest(`/projects/${project.id}/repositories`),
+                    apiRequest(`/projects/${project.id}/environments`),
+                    apiRequest(`/projects/${project.id}/keys`),
                 ]);
                 
                 totalTemplates += templates.length;
@@ -1143,7 +1143,7 @@ async function loadSchedules() {
     }
     
     try {
-        const schedules = await apiRequest(`/project/${CURRENT_PROJECT_ID}/schedule`);
+        const schedules = await apiRequest(`/projects/${CURRENT_PROJECT_ID}/schedule`);
         renderSchedules(schedules);
         updateStats('schedules', schedules.length);
         document.getElementById('schedules-count').textContent = schedules.length;
@@ -1193,7 +1193,7 @@ function renderSchedules(schedules) {
 
 async function createSchedule(scheduleData) {
     try {
-        const schedule = await apiRequest(`/project/${CURRENT_PROJECT_ID}/schedule`, {
+        const schedule = await apiRequest(`/projects/${CURRENT_PROJECT_ID}/schedule`, {
             method: 'POST',
             body: JSON.stringify(scheduleData),
         });
@@ -1209,7 +1209,7 @@ async function createSchedule(scheduleData) {
 
 async function updateSchedule(scheduleId, scheduleData) {
     try {
-        await apiRequest(`/project/${CURRENT_PROJECT_ID}/schedule/${scheduleId}`, {
+        await apiRequest(`/projects/${CURRENT_PROJECT_ID}/schedule/${scheduleId}`, {
             method: 'PUT',
             body: JSON.stringify(scheduleData),
         });
@@ -1227,7 +1227,7 @@ async function deleteSchedule(scheduleId) {
     }
     
     try {
-        await apiRequest(`/project/${CURRENT_PROJECT_ID}/schedule/${scheduleId}`, {
+        await apiRequest(`/projects/${CURRENT_PROJECT_ID}/schedule/${scheduleId}`, {
             method: 'DELETE',
         });
         showToast('Расписание успешно удалено', 'success');
@@ -1334,7 +1334,7 @@ window.editProject = async function(id) {
 
 window.editTemplate = async function(id) {
     try {
-        const template = await apiRequest(`/project/${CURRENT_PROJECT_ID}/templates/${id}`);
+        const template = await apiRequest(`/projects/${CURRENT_PROJECT_ID}/templates/${id}`);
         
         document.getElementById('modal-title').textContent = 'Редактировать шаблон';
         document.getElementById('modal-body').innerHTML = `
@@ -1406,7 +1406,7 @@ window.editTemplate = async function(id) {
 
 window.editInventory = async function(id) {
     try {
-        const inventory = await apiRequest(`/project/${CURRENT_PROJECT_ID}/inventories/${id}`);
+        const inventory = await apiRequest(`/projects/${CURRENT_PROJECT_ID}/inventories/${id}`);
         
         document.getElementById('modal-title').textContent = 'Редактировать инвентарь';
         document.getElementById('modal-body').innerHTML = `
@@ -1470,7 +1470,7 @@ window.editInventory = async function(id) {
 
 window.editRepository = async function(id) {
     try {
-        const repo = await apiRequest(`/project/${CURRENT_PROJECT_ID}/repositories/${id}`);
+        const repo = await apiRequest(`/projects/${CURRENT_PROJECT_ID}/repositories/${id}`);
         
         document.getElementById('modal-title').textContent = 'Редактировать репозиторий';
         document.getElementById('modal-body').innerHTML = `
@@ -1530,7 +1530,7 @@ window.editRepository = async function(id) {
 
 window.editEnvironment = async function(id) {
     try {
-        const env = await apiRequest(`/project/${CURRENT_PROJECT_ID}/environments/${id}`);
+        const env = await apiRequest(`/projects/${CURRENT_PROJECT_ID}/environmentss/${id}`);
         
         document.getElementById('modal-title').textContent = 'Редактировать окружение';
         document.getElementById('modal-body').innerHTML = `
@@ -1576,7 +1576,7 @@ window.editEnvironment = async function(id) {
 
 window.editKey = async function(id) {
     try {
-        const key = await apiRequest(`/project/${CURRENT_PROJECT_ID}/keys/${id}`);
+        const key = await apiRequest(`/projects/${CURRENT_PROJECT_ID}/keys/${id}`);
         
         document.getElementById('modal-title').textContent = 'Редактировать ключ доступа';
         document.getElementById('modal-body').innerHTML = `
@@ -1655,7 +1655,7 @@ window.editKey = async function(id) {
 
 window.editSchedule = async function(id) {
     try {
-        const schedule = await apiRequest(`/project/${CURRENT_PROJECT_ID}/schedules/${id}`);
+        const schedule = await apiRequest(`/projects/${CURRENT_PROJECT_ID}/schedules/${id}`);
         
         document.getElementById('modal-title').textContent = 'Редактировать расписание';
         document.getElementById('modal-body').innerHTML = `
