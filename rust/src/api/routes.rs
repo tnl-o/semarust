@@ -5,7 +5,7 @@ use std::sync::Arc;
 use crate::api::state::AppState;
 use crate::api::handlers;
 use crate::api::websocket::websocket_handler;
-use crate::api::handlers::projects::{schedules, views, integration as project_integration, secret_storages, users as project_users, tasks, notifications};
+use crate::api::handlers::projects::{schedules, views, integration as project_integration, integration_alias, secret_storages, users as project_users, tasks, notifications, backup_restore, refs, invites};
 use crate::api::{events, apps, options, runners, cache, system_info, user};
 use tower_http::services::{ServeDir, ServeFile};
 
@@ -196,6 +196,29 @@ pub fn api_routes() -> Router<Arc<AppState>> {
         // Роль пользователя в проекте
         .route("/api/projects/{project_id}/role", get(handlers::get_user_role))
         .route("/api/project/{project_id}/role", get(handlers::get_user_role))
+
+        // Backup/Restore
+        .route("/api/project/{project_id}/backup", get(backup_restore::get_backup))
+        .route("/api/project/{project_id}/backup", post(backup_restore::restore_backup))
+        .route("/api/backup/verify", post(backup_restore::verify_backup))
+
+        // Refs (keys, repositories, inventory, templates, integrations)
+        .route("/api/project/{project_id}/keys/{key_id}/refs", get(refs::get_key_refs))
+        .route("/api/project/{project_id}/repositories/{repository_id}/refs", get(refs::get_repository_refs))
+        .route("/api/project/{project_id}/inventory/{inventory_id}/refs", get(refs::get_inventory_refs))
+        .route("/api/project/{project_id}/templates/{template_id}/refs", get(refs::get_template_refs))
+        .route("/api/project/{project_id}/integrations/{integration_id}/refs", get(refs::get_integration_refs))
+
+        // Integration aliases
+        .route("/api/project/{project_id}/integrations/aliases", get(integration_alias::get_integration_aliases))
+        .route("/api/project/{project_id}/integrations/aliases", post(integration_alias::add_integration_alias))
+        .route("/api/project/{project_id}/integrations/aliases/{alias_id}", delete(integration_alias::delete_integration_alias))
+
+        // Invites
+        .route("/api/project/{project_id}/invites", get(invites::get_invites))
+        .route("/api/project/{project_id}/invites", post(invites::create_invite))
+        .route("/api/project/{project_id}/invites/{invite_id}", delete(invites::delete_invite))
+        .route("/api/invites/accept/{token}", post(invites::accept_invite))
 
         // Уведомления (Notifications)
         .route("/api/projects/{project_id}/notifications/test", post(notifications::send_test_notification))

@@ -185,6 +185,23 @@ impl SqlStore {
         .await
         .map_err(|e| Error::Database(e))?;
 
+        // project_invite для приглашений в проект
+        sqlx::query(
+            "CREATE TABLE IF NOT EXISTS project_invite (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                project_id INTEGER NOT NULL REFERENCES project(id) ON DELETE CASCADE,
+                user_id INTEGER NOT NULL REFERENCES user(id) ON DELETE CASCADE,
+                role TEXT NOT NULL,
+                created DATETIME NOT NULL,
+                updated DATETIME NOT NULL,
+                token TEXT NOT NULL DEFAULT '',
+                inviter_user_id INTEGER NOT NULL
+            )",
+        )
+        .execute(pool)
+        .await
+        .map_err(|e| Error::Database(e))?;
+
         tracing::info!("Схема БД инициализирована");
         Ok(())
     }
@@ -3833,8 +3850,33 @@ impl ScheduleManager for SqlStore {
         Ok(())
     }
 
-    async fn set_schedule_commit_hash(&self, _project_id: i32, _schedule_id: i32, _hash: &str) -> Result<()> {
-        // TODO: добавить поле commit_hash в таблицу schedule
+    async fn set_schedule_commit_hash(&self, _project_id: i32, schedule_id: i32, hash: &str) -> Result<()> {
+        match self.get_dialect() {
+            SqlDialect::SQLite => {
+                sqlx::query("UPDATE schedule SET last_commit_hash = ? WHERE id = ?")
+                    .bind(hash)
+                    .bind(schedule_id)
+                    .execute(self.get_sqlite_pool()?)
+                    .await
+                    .map_err(|e| Error::Database(e))?;
+            }
+            SqlDialect::PostgreSQL => {
+                sqlx::query("UPDATE schedule SET last_commit_hash = $1 WHERE id = $2")
+                    .bind(hash)
+                    .bind(schedule_id)
+                    .execute(self.get_postgres_pool()?)
+                    .await
+                    .map_err(|e| Error::Database(e))?;
+            }
+            SqlDialect::MySQL => {
+                sqlx::query("UPDATE `schedule` SET last_commit_hash = ? WHERE id = ?")
+                    .bind(hash)
+                    .bind(schedule_id)
+                    .execute(self.get_mysql_pool()?)
+                    .await
+                    .map_err(|e| Error::Database(e))?;
+            }
+        }
         Ok(())
     }
 }

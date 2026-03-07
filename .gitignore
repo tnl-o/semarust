@@ -46,3 +46,7 @@ test_errors.txt
 # Node.js
 web/node_modules/
 web/dist/
+
+# Upstream reference (не коммитить)
+semaphore-upstream/
+rust/semaphore-upstream/
