@@ -80,6 +80,11 @@ pub trait UserManager: Send + Sync {
     async fn get_all_admins(&self) -> Result<Vec<User>>;
     async fn get_user_count(&self) -> Result<usize>;
     async fn get_project_users(&self, project_id: i32, params: RetrieveQueryParams) -> Result<Vec<ProjectUser>>;
+    
+    /// TOTP методы
+    async fn get_user_totp(&self, user_id: i32) -> Result<Option<UserTotp>>;
+    async fn set_user_totp(&self, user_id: i32, totp: &UserTotp) -> Result<()>;
+    async fn delete_user_totp(&self, user_id: i32) -> Result<()>;
 }
 
 /// Хранилище проектов

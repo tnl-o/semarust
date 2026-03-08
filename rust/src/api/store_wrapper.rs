@@ -115,6 +115,18 @@ impl UserManager for StoreWrapper {
     async fn get_project_users(&self, project_id: i32, params: RetrieveQueryParams) -> Result<Vec<ProjectUser>> {
         self.inner.as_ref().as_ref().get_project_users(project_id, params).await
     }
+    
+    async fn get_user_totp(&self, user_id: i32) -> Result<Option<UserTotp>> {
+        self.inner.as_ref().as_ref().get_user_totp(user_id).await
+    }
+    
+    async fn set_user_totp(&self, user_id: i32, totp: &UserTotp) -> Result<()> {
+        self.inner.as_ref().as_ref().set_user_totp(user_id, totp).await
+    }
+    
+    async fn delete_user_totp(&self, user_id: i32) -> Result<()> {
+        self.inner.as_ref().as_ref().delete_user_totp(user_id).await
+    }
 }
 
 #[async_trait]
