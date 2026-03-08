@@ -28,20 +28,20 @@ module.exports = {
       chunkFilename: 'css/[name].css',
     },
   },
-  chainWebpack: (config) => {
-    config.plugin('html')
-      .tap((args) => {
-        // eslint-disable-next-line no-param-reassign
-        args[0].minify = false;
-        return args;
-      });
-  },
   transpileDependencies: [
     'vuetify',
   ],
   publicPath: './',
-  // path.resolve избегает бага html-webpack-plugin на Windows (pub lic → public)
-  outputDir: path.resolve(__dirname, 'public'),
+  // Для сборки используем dist, потом копируем в public
+  outputDir: path.resolve(__dirname, 'dist'),
   indexPath: 'index.html',
   filenameHashing: false,
+  pages: {
+    index: {
+      entry: 'src/main.js',
+      template: 'public/index.html',
+      filename: 'index.html',
+      title: 'Semaphore UI',
+    },
+  },
 };

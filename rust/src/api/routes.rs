@@ -269,6 +269,10 @@ pub fn api_routes() -> Router<Arc<AppState>> {
 
 /// Создаёт маршруты для статических файлов
 pub fn static_routes() -> Router<Arc<AppState>> {
+    use axum::http::StatusCode;
+    use axum::response::{Response, IntoResponse};
+    use axum::middleware::{self, Next};
+    
     // Путь к директории с frontend: SEMAPHORE_WEB_PATH или относительно Cargo.toml (rust/../web/public)
     let web_path = std::env::var("SEMAPHORE_WEB_PATH")
         .unwrap_or_else(|_| {
@@ -289,6 +293,15 @@ pub fn static_routes() -> Router<Arc<AppState>> {
     }
     tracing::info!("Serving static files from {}", web_path);
 
+    // Middleware для проверки пути - API маршруты не обрабатываются
+    async fn check_api_path(req: axum::http::Request<axum::body::Body>, next: Next) -> Result<Response, StatusCode> {
+        // Если путь начинается с /api/, возвращаем 404 чтобы обработал API роутер
+        if req.uri().path().starts_with("/api/") {
+            return Err(StatusCode::NOT_FOUND);
+        }
+        Ok(next.run(req).await)
+    }
+
     // ServeDir для раздачи статических файлов с fallback на index.html для SPA
     let serve_dir = ServeDir::new(&web_path)
         .not_found_service(ServeFile::new(format!("{web_path}/index.html")));
@@ -296,4 +309,5 @@ pub fn static_routes() -> Router<Arc<AppState>> {
     Router::new()
         // В axum 0.8 используем fallback_service вместо nest_service
         .fallback_service(serve_dir)
+        .layer(middleware::from_fn(check_api_path))
 }
