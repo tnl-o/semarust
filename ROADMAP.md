@@ -305,7 +305,7 @@
 
 ## 📝 ЖУРНАЛ ИЗМЕНЕНИЙ
 
-### 2026-03-08 (20:00 MSK)
+### 2026-03-08 (22:00 MSK)
 - ✅ Создан файл ROADMAP.md
 - ✅ Исправлены маркеры слияния в `routes.rs`
 - ✅ Проведена декомпозиция 90 TODO комментариев
@@ -315,13 +315,14 @@
 - ✅ Исправлен порядок маршрутов: api_routes перед static_routes
 - ✅ Восстановлен CORS middleware
 - ⚠️ Аутентификация — POST /api/auth/login работает, но 401 возвращает пустое тело
-- ✅ Отправлено в origin/main (4 коммита)
+- ✅ Отправлено в origin/main (6 коммитов)
 - ✅ Синхронизация semaphore/rust с rust_semaphore завершена
 - ✅ **P1-1: WebSocketManager реализация** — ЗАВЕРШЕНА
-  - Добавлен `ws_manager` в `TaskPool`
-  - Интегрирована отправка логов через `WebSocketManager`
-  - Интегрирована отправка статуса задач через WebSocket
-  - Убраны TODO комментарии о WebSocket интеграции
+- ✅ **P1-2: Завершение реализации TOTP/2FA** — ЗАВЕРШЕНА
+  - Добавлены методы TOTP в UserManager trait
+  - Реализованы методы в SqlStore, MockStore, StoreWrapper
+  - Обновлены handlers: totp.rs, users.rs
+  - Убраны TODO комментарии о TOTP интеграции
 
 ---
 
