@@ -5,7 +5,7 @@
 use axum::{
     extract::State,
     http::{header, StatusCode},
-    response::{AppendHeaders, IntoResponse},
+    response::{AppendHeaders, IntoResponse, Response},
     Json,
 };
 use std::sync::Arc;
@@ -59,14 +59,21 @@ pub async fn login(
             user.password.len()
         );
         tracing::warn!("Invalid password for user: {}. Debug: {}", user.username, debug_info);
-        return (
-            StatusCode::UNAUTHORIZED,
-            Json(serde_json::json!({
-                "error": "Неверный логин или пароль",
-                "code": "INVALID_CREDENTIALS",
-                "debug": debug_info
-            })),
-        ).into_response();
+        
+        // Используем Response напрямую для обхода проблемы с (StatusCode, Json)
+        let error_response = serde_json::json!({
+            "error": "Неверный логин или пароль",
+            "code": "INVALID_CREDENTIALS",
+            "debug": debug_info
+        });
+        
+        return Response::builder()
+            .status(StatusCode::UNAUTHORIZED)
+            .header("Content-Type", "application/json")
+            .header("X-Correlation-Id", uuid::Uuid::new_v4().to_string())
+            .body(axum::body::Body::from(error_response.to_string()))
+            .unwrap()
+            .into_response();
     }
 
     // Проверяем TOTP, если настроен
