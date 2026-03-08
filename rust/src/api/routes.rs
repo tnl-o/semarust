@@ -63,6 +63,7 @@ pub fn api_routes() -> Router<Arc<AppState>> {
         .route("/api/projects/{project_id}/inventories/{id}", get(handlers::get_inventory))
         .route("/api/projects/{project_id}/inventories/{id}", put(handlers::update_inventory))
         .route("/api/projects/{project_id}/inventories/{id}", delete(handlers::delete_inventory))
+        .route("/api/projects/{project_id}/inventories/playbooks", get(handlers::get_playbooks))
 
         // Репозитории
         .route("/api/projects/{project_id}/repositories", get(handlers::get_repositories))

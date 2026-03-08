@@ -13,7 +13,7 @@ function buildInventoryForm(inventory = null) {
         <form id="inventory-form">
             <div class="form-group">
                 <label for="inventory-name">Название *</label>
-                <input type="text" id="inventory-name" name="name" required 
+                <input type="text" id="inventory-name" name="name" required
                        value="${escapeHtml(inventory?.name || '')}">
             </div>
             <div class="form-group">
@@ -25,19 +25,24 @@ function buildInventoryForm(inventory = null) {
                 </select>
             </div>
             <div class="form-group">
-                <label for="inventory-data">Данные инвентаря *</label>
-                <textarea id="inventory-data" name="inventory_data" required 
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                    <label for="inventory-data">Данные инвентаря *</label>
+                    <button type="button" class="btn btn-secondary btn-sm" onclick="showPlaybookSelector()" style="font-size: 12px; padding: 4px 8px;">
+                        📋 Выбрать из репозитория
+                    </button>
+                </div>
+                <textarea id="inventory-data" name="inventory_data" required
                           style="min-height: 200px; font-family: monospace;">${escapeHtml(inventory?.inventory_data || '')}</textarea>
-                <small>Формат: YAML, INI или JSON</small>
+                <small>Формат: YAML, INI или JSON. Используйте кнопку выше для выбора из репозитория</small>
             </div>
             <div class="form-group">
                 <label for="inventory-ssh-login">SSH Login</label>
-                <input type="text" id="inventory-ssh-login" name="ssh_login" 
+                <input type="text" id="inventory-ssh-login" name="ssh_login"
                        value="${escapeHtml(inventory?.ssh_login || 'ansible')}">
             </div>
             <div class="form-group">
                 <label for="inventory-ssh-port">SSH Port</label>
-                <input type="number" id="inventory-ssh-port" name="ssh_port" 
+                <input type="number" id="inventory-ssh-port" name="ssh_port"
                        value="${inventory?.ssh_port || 22}">
             </div>
             <div class="form-actions">
@@ -448,3 +453,52 @@ window.showCreateEnvironmentModal = showCreateEnvironmentModal;
 window.showCreateKeyModal = showCreateKeyModal;
 window.showCreateTemplateModal = showCreateTemplateModal;
 window.showCreateScheduleModal = showCreateScheduleModal;
+
+// ============================================================================
+// Playbook Selector
+// ============================================================================
+
+async function showPlaybookSelector() {
+    try {
+        // Загружаем список playbook из репозиториев
+        const playbooks = await apiRequest(`/projects/${CURRENT_PROJECT_ID}/inventories/playbooks`);
+
+        if (playbooks.length === 0) {
+            showToast('Нет доступных playbook в репозиториях', 'warning');
+            return;
+        }
+
+        // Создаём модальное окно для выбора playbook
+        openModal('Выберите playbook', `
+            <div class="playbook-selector">
+                <p>Выберите playbook из доступных в репозиториях:</p>
+                <div class="playbook-list" style="max-height: 400px; overflow-y: auto;">
+                    ${playbooks.map(pb => `
+                        <div class="playbook-item" style="padding: 10px; border: 1px solid #ddd; margin-bottom: 8px; border-radius: 4px; cursor: pointer;"
+                             onclick="selectPlaybook('${escapeHtml(pb)}')">
+                            📄 ${escapeHtml(pb)}
+                        </div>
+                    `).join('')}
+                </div>
+                <div class="form-actions" style="margin-top: 15px;">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal()">Отмена</button>
+                </div>
+            </div>
+        `);
+    } catch (error) {
+        showToast('Ошибка загрузки playbook: ' + error.message, 'error');
+    }
+}
+
+function selectPlaybook(playbookPath) {
+    // Вставляем путь к playbook в поле inventory_data
+    const inventoryDataField = document.getElementById('inventory-data');
+    if (inventoryDataField) {
+        inventoryDataField.value = playbookPath;
+    }
+    closeModal();
+    showToast(`Playbook ${playbookPath} выбран`, 'success');
+}
+
+window.showPlaybookSelector = showPlaybookSelector;
+window.selectPlaybook = selectPlaybook;

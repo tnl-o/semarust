@@ -15,6 +15,7 @@ use crate::models::inventory::InventoryType;
 use crate::error::Error;
 use crate::api::middleware::ErrorResponse;
 use crate::db::store::InventoryManager;
+use crate::db::store::RepositoryManager;
 
 /// Получить список инвентарей проекта
 ///
@@ -158,6 +159,50 @@ pub struct InventoryUpdatePayload {
     pub name: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none", rename = "inventory")]
     pub inventory_data: Option<String>,
+}
+
+// ============================================================================
+// Playbook Helpers
+// ============================================================================
+
+/// Получить список playbook-файлов из репозитория
+///
+/// GET /api/projects/:project_id/inventories/playbooks
+pub async fn get_playbooks(
+    State(state): State<Arc<AppState>>,
+    Path(project_id): Path<i32>,
+) -> Result<Json<Vec<String>>, (StatusCode, Json<ErrorResponse>)> {
+    // Получаем все репозитории проекта
+    let repositories = state.store.get_repositories(project_id)
+        .await
+        .map_err(|e| (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(ErrorResponse::new(e.to_string()))
+        ))?;
+
+    let mut all_playbooks = Vec::new();
+
+    // Для каждого репозитория получаем список playbook-файлов
+    for repo in repositories {
+        // Получаем путь к репозиторию
+        let repo_path = format!("/tmp/semaphore/repos/{}/{}", project_id, repo.id);
+        
+        // Проверяем существование директории
+        if std::path::Path::new(&repo_path).exists() {
+            match crate::db::sql::template_utils::list_playbooks(&repo_path).await {
+                Ok(playbooks) => {
+                    for playbook in playbooks {
+                        all_playbooks.push(format!("{}/{}", repo.name, playbook));
+                    }
+                }
+                Err(e) => {
+                    tracing::warn!("Failed to list playbooks for repo {}: {}", repo.id, e);
+                }
+            }
+        }
+    }
+
+    Ok(Json(all_playbooks))
 }
 
 // ============================================================================
