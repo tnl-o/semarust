@@ -77,12 +77,16 @@ pub fn api_routes() -> Router<Arc<AppState>> {
         .route("/api/projects/{project_id}/inventories/{id}", get(handlers::get_inventory))
         .route("/api/projects/{project_id}/inventories/{id}", put(handlers::update_inventory))
         .route("/api/projects/{project_id}/inventories/{id}", delete(handlers::delete_inventory))
+<<<<<<< HEAD
         // Алиас Vue: /api/project/{id}/inventory
         .route("/api/project/{project_id}/inventory", get(handlers::get_inventories))
         .route("/api/project/{project_id}/inventory", post(handlers::create_inventory))
         .route("/api/project/{project_id}/inventory/{id}", get(handlers::get_inventory))
         .route("/api/project/{project_id}/inventory/{id}", put(handlers::update_inventory))
         .route("/api/project/{project_id}/inventory/{id}", delete(handlers::delete_inventory))
+
+        // Playbooks endpoint (из upstream)
+        .route("/api/projects/{project_id}/inventories/playbooks", get(handlers::get_playbooks))
 
         // Репозитории
         .route("/api/projects/{project_id}/repositories", get(handlers::get_repositories))

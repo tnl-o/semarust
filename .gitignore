@@ -1,8 +1,22 @@
-# Скомпилированные бинарники
-/target/
-**/target/
+# Build artifacts
+dist/
+build/
+*.js.map
 
-# Файлы окружения
+# Dependencies
+node_modules/
+
+# Editors
+.vscode/
+
+# Logs
+*.log
+logs/
+
+# Temp files
+*.tmp
+
+# Environment
 .env
 .env.local
 .env.*.local
