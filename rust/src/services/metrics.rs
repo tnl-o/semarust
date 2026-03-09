@@ -130,6 +130,7 @@ lazy_static! {
 }
 
 /// Менеджер метрик
+#[derive(Clone)]
 pub struct MetricsManager {
     start_time: std::time::Instant,
     task_counters: Arc<RwLock<TaskCounters>>,

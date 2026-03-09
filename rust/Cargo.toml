@@ -151,6 +151,8 @@ features = ["user", "fs"]
 tokio-test = "0.4"
 fake = { version = "4", features = ["derive", "chrono"] }
 tempfile = "3"
+mockall = "0.13"
+assert-json-diff = "2.0"
 
 # Профилирование
 [profile.release]
