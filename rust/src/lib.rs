@@ -27,6 +27,7 @@ pub mod pro;
 pub mod services;
 pub mod utils;
 pub mod plugins;
+pub mod cache;
 
 mod error;
 mod logging;

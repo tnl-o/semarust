@@ -122,6 +122,9 @@ base64 = "0.22"
 wasmtime = "29"
 wasmtime-wasi = "29"
 
+# Redis кэширование
+redis = { version = "0.29", features = ["tokio-comp", "connection-manager", "cluster"] }
+
 # WebSocket
 tokio-tungstenite = "0.27"
 axum-extra = { version = "0.10", features = ["typed-header", "cookie"] }

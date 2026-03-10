@@ -4,6 +4,7 @@ pub mod access_key_installation_service;
 pub mod access_key_installer;
 pub mod alert;
 pub mod backup;
+pub mod cache_service;
 pub mod exporter;
 pub mod exporter_main;
 pub mod executor;
@@ -29,6 +30,7 @@ pub use access_key_installation_service::{
     AccessKeyInstallationServiceImpl, AccessKeyServiceTrait,
     AccessKeyServiceImpl, GetAccessKeyOptions, SimpleEncryptionService,
 };
+pub use cache_service::{CacheService, CacheServiceConfig, CacheKeys, SessionData};
 pub use local_job::LocalJob;
 pub use alert::AlertService;
 pub use backup::{BackupFormat, BackupDB, BackupEntity, BackupSluggedEntity};

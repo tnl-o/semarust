@@ -1,8 +1,10 @@
 //! Middleware модули
 
+pub mod cache;
 pub mod rate_limiter;
 pub mod security_headers;
 
+pub use cache::CacheMiddleware;
 pub use rate_limiter::*;
 pub use security_headers::*;
 
