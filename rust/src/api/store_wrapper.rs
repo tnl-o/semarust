@@ -3,6 +3,7 @@
 use crate::db::store::*;
 use crate::models::*;
 use crate::models::audit_log::{AuditAction, AuditObjectType, AuditLevel, AuditLog, AuditLogFilter, AuditLogResult};
+use crate::models::webhook::{Webhook, UpdateWebhook, WebhookLog};
 use crate::error::Result;
 use crate::services::task_logger::TaskStatus;
 use async_trait::async_trait;
@@ -636,6 +637,37 @@ impl AuditLogManager for StoreWrapper {
 
     async fn clear_audit_log(&self) -> Result<u64> {
         self.inner.as_ref().as_ref().clear_audit_log().await
+    }
+}
+
+#[async_trait]
+impl crate::db::store::WebhookManager for StoreWrapper {
+    async fn get_webhook(&self, webhook_id: i64) -> Result<Webhook> {
+        self.inner.as_ref().as_ref().get_webhook(webhook_id).await
+    }
+
+    async fn get_webhooks_by_project(&self, project_id: i64) -> Result<Vec<Webhook>> {
+        self.inner.as_ref().as_ref().get_webhooks_by_project(project_id).await
+    }
+
+    async fn create_webhook(&self, webhook: Webhook) -> Result<Webhook> {
+        self.inner.as_ref().as_ref().create_webhook(webhook).await
+    }
+
+    async fn update_webhook(&self, webhook_id: i64, webhook: UpdateWebhook) -> Result<Webhook> {
+        self.inner.as_ref().as_ref().update_webhook(webhook_id, webhook).await
+    }
+
+    async fn delete_webhook(&self, webhook_id: i64) -> Result<()> {
+        self.inner.as_ref().as_ref().delete_webhook(webhook_id).await
+    }
+
+    async fn get_webhook_logs(&self, webhook_id: i64) -> Result<Vec<WebhookLog>> {
+        self.inner.as_ref().as_ref().get_webhook_logs(webhook_id).await
+    }
+
+    async fn create_webhook_log(&self, log: WebhookLog) -> Result<WebhookLog> {
+        self.inner.as_ref().as_ref().create_webhook_log(log).await
     }
 }
 
