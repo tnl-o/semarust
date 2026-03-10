@@ -5,6 +5,68 @@
 Формат основан на [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 этот проект придерживается [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.0] - 2026-03-10
+
+### 🎉 Q4 2026 Release
+
+#### ✨ Добавлено
+
+##### GraphQL API
+- ✅ Интеграция async-graphql 7.0
+- ✅ Endpoint `/graphql` с GraphiQL playground
+- ✅ Query: users, projects, templates, tasks, ping
+- ✅ Mutation: ping (тест)
+- ✅ Subscription: task_created (заглушка)
+- ✅ Документация: GRAPHQL_API.md
+- ✅ Файлы: `src/api/graphql/*` (6 файлов)
+
+##### Telegram Bot API
+- ✅ Интеграция teloxide 0.13
+- ✅ Конфигурация: `telegram_bot_token`
+- ✅ Команды: /start, /help
+- ✅ Документация: TELEGRAM_BOT.md
+- ✅ Файлы: `src/services/telegram_bot/*`
+
+##### Prometheus метрики
+- ✅ 18 метрик для мониторинга
+- ✅ Endpoints: /api/metrics, /api/metrics/json
+- ✅ Системные метрики (CPU, memory, uptime)
+- ✅ Документация: PROMETHEUS_METRICS.md
+
+#### 📦 Зависимости
+
+##### Добавлено
+- `async-graphql = "7.0"` + `async-graphql-axum`
+- `teloxide = "0.13"` + macros
+
+#### 📚 Документация
+
+##### Создано
+- ✅ GRAPHQL_API.md — GraphQL API руководство
+- ✅ TELEGRAM_BOT.md — Telegram Bot руководство
+- ✅ Q4_2026_REPORT.md — Отчёт о выполнении Q4 2026
+
+##### Обновлено
+- ✅ ROADMAP.md — добавлены завершённые задачи Q4 2026
+- ✅ ROADMAP_DETAILED.md — обновлена дорожная карта
+- ✅ CHANGELOG.md — этот файл
+
+#### 🔧 Изменения
+
+##### Конфигурация
+- ✅ Добавлено: `telegram_bot_token` в Config
+
+#### 📊 Метрики
+
+| Метрика | Значение |
+|---------|----------|
+| **Новых файлов** | 10 |
+| **Строк кода** | +2,000 |
+| **Зависимостей** | +3 |
+| **Документов** | +3 |
+
+---
+
 ## [2.0.1] - 2026-03-05
 
 ### 🎯 Исправление авторизации

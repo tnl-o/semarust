@@ -125,6 +125,7 @@ pub fn create_default_config() -> Config {
             all_projects: false,
         },
         email_sender: "semaphore@localhost".to_string(),
+        telegram_bot_token: None,
     }
 }
 

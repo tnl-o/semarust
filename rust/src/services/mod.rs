@@ -20,6 +20,7 @@ pub mod task_pool_runner;
 pub mod task_pool_status;
 pub mod task_pool_types;
 pub mod task_runner;
+pub mod telegram_bot;
 pub mod totp;
 pub mod webhook;
 

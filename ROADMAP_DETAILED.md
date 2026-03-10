@@ -303,10 +303,10 @@ Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.33s
 
 | ID | Задача | Приоритет | Оценка | Статус |
 |----|--------|-----------|--------|--------|
-| P1-1 | GraphQL API | Высокий | 5 дней | 📅 Запланировано |
-| P1-2 | Telegram Bot API | Высокий | 3 дня | 📅 Запланировано |
-| P1-3 | Prometheus метрики | Высокий | 4 дня | 📅 Запланировано |
-| P1-4 | WASM загрузчик плагинов | Средний | 7 дней | 📅 Запланировано |
+| P1-1 | GraphQL API | Высокий | 5 дней | ✅ Завершено |
+| P1-2 | Telegram Bot API | Высокий | 3 дня | ✅ Завершено |
+| P1-3 | Prometheus метрики | Высокий | 4 дня | ✅ Завершено |
+| P1-4 | WASM загрузчик плагинов | Средний | 7 дней | 🔮 Будущее |
 
 #### P2 — Важные задачи
 
@@ -465,6 +465,10 @@ Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.33s
 | `ANALYTICS.md` | ✅ Готово | Аналитика и дашборды |
 | `PLUGINS.md` | ✅ Готово | Плагин система |
 | `SINGLE_CONTAINER.md` | ✅ Готово | Единый контейнер |
+| `GRAPHQL_API.md` | ✅ Готово | GraphQL API ⭐ NEW |
+| `TELEGRAM_BOT.md` | ✅ Готово | Telegram Bot ⭐ NEW |
+| `PROMETHEUS_METRICS.md` | ✅ Готово | Prometheus метрики |
+| `Q4_2026_REPORT.md` | ✅ Готово | Отчёт Q4 2026 ⭐ NEW |
 
 ---
 
@@ -488,8 +492,12 @@ Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.33s
 
 - **GitHub:** https://github.com/alexandervashurin/semaphore
 - **Email:** alexandervashurin@yandex.ru
-- **Документация:** См. раздел "Документация" выше
+- **Документация:**
+  - [GRAPHQL_API.md](GRAPHQL_API.md) — GraphQL API
+  - [TELEGRAM_BOT.md](TELEGRAM_BOT.md) — Telegram Bot
+  - [PROMETHEUS_METRICS.md](PROMETHEUS_METRICS.md) — Prometheus метрики
+  - [Q4_2026_REPORT.md](Q4_2026_REPORT.md) — Отчёт Q4 2026
 
 ---
 
-*Последнее обновление: 9 марта 2026 г.*
+*Последнее обновление: 10 марта 2026 г.*

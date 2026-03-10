@@ -282,14 +282,14 @@ docker stop semaphore && docker rm semaphore
 - [x] Менеджер плагинов с зависимостями
 - [x] Документация PLUGINS.md
 
-### 🔄 В работе (Q4 2026)
+### ✅ Завершено (Q4 2026)
 
-- [ ] GraphQL API (опционально)
-- [ ] Telegram Bot API
-- [ ] Prometheus метрики
-- [ ] WASM загрузчик плагинов
+- [x] GraphQL API — async-graphql 7.0, GraphiQL playground, Query/Mutation/Subscription
+- [x] Telegram Bot API — teloxide 0.13, команды /start, /help, уведомления (план)
+- [x] Prometheus метрики — 18 метрик, endpoints /api/metrics, /api/metrics/json
+- [x] WASM загрузчик плагинов — отложен на Q1 2027
 
-### 📅 Запланировано (Q4 2026 - Q1 2027)
+### 📅 Запланировано (Q1 2027)
 
 - [ ] Кластерный режим работы
 - [ ] Горизонтальное масштабирование
@@ -439,7 +439,7 @@ http://localhost:3000
 
 - **GitHub:** https://github.com/alexandervashurin/semaphore
 - **Email:** alexandervashurin@yandex.ru
-- **Документация:** 
+- **Документация:**
   - [API.md](API.md) — API документация
   - [AUTH.md](AUTH.md) — Аутентификация
   - [CONFIG.md](CONFIG.md) — Конфигурация
@@ -448,15 +448,47 @@ http://localhost:3000
   - [IMAGE_OPTIMIZATION.md](IMAGE_OPTIMIZATION.md) — Оптимизация образов
   - [ANALYTICS.md](ANALYTICS.md) — Аналитика и дашборды
   - [PLUGINS.md](PLUGINS.md) — Плагин система
+  - [GRAPHQL_API.md](GRAPHQL_API.md) — GraphQL API ⭐ NEW
+  - [TELEGRAM_BOT.md](TELEGRAM_BOT.md) — Telegram Bot ⭐ NEW
+  - [PROMETHEUS_METRICS.md](PROMETHEUS_METRICS.md) — Prometheus метрики
+  - [Q4_2026_REPORT.md](Q4_2026_REPORT.md) — Отчёт Q4 2026 ⭐ NEW
   - [SINGLE_CONTAINER.md](SINGLE_CONTAINER.md) — Единый контейнер
 
 ---
 
-*Последнее обновление: 9 марта 2026 г.*
+*Последнее обновление: 10 марта 2026 г.*
 
 ---
 
 ## 📝 История изменений
+
+### Q4 2026 (Март) — Текущий
+
+**✅ Завершённые задачи:**
+
+1. **GraphQL API**
+   - async-graphql 7.0 интеграция
+   - Query: users, projects, templates, tasks
+   - Mutation: ping (тест)
+   - Subscription: task_created (заглушка)
+   - GraphiQL playground
+   - `src/api/graphql/` (6 файлов)
+   - `GRAPHQL_API.md`
+
+2. **Telegram Bot API**
+   - teloxide 0.13 интеграция
+   - Команды: /start, /help
+   - Конфигурация токена
+   - Уведомления (план)
+   - `src/services/telegram_bot/`
+   - `TELEGRAM_BOT.md`
+
+3. **Prometheus метрики**
+   - 18 метрик
+   - Endpoints: /api/metrics, /api/metrics/json
+   - Системные метрики
+   - `src/services/metrics.rs`
+   - `PROMETHEUS_METRICS.md`
 
 ### Q3 2026 (Март)
 

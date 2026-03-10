@@ -6,7 +6,7 @@ use crate::api::state::AppState;
 use crate::api::handlers;
 use crate::api::websocket::websocket_handler;
 use crate::api::handlers::projects::{schedules, views, integration as project_integration, integration_alias, secret_storages, users as project_users, tasks, notifications, backup_restore, refs, invites};
-use crate::api::{events, apps, options, runners, cache, system_info, user};
+use crate::api::{events, apps, options, runners, cache, system_info, user, graphql};
 use tower_http::services::{ServeDir, ServeFile};
 
 /// Создаёт маршруты API

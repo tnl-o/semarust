@@ -386,6 +386,10 @@ pub struct Config {
     /// Отправитель email по умолчанию
     #[serde(rename = "emailSender", default = "default_email_sender")]
     pub email_sender: String,
+
+    /// Telegram Bot Token
+    #[serde(rename = "telegramBotToken", default)]
+    pub telegram_bot_token: Option<String>,
 }
 
 /// Конфигурация алертов
@@ -453,6 +457,7 @@ impl Default for Config {
                 all_projects: false,
             },
             email_sender: default_email_sender(),
+            telegram_bot_token: None,
         }
     }
 }
