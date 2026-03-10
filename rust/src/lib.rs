@@ -28,6 +28,7 @@ pub mod services;
 pub mod utils;
 pub mod plugins;
 pub mod cache;
+pub mod grpc;
 
 mod error;
 mod logging;

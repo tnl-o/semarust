@@ -79,6 +79,7 @@ shlex = "1.3"
 futures = "0.3"
 async-trait = "0.1"
 futures-util = "0.3"
+tokio-stream = { version = "0.1", features = ["sync"] }
 
 # Регулярные выражения
 regex = "1"
@@ -125,6 +126,12 @@ wasmtime-wasi = "29"
 # Redis кэширование
 redis = { version = "0.29", features = ["tokio-comp", "connection-manager", "cluster"] }
 
+# gRPC для внутренних сервисов
+tonic = "0.13"
+prost = "0.14"
+prost-types = "0.14"
+tonic-reflection = "0.13"
+
 # WebSocket
 tokio-tungstenite = "0.27"
 axum-extra = { version = "0.10", features = ["typed-header", "cookie"] }
@@ -166,6 +173,10 @@ features = ["user", "fs"]
 tokio-test = "0.4"
 fake = { version = "4", features = ["derive", "chrono"] }
 tempfile = "3"
+
+# Build dependencies для gRPC
+[build-dependencies]
+tonic-build = "0.13"
 
 # Профилирование
 [profile.release]
