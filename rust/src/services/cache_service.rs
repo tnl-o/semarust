@@ -424,9 +424,97 @@ mod tests {
             totp: None,
             email_otp: None,
         };
-        
+
         let session = SessionData::new(&user, 3600);
         assert_eq!(session.user_id, 1);
         assert!(!session.is_expired());
+    }
+
+    #[test]
+    fn test_session_data_expired() {
+        let user = User {
+            id: 2,
+            username: "expired".to_string(),
+            email: "expired@example.com".to_string(),
+            password: "hash".to_string(),
+            admin: true,
+            name: "Expired User".to_string(),
+            created: Utc::now(),
+            external: false,
+            alert: false,
+            pro: false,
+            totp: None,
+            email_otp: None,
+        };
+
+        // Создаём сессию с TTL 0 секунд (истекает сразу)
+        let session = SessionData::new(&user, 0);
+        assert_eq!(session.user_id, 2);
+        assert!(session.is_admin);
+        // Сессия с TTL=0 должна быть просрочена
+        assert!(session.is_expired());
+    }
+
+    #[test]
+    fn test_session_data_fields() {
+        let user = User {
+            id: 10,
+            username: "fieldtest".to_string(),
+            email: "fields@test.com".to_string(),
+            password: "hash".to_string(),
+            admin: true,
+            name: "Field Test".to_string(),
+            created: Utc::now(),
+            external: false,
+            alert: false,
+            pro: true,
+            totp: None,
+            email_otp: None,
+        };
+
+        let session = SessionData::new(&user, 7200);
+        
+        assert_eq!(session.username, "fieldtest");
+        assert_eq!(session.email, "fields@test.com");
+        assert!(session.is_admin);
+        assert_eq!(session.user_id, 10);
+    }
+
+    #[test]
+    fn test_cache_service_config_default() {
+        let config = CacheServiceConfig::default();
+        
+        assert_eq!(config.session_ttl_secs, 3600);
+        assert_eq!(config.query_cache_ttl_secs, 300);
+        assert_eq!(config.project_cache_ttl_secs, 600);
+        assert_eq!(config.task_cache_ttl_secs, 60);
+    }
+
+    #[test]
+    fn test_cache_service_config_custom() {
+        let config = CacheServiceConfig {
+            session_ttl_secs: 7200,
+            query_cache_ttl_secs: 600,
+            project_cache_ttl_secs: 1200,
+            task_cache_ttl_secs: 120,
+        };
+
+        assert_eq!(config.session_ttl_secs, 7200);
+        assert_eq!(config.query_cache_ttl_secs, 600);
+    }
+
+    #[test]
+    fn test_cache_keys_all_types() {
+        // Проверяем все типы ключей
+        assert_eq!(CacheKeys::session("abc"), "session:abc");
+        assert_eq!(CacheKeys::user_id(123), "user:id:123");
+        assert_eq!(CacheKeys::user_username("john"), "user:username:john");
+        assert_eq!(CacheKeys::project(456), "project:456");
+        assert_eq!(CacheKeys::project_tasks(1, None), "project:1:tasks");
+        assert_eq!(CacheKeys::project_tasks(1, Some("success")), "project:1:tasks:success");
+        assert_eq!(CacheKeys::template(789), "template:789");
+        assert_eq!(CacheKeys::inventory(111), "inventory:111");
+        assert_eq!(CacheKeys::repository(222), "repository:222");
+        assert_eq!(CacheKeys::environment(333), "environment:333");
     }
 }

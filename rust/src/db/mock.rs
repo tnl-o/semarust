@@ -661,11 +661,11 @@ impl WebhookManager for MockStore {
     }
 
     async fn create_webhook(&self, _webhook: crate::models::webhook::Webhook) -> Result<crate::models::webhook::Webhook> {
-        Err(Error::Database("Not implemented in mock".to_string()))
+        Err(Error::Database(sqlx::Error::Protocol("Not implemented in mock".to_string())))
     }
 
     async fn update_webhook(&self, _webhook_id: i64, _webhook: crate::models::webhook::UpdateWebhook) -> Result<crate::models::webhook::Webhook> {
-        Err(Error::Database("Not implemented in mock".to_string()))
+        Err(Error::Database(sqlx::Error::Protocol("Not implemented in mock".to_string())))
     }
 
     async fn delete_webhook(&self, _webhook_id: i64) -> Result<()> {
@@ -677,6 +677,6 @@ impl WebhookManager for MockStore {
     }
 
     async fn create_webhook_log(&self, _log: crate::models::webhook::WebhookLog) -> Result<crate::models::webhook::WebhookLog> {
-        Err(Error::Database("Not implemented in mock".to_string()))
+        Err(Error::Database(sqlx::Error::Protocol("Not implemented in mock".to_string())))
     }
 }
