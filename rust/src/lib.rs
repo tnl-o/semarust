@@ -29,6 +29,7 @@ pub mod utils;
 pub mod plugins;
 pub mod cache;
 pub mod grpc;
+pub mod kubernetes;
 
 mod error;
 mod logging;
