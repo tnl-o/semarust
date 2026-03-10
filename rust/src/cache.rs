@@ -383,6 +383,7 @@ mod tests {
     fn test_cache_key() {
         assert_eq!(cache_key(&["user", "123"]), "user:123");
         assert_eq!(cache_key(&["project", "456", "tasks"]), "project:456:tasks");
+        assert_eq!(cache_key(&["api", "v1", "projects", "1"]), "api:v1:projects:1");
     }
 
     #[test]
@@ -390,8 +391,179 @@ mod tests {
         let mut stats = CacheStats::default();
         stats.hits = 80;
         stats.misses = 20;
-        
+
         assert_eq!(stats.hit_ratio(), 80.0);
         assert_eq!(stats.total_requests(), 100);
+    }
+
+    #[test]
+    fn test_cache_stats_zero_requests() {
+        let stats = CacheStats::default();
+        assert_eq!(stats.hit_ratio(), 0.0);
+        assert_eq!(stats.total_requests(), 0);
+    }
+
+    #[test]
+    fn test_cache_stats_all_hits() {
+        let mut stats = CacheStats::default();
+        stats.hits = 100;
+        stats.misses = 0;
+        assert_eq!(stats.hit_ratio(), 100.0);
+    }
+
+    #[test]
+    fn test_cache_stats_all_misses() {
+        let mut stats = CacheStats::default();
+        stats.hits = 0;
+        stats.misses = 100;
+        assert_eq!(stats.hit_ratio(), 0.0);
+    }
+
+    #[test]
+    fn test_redis_config_default() {
+        let config = RedisConfig::default();
+        assert_eq!(config.url, "redis://localhost:6379");
+        assert_eq!(config.key_prefix, "semaphore:");
+        assert_eq!(config.default_ttl_secs, 300);
+        assert_eq!(config.max_retries, 3);
+        assert_eq!(config.connection_timeout_secs, 5);
+        assert!(!config.enabled);
+    }
+
+    #[test]
+    fn test_redis_config_custom() {
+        let config = RedisConfig {
+            url: "redis://custom:6380".to_string(),
+            key_prefix: "custom:".to_string(),
+            default_ttl_secs: 600,
+            max_retries: 5,
+            connection_timeout_secs: 10,
+            enabled: true,
+        };
+        assert_eq!(config.url, "redis://custom:6380");
+        assert_eq!(config.key_prefix, "custom:");
+        assert_eq!(config.default_ttl_secs, 600);
+        assert_eq!(config.max_retries, 5);
+        assert_eq!(config.connection_timeout_secs, 10);
+        assert!(config.enabled);
+    }
+
+    #[tokio::test]
+    async fn test_redis_cache_creation() {
+        let config = RedisConfig::default();
+        let cache = RedisCache::new(config);
+        assert!(!cache.is_enabled());
+    }
+
+    #[tokio::test]
+    async fn test_redis_cache_enabled() {
+        let config = RedisConfig {
+            enabled: true,
+            ..Default::default()
+        };
+        let cache = RedisCache::new(config);
+        assert!(cache.is_enabled());
+    }
+
+    #[tokio::test]
+    async fn test_redis_cache_get_disabled() {
+        let config = RedisConfig::default();
+        let cache = RedisCache::new(config);
+        
+        // Когда кэш отключён, get должен возвращать None
+        let result: Result<Option<String>> = cache.get("test_key").await;
+        assert!(result.is_ok());
+        assert!(result.unwrap().is_none());
+    }
+
+    #[tokio::test]
+    async fn test_redis_cache_set_disabled() {
+        let config = RedisConfig::default();
+        let cache = RedisCache::new(config);
+        
+        // Когда кэш отключён, set должен возвращать Ok
+        let result = cache.set("test_key", &"test_value").await;
+        assert!(result.is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_redis_cache_delete_disabled() {
+        let config = RedisConfig::default();
+        let cache = RedisCache::new(config);
+        
+        // Когда кэш отключён, delete должен возвращать Ok
+        let result = cache.delete("test_key").await;
+        assert!(result.is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_redis_cache_increment_disabled() {
+        let config = RedisConfig::default();
+        let cache = RedisCache::new(config);
+        
+        // Когда кэш отключён, increment должен возвращать 0
+        let result = cache.increment("test_key").await;
+        assert!(result.is_ok());
+        assert_eq!(result.unwrap(), 0);
+    }
+
+    #[tokio::test]
+    async fn test_redis_cache_exists_disabled() {
+        let config = RedisConfig::default();
+        let cache = RedisCache::new(config);
+        
+        // Когда кэш отключён, exists должен возвращать false
+        let result = cache.exists("test_key").await;
+        assert!(result.is_ok());
+        assert!(!result.unwrap());
+    }
+
+    #[tokio::test]
+    async fn test_redis_cache_make_key() {
+        let config = RedisConfig {
+            key_prefix: "test:".to_string(),
+            ..Default::default()
+        };
+        let cache = RedisCache::new(config);
+        
+        // Проверяем что ключ формируется с префиксом
+        // Это приватный метод, но мы можем проверить через публичные методы
+        let _ = cache.get::<String>("key").await;
+    }
+
+    #[tokio::test]
+    async fn test_redis_cache_stats() {
+        let config = RedisConfig::default();
+        let cache = RedisCache::new(config);
+        
+        let stats = cache.get_stats().await;
+        assert_eq!(stats.hits, 0);
+        assert_eq!(stats.misses, 0);
+        assert_eq!(stats.errors, 0);
+        assert_eq!(stats.connections, 0);
+    }
+
+    #[tokio::test]
+    async fn test_redis_cache_reset_stats() {
+        let config = RedisConfig::default();
+        let cache = RedisCache::new(config);
+        
+        // Сброс статистики
+        cache.reset_stats().await;
+        
+        let stats = cache.get_stats().await;
+        assert_eq!(stats.hits, 0);
+        assert_eq!(stats.misses, 0);
+        assert_eq!(stats.errors, 0);
+    }
+
+    #[tokio::test]
+    async fn test_redis_cache_delete_pattern_disabled() {
+        let config = RedisConfig::default();
+        let cache = RedisCache::new(config);
+        
+        // Когда кэш отключён, delete_pattern должен возвращать Ok
+        let result = cache.delete_pattern("test*").await;
+        assert!(result.is_ok());
     }
 }

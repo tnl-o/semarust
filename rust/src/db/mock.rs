@@ -153,11 +153,6 @@ impl UserManager for MockStore {
         }
         Ok(())
     }
-
-    async fn get_hooks_by_template(&self, _template_id: i32) -> Result<Vec<Hook>> {
-        // Mock - возвращаем пустой список
-        Ok(Vec::new())
-    }
 }
 
 #[async_trait]
@@ -594,6 +589,61 @@ impl SecretStorageManager for MockStore {
     }
     async fn delete_secret_storage(&self, _project_id: i32, _storage_id: i32) -> Result<()> {
         Ok(())
+    }
+}
+
+#[async_trait]
+impl AuditLogManager for MockStore {
+    async fn create_audit_log(
+        &self,
+        _project_id: Option<i64>,
+        _user_id: Option<i64>,
+        _username: Option<String>,
+        _action: &AuditAction,
+        _object_type: &AuditObjectType,
+        _object_id: Option<i64>,
+        _object_name: Option<String>,
+        _description: String,
+        _level: &AuditLevel,
+        _ip_address: Option<String>,
+        _user_agent: Option<String>,
+        _details: Option<serde_json::Value>,
+    ) -> Result<AuditLog> {
+        // Mock implementation - return error for tests
+        Err(Error::NotFound("AuditLog not found".to_string()))
+    }
+
+    async fn get_audit_log(&self, _id: i64) -> Result<AuditLog> {
+        Err(Error::NotFound("AuditLog not found".to_string()))
+    }
+
+    async fn search_audit_logs(&self, _filter: &AuditLogFilter) -> Result<AuditLogResult> {
+        Ok(AuditLogResult {
+            records: vec![],
+            total: 0,
+            limit: 0,
+            offset: 0,
+        })
+    }
+
+    async fn get_audit_logs_by_project(&self, _project_id: i64, _limit: i64, _offset: i64) -> Result<Vec<AuditLog>> {
+        Ok(vec![])
+    }
+
+    async fn get_audit_logs_by_user(&self, _user_id: i64, _limit: i64, _offset: i64) -> Result<Vec<AuditLog>> {
+        Ok(vec![])
+    }
+
+    async fn get_audit_logs_by_action(&self, _action: &AuditAction, _limit: i64, _offset: i64) -> Result<Vec<AuditLog>> {
+        Ok(vec![])
+    }
+
+    async fn delete_audit_logs_before(&self, _before: chrono::DateTime<chrono::Utc>) -> Result<u64> {
+        Ok(0)
+    }
+
+    async fn clear_audit_log(&self) -> Result<u64> {
+        Ok(0)
     }
 }
 

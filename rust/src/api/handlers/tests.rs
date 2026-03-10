@@ -5,6 +5,7 @@ mod tests {
     use axum::{
         body::Body,
         http::{Request, StatusCode},
+        response::IntoResponse,
     };
     use tower::ServiceExt;
     use std::sync::Arc;
@@ -67,13 +68,14 @@ mod tests {
             password: "wrong".to_string(),
             totp_code: None,
         };
-        let result = handlers::login(
+        let response = handlers::login(
             axum::extract::State(state),
             axum::Json(payload),
         ).await;
-        assert!(result.is_err());
-        let (status, _) = result.unwrap_err();
-        assert_eq!(status, StatusCode::UNAUTHORIZED);
+        
+        // Response is IntoResponse, check status code
+        let resp = response.into_response();
+        assert_eq!(resp.status(), StatusCode::UNAUTHORIZED);
     }
 
     #[tokio::test]
