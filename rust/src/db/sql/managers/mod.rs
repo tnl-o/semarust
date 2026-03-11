@@ -12,6 +12,10 @@
 //! - `ProjectStore` - управление проектами
 //! - `TemplateManager` - управление шаблонами
 //! - `TaskManager` - управление задачами
+//! - `InventoryManager` - управление инвентарями
+//! - `RepositoryManager` - управление репозиториями
+//! - `EnvironmentManager` - управление окружениями
+//! - `AccessKeyManager` - управление ключами доступа
 //! - `WebhookManager` - управление webhook
 
 pub mod connection;
@@ -21,6 +25,10 @@ pub mod user;
 pub mod project;
 pub mod template;
 pub mod task;
+pub mod inventory;
+pub mod repository;
+pub mod environment;
+pub mod access_key;
 pub mod webhook;
 
 // Ре-экспорт трейтов для удобства
@@ -31,6 +39,10 @@ pub use user::*;
 pub use project::*;
 pub use template::*;
 pub use task::*;
+pub use inventory::*;
+pub use repository::*;
+pub use environment::*;
+pub use access_key::*;
 pub use webhook::*;
 
 // ============================================================================
