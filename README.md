@@ -1,7 +1,7 @@
 # 🦀 Semaphore UI на Rust
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Rust](https://img.shields.io/badge/Rust-1.75+-blue.svg)](https://www.rust-lang.org)
+[![Rust](https://img.shields.io/badge/Rust-1.80+-blue.svg)](https://www.rust-lang.org)
 [![Tests](https://img.shields.io/badge/tests-475%20passed-brightgreen.svg)]()
 [![Build Status](https://img.shields.io/badge/build-passing-brightgreen.svg)]()
 [![Migration](https://img.shields.io/badge/migration-100%25-brightgreen.svg)]()
@@ -10,25 +10,28 @@
 
 **Полная миграция Semaphore UI на Rust** - высокопроизводительная, безопасная и надёжная система автоматизации для Ansible, Terraform, OpenTofu, Terragrunt, PowerShell и других DevOps-инструментов.
 
-## 🎯 CRUD Демо
+## 🎯 Демо-режим
 
-> **Попробуйте прямо сейчас!** Интерактивное демо с полным CRUD для всех сущностей.
+> **Попробуйте прямо сейчас!** Полноценное демо-окружение с готовыми данными.
 
 ```bash
-# Быстрый старт
-./demo-start.sh
+# Быстрый старт демо-режима
+./scripts/start-demo-mode.sh
+./start.sh hybrid
 
 # Откройте в браузере
-http://localhost/demo-crud.html
+http://localhost:3000
 ```
 
-**Учётные данные:**
+**Учётные данные (пароль для всех: demo123):**
 - `admin` / `demo123` (администратор)
 - `john.doe` / `demo123` (менеджер)
 - `jane.smith` / `demo123` (менеджер)
 - `devops` / `demo123` (исполнитель)
 
-📖 **Подробная документация**: [CRUD_DEMO.md](CRUD_DEMO.md)
+**Демо-данные:** 4 проекта, 12 шаблонов, 4 расписания, 6 задач
+
+📖 **Подробная документация**: [db/postgres/DEMO_MODE.md](db/postgres/DEMO_MODE.md)
 
 ---
 
@@ -36,7 +39,7 @@ http://localhost/demo-crud.html
 
 ### Требования
 
-- Rust 1.75 или новее
+- Rust 1.80 или новее
 - Cargo
 - Docker (опционально, для Docker-режимов)
 
