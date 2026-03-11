@@ -38,66 +38,116 @@ http://localhost/demo-crud.html
 
 - Rust 1.75 или новее
 - Cargo
-- Docker (опционально, для PostgreSQL)
+- Docker (опционально, для Docker-режимов)
 
 ---
 
-### Вариант 1: Docker (Frontend + PostgreSQL + демо-данные)
+### 📋 Режимы запуска
+
+#### Режим 1: Docker Full (Frontend + БД в Docker, Backend на хосте) ⭐ Рекомендуется
 
 ```bash
-# 1. Запуск frontend и БД
-./start.sh
+# Запуск всех сервисов
+./start.sh docker-full
 
-# 2. Запуск backend (в отдельном терминале)
-./start.sh --backend
+# Или просто (режим по умолчанию)
+./start.sh
 ```
 
 **Доступ:** http://localhost
 
-**Учётные данные:**
+**Учётные данные (демо):**
 - `admin` / `demo123`
 - `john.doe` / `demo123`
 - `jane.smith` / `demo123`
 - `devops` / `demo123`
 
+**Полезные команды:**
+```bash
+./start.sh --stop          # Остановить сервисы
+./start.sh --logs          # Просмотр логов
+./start.sh --clean         # Очистить данные БД
+./start.sh --backend       # Запустить только backend
+```
+
 ---
 
-### Вариант 2: SQLite (для тестирования)
+#### Режим 2: SQLite (минимальные зависимости, для тестирования)
 
 ```bash
-# Сборка frontend
-./web/build.sh
+# Первый запуск с инициализацией
+./start.sh sqlite --init
 
 # Запуск сервера
-cd rust
-export SEMAPHORE_DB_PATH=/tmp/semaphore.db
-cargo run -- server --host 0.0.0.0 --port 3000
+./start.sh sqlite
 ```
 
 **Доступ:** http://localhost:3000
 
-**Создание администратора:**
+**Учётные данные:**
+- `admin` / `admin123`
+
+**Полезные команды:**
 ```bash
-cargo run -- user add --username admin --name "Admin" --email admin@localhost --password admin123 --admin
+./start.sh sqlite --stop   # Остановить backend
+./start.sh sqlite --build  # Пересобрать backend
 ```
 
 ---
 
-### Вариант 3: PostgreSQL (продакшен)
+#### Режим 3: Docker All (всё в Docker, продакшен)
 
 ```bash
-# 1. Запуск PostgreSQL
-docker run -d --name semaphore-postgres \
-  -e POSTGRES_USER=semaphore \
-  -e POSTGRES_PASSWORD=semaphore_pass \
-  -e POSTGRES_DB=semaphore \
-  -p 5432:5432 \
-  postgres:16-alpine
+# Запуск всех сервисов в Docker
+./start.sh docker-all
+```
 
-# 2. Сборка frontend
+**Доступ:** http://localhost
+
+**Учётные данные (демо):**
+- `admin` / `demo123`
+
+**Полезные команды:**
+```bash
+./start.sh docker-all --stop   # Остановить сервисы
+./start.sh docker-all --logs   # Просмотр логов
+./start.sh docker-all --clean  # Очистить volumes
+```
+
+---
+
+### 🔧 Ручной запуск (для разработки)
+
+#### Сборка frontend
+```bash
 ./web/build.sh
+```
 
-# 3. Запуск backend
+#### Запуск backend напрямую
+```bash
+cd rust
+
+# С SQLite
+export SEMAPHORE_DB_DIALECT=sqlite
+export SEMAPHORE_DB_PATH=/tmp/semaphore.db
+cargo run -- server --host 0.0.0.0 --port 3000
+
+# С PostgreSQL
+export SEMAPHORE_DB_DIALECT=postgres
+export SEMAPHORE_DB_URL=postgres://semaphore:semaphore_pass@localhost:5432/semaphore
+cargo run -- server --host 0.0.0.0 --port 3000
+```
+
+#### Создание администратора
+```bash
+cd rust
+cargo run -- user add \
+  --username admin \
+  --name "Administrator" \
+  --email admin@localhost \
+  --password admin123 \
+  --admin
+```
 cd rust
 export SEMAPHORE_DB_URL="postgres://semaphore:semaphore_pass@localhost:5432/semaphore"
 cargo run -- server --host 0.0.0.0 --port 3000
