@@ -56,6 +56,7 @@ pub mod integration;
 pub mod project_invite;
 pub mod terraform;
 pub mod webhook;
+pub mod playbook;
 
 // Ре-экспорт трейтов для удобства
 pub use connection::*;
@@ -80,6 +81,7 @@ pub use integration::*;
 pub use project_invite::*;
 pub use terraform::*;
 pub use webhook::*;
+pub use playbook::*;
 
 // ============================================================================
 // Store trait implementation

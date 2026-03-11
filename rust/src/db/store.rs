@@ -320,6 +320,16 @@ pub trait AuditLogManager: Send + Sync {
     async fn clear_audit_log(&self) -> Result<u64>;
 }
 
+/// Менеджер Playbook
+#[async_trait]
+pub trait PlaybookManager: Send + Sync {
+    async fn get_playbooks(&self, project_id: i32) -> Result<Vec<Playbook>>;
+    async fn get_playbook(&self, id: i32, project_id: i32) -> Result<Playbook>;
+    async fn create_playbook(&self, project_id: i32, playbook: PlaybookCreate) -> Result<Playbook>;
+    async fn update_playbook(&self, id: i32, project_id: i32, playbook: PlaybookUpdate) -> Result<Playbook>;
+    async fn delete_playbook(&self, id: i32, project_id: i32) -> Result<()>;
+}
+
 /// Менеджер webhook
 #[async_trait]
 pub trait WebhookManager: Send + Sync {
@@ -346,17 +356,6 @@ pub trait WebhookManager: Send + Sync {
 }
 
 /// Менеджер Playbook
-#[async_trait]
-pub trait PlaybookManager: Send + Sync {
-    async fn get_playbooks(&self, project_id: i32) -> Result<Vec<Playbook>>;
-    async fn get_playbook(&self, id: i32, project_id: i32) -> Result<Playbook>;
-    async fn create_playbook(&self, project_id: i32, playbook: PlaybookCreate) -> Result<Playbook>;
-    async fn update_playbook(&self, id: i32, project_id: i32, playbook: PlaybookUpdate) -> Result<Playbook>;
-    async fn delete_playbook(&self, id: i32, project_id: i32) -> Result<()>;
-}
-
-/// Основной трейт хранилища - агрегирует все менеджеры
-#[async_trait]
 pub trait Store:
     ConnectionManager
     + MigrationManager
@@ -382,6 +381,6 @@ pub trait Store:
     + HookManager
     + AuditLogManager
     + WebhookManager
-//    + PlaybookManager  // Временно отключено до исправления компиляции
+    + PlaybookManager
 {
 }
