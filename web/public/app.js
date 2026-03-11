@@ -167,7 +167,8 @@ const ui = {
             projects: '📁 Проекты', 
             templates: '📋 Шаблоны', 
             tasks: '✅ Задачи', 
-            inventory: '📦 Инвентарь', 
+            inventory: '📦 Инвентарь',
+            playbooks: '📜 Playbooks',
             keys: '🔐 Ключи', 
             repositories: '🗂️ Репозитории', 
             users: '👥 Пользователи'
@@ -218,6 +219,7 @@ const ui = {
             else if (page === 'templates') await this.loadTemplates();
             else if (page === 'tasks') await this.loadTasks();
             else if (page === 'inventory') await this.loadInventory();
+            else if (page === 'playbooks') await this.loadPlaybooks();
             else if (page === 'keys') await this.loadKeys();
             else if (page === 'repositories') await this.loadRepositories();
         } catch (error) { console.error(`Error loading ${page}:`, error); }
@@ -752,3 +754,42 @@ const app = {
 };
 
 document.addEventListener('DOMContentLoaded', () => app.init());
+
+    // === Playbooks CRUD ===
+    async loadPlaybooks() {
+        try {
+            if (!state.currentProjectId) { this.renderEmptyTable('playbooks-table', 4); return; }
+            const playbooks = await api.get(`/project/${state.currentProjectId}/inventories/playbooks`).catch(() => []);
+            state.playbooks = Array.isArray(playbooks) ? playbooks : [];
+            this.renderPlaybooksTable(state.playbooks);
+        } catch (error) { this.renderEmptyTable('playbooks-table', 4); }
+    },
+    async createPlaybook() {
+        const name = prompt('Название playbook (например, site.yml):'); if (!name) return;
+        const content = prompt('YAML содержимое:'); if (!content) return;
+        try {
+            await api.post(`/project/${state.currentProjectId}/inventory`, {
+                name, inventory_type: 'file', inventory_data: content
+            });
+            await this.loadPlaybooks();
+            alert('✅ Playbook создан!');
+        } catch (error) { alert('❌ Ошибка: ' + error.message); }
+    },
+    renderPlaybooksTable(playbooks) {
+        const tbody = document.getElementById('playbooks-table');
+        if (!tbody) return;
+        if (!playbooks || playbooks.length === 0) { tbody.innerHTML = '<tr><td colspan="4" class="empty-state"><p>Нет playbooks</p></td></tr>'; return; }
+        tbody.innerHTML = playbooks.map(pb => `<tr><td>${pb.id || '-'}</td><td><strong>${pb.name || pb}</strong></td><td><span class="badge badge-info">ansible</span></td><td><div class="actions"><button class="btn btn-sm btn-edit" onclick="app.editPlaybook('${pb.name || pb}')">✏️</button></div></td></tr>`).join('');
+    },
+    async editPlaybook(name) {
+        const pb = state.playbooks.find(p => (p.name || p) === name); if (!pb) return;
+        const content = prompt('YAML содержимое:', pb.content || pb.inventory_data || '');
+        if (!content) return;
+        try {
+            await api.put(`/project/${state.currentProjectId}/inventory/${pb.id || pb}`, {
+                inventory_data: content
+            });
+            await this.loadPlaybooks();
+            alert('✅ Playbook обновлён!');
+        } catch (error) { alert('❌ Ошибка: ' + error.message); }
+    }
