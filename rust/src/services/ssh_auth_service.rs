@@ -135,7 +135,9 @@ impl SshAuthService {
             ));
         }
 
-        if !ssh_key.contains("RSA") && !ssh_key.contains("ED25519") && !ssh_key.contains("EC") {
+        // Проверяем поддерживаемые типы ключей
+        let supported_types = ["RSA", "ED25519", "EC", "OPENSSH"];
+        if !supported_types.iter().any(|t| ssh_key.contains(t)) {
             return Err(Error::Validation(
                 "Неподдерживаемый тип SSH ключа".to_string(),
             ));
