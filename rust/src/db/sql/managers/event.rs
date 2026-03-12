@@ -1,11 +1,13 @@
-//! Менеджер хранилища данных
-//!
-//! Автоматически извлечён из mod.rs в рамках декомпозиции
+//! EventManager - управление событиями
 
 use crate::db::sql::SqlStore;
 use crate::db::store::*;
+use crate::db::sql::SqlDialect;
 use crate::error::{Error, Result};
+use crate::models::Event;
 use async_trait::async_trait;
+use chrono::{DateTime, Utc};
+use sqlx::Row;
 
 #[async_trait]
 impl EventManager for SqlStore {
@@ -21,7 +23,7 @@ impl EventManager for SqlStore {
                 if let Some(pid) = project_id {
                     q = q.bind(pid);
                 }
-                let rows = q.bind(limit as i64).fetch_all(self.get_sqlite_pool()?).await.map_err(|e| Error::Database(e))?;
+                let rows = q.bind(limit as i64).fetch_all(self.get_sqlite_pool().ok_or_else(|| Error::Other("SQLite pool not found".to_string()))?).await.map_err(|e| Error::Database(e))?;
                 Ok(rows.into_iter().map(|row| Event {
                     id: row.get("id"),
                     project_id: row.try_get("project_id").ok(),
@@ -42,7 +44,7 @@ impl EventManager for SqlStore {
                 if let Some(pid) = project_id {
                     q = q.bind(pid);
                 }
-                let rows = q.bind(limit as i64).fetch_all(self.get_postgres_pool()?).await.map_err(|e| Error::Database(e))?;
+                let rows = q.bind(limit as i64).fetch_all(self.get_postgres_pool().ok_or_else(|| Error::Other("PostgreSQL pool not found".to_string()))?).await.map_err(|e| Error::Database(e))?;
                 Ok(rows.into_iter().map(|row| Event {
                     id: row.get("id"),
                     project_id: row.try_get("project_id").ok(),
@@ -63,7 +65,7 @@ impl EventManager for SqlStore {
                 if let Some(pid) = project_id {
                     q = q.bind(pid);
                 }
-                let rows = q.bind(limit as i64).fetch_all(self.get_mysql_pool()?).await.map_err(|e| Error::Database(e))?;
+                let rows = q.bind(limit as i64).fetch_all(self.get_mysql_pool().ok_or_else(|| Error::Other("MySQL pool not found".to_string()))?).await.map_err(|e| Error::Database(e))?;
                 Ok(rows.into_iter().map(|row| Event {
                     id: row.get("id"),
                     project_id: row.try_get("project_id").ok(),
@@ -88,7 +90,7 @@ impl EventManager for SqlStore {
                     .bind(&event.object_type)
                     .bind(&event.description)
                     .bind(event.created)
-                    .fetch_one(self.get_sqlite_pool()?).await.map_err(|e| Error::Database(e))?;
+                    .fetch_one(self.get_sqlite_pool().ok_or_else(|| Error::Other("SQLite pool not found".to_string()))?).await.map_err(|e| Error::Database(e))?;
                 event.id = id;
                 Ok(event)
             }
@@ -101,7 +103,7 @@ impl EventManager for SqlStore {
                     .bind(&event.object_type)
                     .bind(&event.description)
                     .bind(event.created)
-                    .fetch_one(self.get_postgres_pool()?).await.map_err(|e| Error::Database(e))?;
+                    .fetch_one(self.get_postgres_pool().ok_or_else(|| Error::Other("PostgreSQL pool not found".to_string()))?).await.map_err(|e| Error::Database(e))?;
                 event.id = id;
                 Ok(event)
             }
@@ -114,7 +116,7 @@ impl EventManager for SqlStore {
                     .bind(&event.object_type)
                     .bind(&event.description)
                     .bind(event.created)
-                    .execute(self.get_mysql_pool()?).await.map_err(|e| Error::Database(e))?;
+                    .execute(self.get_mysql_pool().ok_or_else(|| Error::Other("MySQL pool not found".to_string()))?).await.map_err(|e| Error::Database(e))?;
                 event.id = result.last_insert_id() as i32;
                 Ok(event)
             }

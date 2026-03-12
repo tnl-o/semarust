@@ -1,10 +1,9 @@
-//! Менеджер хранилища данных
-//!
-//! Автоматически извлечён из mod.rs в рамках декомпозиции
+//! HookManager - управление хуками
 
 use crate::db::sql::SqlStore;
 use crate::db::store::*;
 use crate::error::{Error, Result};
+use crate::models::Hook;
 use async_trait::async_trait;
 
 #[async_trait]

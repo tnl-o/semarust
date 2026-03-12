@@ -1,10 +1,9 @@
-//! Менеджер хранилища данных
-//!
-//! Автоматически извлечён из mod.rs в рамках декомпозиции
+//! ProjectInviteManager - управление приглашениями в проект
 
 use crate::db::sql::SqlStore;
 use crate::db::store::*;
 use crate::error::{Error, Result};
+use crate::models::{ProjectInvite, ProjectInviteWithUser};
 use async_trait::async_trait;
 
 #[async_trait]

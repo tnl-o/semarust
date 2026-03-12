@@ -1,11 +1,13 @@
-//! Менеджер хранилища данных
-//!
-//! Автоматически извлечён из mod.rs в рамках декомпозиции
+//! TokenManager - управление API токенами
 
 use crate::db::sql::SqlStore;
 use crate::db::store::*;
+use crate::db::sql::SqlDialect;
 use crate::error::{Error, Result};
+use crate::models::APIToken;
 use async_trait::async_trait;
+use chrono::Utc;
+use sqlx::Row;
 
 #[async_trait]
 impl TokenManager for SqlStore {
@@ -13,7 +15,7 @@ impl TokenManager for SqlStore {
         match self.get_dialect() {
             SqlDialect::SQLite => {
                 let query = "SELECT * FROM api_token WHERE user_id = ? ORDER BY created DESC";
-                let rows = sqlx::query(query).bind(user_id).fetch_all(self.get_sqlite_pool()?).await.map_err(|e| Error::Database(e))?;
+                let rows = sqlx::query(query).bind(user_id).fetch_all(self.get_sqlite_pool().ok_or_else(|| Error::Other("SQLite pool not found".to_string()))?).await.map_err(|e| Error::Database(e))?;
                 Ok(rows.into_iter().map(|row| APIToken {
                     id: row.get("id"),
                     user_id: row.get("user_id"),
@@ -25,7 +27,7 @@ impl TokenManager for SqlStore {
             }
             SqlDialect::PostgreSQL => {
                 let query = "SELECT * FROM api_token WHERE user_id = $1 ORDER BY created DESC";
-                let rows = sqlx::query(query).bind(user_id).fetch_all(self.get_postgres_pool()?).await.map_err(|e| Error::Database(e))?;
+                let rows = sqlx::query(query).bind(user_id).fetch_all(self.get_postgres_pool().ok_or_else(|| Error::Other("PostgreSQL pool not found".to_string()))?).await.map_err(|e| Error::Database(e))?;
                 Ok(rows.into_iter().map(|row| APIToken {
                     id: row.get("id"),
                     user_id: row.get("user_id"),
@@ -37,7 +39,7 @@ impl TokenManager for SqlStore {
             }
             SqlDialect::MySQL => {
                 let query = "SELECT * FROM `api_token` WHERE user_id = ? ORDER BY created DESC";
-                let rows = sqlx::query(query).bind(user_id).fetch_all(self.get_mysql_pool()?).await.map_err(|e| Error::Database(e))?;
+                let rows = sqlx::query(query).bind(user_id).fetch_all(self.get_mysql_pool().ok_or_else(|| Error::Other("MySQL pool not found".to_string()))?).await.map_err(|e| Error::Database(e))?;
                 Ok(rows.into_iter().map(|row| APIToken {
                     id: row.get("id"),
                     user_id: row.get("user_id"),
@@ -60,7 +62,7 @@ impl TokenManager for SqlStore {
                     .bind(&token.token)
                     .bind(token.created)
                     .bind(token.expired)
-                    .fetch_one(self.get_sqlite_pool()?).await.map_err(|e| Error::Database(e))?;
+                    .fetch_one(self.get_sqlite_pool().ok_or_else(|| Error::Other("SQLite pool not found".to_string()))?).await.map_err(|e| Error::Database(e))?;
                 token.id = id;
                 Ok(token)
             }
@@ -72,7 +74,7 @@ impl TokenManager for SqlStore {
                     .bind(&token.token)
                     .bind(token.created)
                     .bind(token.expired)
-                    .fetch_one(self.get_postgres_pool()?).await.map_err(|e| Error::Database(e))?;
+                    .fetch_one(self.get_postgres_pool().ok_or_else(|| Error::Other("PostgreSQL pool not found".to_string()))?).await.map_err(|e| Error::Database(e))?;
                 token.id = id;
                 Ok(token)
             }
@@ -84,7 +86,7 @@ impl TokenManager for SqlStore {
                     .bind(&token.token)
                     .bind(token.created)
                     .bind(token.expired)
-                    .execute(self.get_mysql_pool()?).await.map_err(|e| Error::Database(e))?;
+                    .execute(self.get_mysql_pool().ok_or_else(|| Error::Other("MySQL pool not found".to_string()))?).await.map_err(|e| Error::Database(e))?;
                 token.id = result.last_insert_id() as i32;
                 Ok(token)
             }
@@ -95,7 +97,7 @@ impl TokenManager for SqlStore {
         match self.get_dialect() {
             SqlDialect::SQLite => {
                 let query = "SELECT * FROM api_token WHERE id = ?";
-                let row = sqlx::query(query).bind(token_id).fetch_one(self.get_sqlite_pool()?).await.map_err(|e| match e {
+                let row = sqlx::query(query).bind(token_id).fetch_one(self.get_sqlite_pool().ok_or_else(|| Error::Other("SQLite pool not found".to_string()))?).await.map_err(|e| match e {
                     sqlx::Error::RowNotFound => Error::NotFound("Токен не найден".to_string()),
                     _ => Error::Database(e),
                 })?;
@@ -110,7 +112,7 @@ impl TokenManager for SqlStore {
             }
             SqlDialect::PostgreSQL => {
                 let query = "SELECT * FROM api_token WHERE id = $1";
-                let row = sqlx::query(query).bind(token_id).fetch_one(self.get_postgres_pool()?).await.map_err(|e| match e {
+                let row = sqlx::query(query).bind(token_id).fetch_one(self.get_postgres_pool().ok_or_else(|| Error::Other("PostgreSQL pool not found".to_string()))?).await.map_err(|e| match e {
                     sqlx::Error::RowNotFound => Error::NotFound("Токен не найден".to_string()),
                     _ => Error::Database(e),
                 })?;
@@ -125,7 +127,7 @@ impl TokenManager for SqlStore {
             }
             SqlDialect::MySQL => {
                 let query = "SELECT * FROM `api_token` WHERE id = ?";
-                let row = sqlx::query(query).bind(token_id).fetch_one(self.get_mysql_pool()?).await.map_err(|e| match e {
+                let row = sqlx::query(query).bind(token_id).fetch_one(self.get_mysql_pool().ok_or_else(|| Error::Other("MySQL pool not found".to_string()))?).await.map_err(|e| match e {
                     sqlx::Error::RowNotFound => Error::NotFound("Токен не найден".to_string()),
                     _ => Error::Database(e),
                 })?;
@@ -145,15 +147,15 @@ impl TokenManager for SqlStore {
         match self.get_dialect() {
             SqlDialect::SQLite => {
                 let query = "UPDATE api_token SET expired = 1 WHERE id = ?";
-                sqlx::query(query).bind(token_id).execute(self.get_sqlite_pool()?).await.map_err(|e| Error::Database(e))?;
+                sqlx::query(query).bind(token_id).execute(self.get_sqlite_pool().ok_or_else(|| Error::Other("SQLite pool not found".to_string()))?).await.map_err(|e| Error::Database(e))?;
             }
             SqlDialect::PostgreSQL => {
                 let query = "UPDATE api_token SET expired = TRUE WHERE id = $1";
-                sqlx::query(query).bind(token_id).execute(self.get_postgres_pool()?).await.map_err(|e| Error::Database(e))?;
+                sqlx::query(query).bind(token_id).execute(self.get_postgres_pool().ok_or_else(|| Error::Other("PostgreSQL pool not found".to_string()))?).await.map_err(|e| Error::Database(e))?;
             }
             SqlDialect::MySQL => {
                 let query = "UPDATE `api_token` SET expired = 1 WHERE id = ?";
-                sqlx::query(query).bind(token_id).execute(self.get_mysql_pool()?).await.map_err(|e| Error::Database(e))?;
+                sqlx::query(query).bind(token_id).execute(self.get_mysql_pool().ok_or_else(|| Error::Other("MySQL pool not found".to_string()))?).await.map_err(|e| Error::Database(e))?;
             }
         }
         Ok(())
@@ -163,15 +165,15 @@ impl TokenManager for SqlStore {
         match self.get_dialect() {
             SqlDialect::SQLite => {
                 let query = "DELETE FROM api_token WHERE id = ?";
-                sqlx::query(query).bind(token_id).execute(self.get_sqlite_pool()?).await.map_err(|e| Error::Database(e))?;
+                sqlx::query(query).bind(token_id).execute(self.get_sqlite_pool().ok_or_else(|| Error::Other("SQLite pool not found".to_string()))?).await.map_err(|e| Error::Database(e))?;
             }
             SqlDialect::PostgreSQL => {
                 let query = "DELETE FROM api_token WHERE id = $1";
-                sqlx::query(query).bind(token_id).execute(self.get_postgres_pool()?).await.map_err(|e| Error::Database(e))?;
+                sqlx::query(query).bind(token_id).execute(self.get_postgres_pool().ok_or_else(|| Error::Other("PostgreSQL pool not found".to_string()))?).await.map_err(|e| Error::Database(e))?;
             }
             SqlDialect::MySQL => {
                 let query = "DELETE FROM `api_token` WHERE id = ?";
-                sqlx::query(query).bind(token_id).execute(self.get_mysql_pool()?).await.map_err(|e| Error::Database(e))?;
+                sqlx::query(query).bind(token_id).execute(self.get_mysql_pool().ok_or_else(|| Error::Other("MySQL pool not found".to_string()))?).await.map_err(|e| Error::Database(e))?;
             }
         }
         Ok(())

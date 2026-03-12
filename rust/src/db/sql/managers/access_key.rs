@@ -1,11 +1,14 @@
-//! Менеджер хранилища данных
+//! AccessKeyManager - управление ключами доступа
 //!
-//! Автоматически извлечён из mod.rs в рамках декомпозиции
+//! Реализация трейта AccessKeyManager для SqlStore
 
 use crate::db::sql::SqlStore;
+use crate::db::sql::types::SqlDialect;
 use crate::db::store::*;
+use crate::models::AccessKey;
 use crate::error::{Error, Result};
 use async_trait::async_trait;
+use sqlx::Row;
 
 #[async_trait]
 impl AccessKeyManager for SqlStore {
@@ -15,7 +18,7 @@ impl AccessKeyManager for SqlStore {
                 let query = "SELECT * FROM access_key WHERE project_id = ? ORDER BY name";
                 let rows = sqlx::query(query)
                     .bind(project_id)
-                    .fetch_all(self.get_sqlite_pool()?)
+                    .fetch_all(self.get_sqlite_pool().ok_or_else(|| Error::Other("SQLite pool not found".to_string()))?)
                     .await
                     .map_err(|e| Error::Database(e))?;
 
@@ -41,7 +44,7 @@ impl AccessKeyManager for SqlStore {
                 let query = "SELECT * FROM access_key WHERE project_id = $1 ORDER BY name";
                 let rows = sqlx::query(query)
                     .bind(project_id)
-                    .fetch_all(self.get_postgres_pool()?)
+                    .fetch_all(self.get_postgres_pool().ok_or_else(|| Error::Other("PostgreSQL pool not found".to_string()))?)
                     .await
                     .map_err(|e| Error::Database(e))?;
 
@@ -67,7 +70,7 @@ impl AccessKeyManager for SqlStore {
                 let query = "SELECT * FROM `access_key` WHERE project_id = ? ORDER BY name";
                 let rows = sqlx::query(query)
                     .bind(project_id)
-                    .fetch_all(self.get_mysql_pool()?)
+                    .fetch_all(self.get_mysql_pool().ok_or_else(|| Error::Other("MySQL pool not found".to_string()))?)
                     .await
                     .map_err(|e| Error::Database(e))?;
 
@@ -99,7 +102,7 @@ impl AccessKeyManager for SqlStore {
                 let row = sqlx::query(query)
                     .bind(key_id)
                     .bind(project_id)
-                    .fetch_one(self.get_sqlite_pool()?)
+                    .fetch_one(self.get_sqlite_pool().ok_or_else(|| Error::Other("SQLite pool not found".to_string()))?)
                     .await
                     .map_err(|e| match e {
                         sqlx::Error::RowNotFound => Error::NotFound("Ключ доступа не найден".to_string()),
@@ -129,7 +132,7 @@ impl AccessKeyManager for SqlStore {
                 let row = sqlx::query(query)
                     .bind(key_id)
                     .bind(project_id)
-                    .fetch_one(self.get_postgres_pool()?)
+                    .fetch_one(self.get_postgres_pool().ok_or_else(|| Error::Other("PostgreSQL pool not found".to_string()))?)
                     .await
                     .map_err(|e| match e {
                         sqlx::Error::RowNotFound => Error::NotFound("Ключ доступа не найден".to_string()),
@@ -159,7 +162,7 @@ impl AccessKeyManager for SqlStore {
                 let row = sqlx::query(query)
                     .bind(key_id)
                     .bind(project_id)
-                    .fetch_one(self.get_mysql_pool()?)
+                    .fetch_one(self.get_mysql_pool().ok_or_else(|| Error::Other("MySQL pool not found".to_string()))?)
                     .await
                     .map_err(|e| match e {
                         sqlx::Error::RowNotFound => Error::NotFound("Ключ доступа не найден".to_string()),
@@ -205,7 +208,7 @@ impl AccessKeyManager for SqlStore {
                     .bind(&key.secret_storage_id)
                     .bind(key.owner.as_ref().map(|o| o.to_string()))
                     .bind(&key.environment_id)
-                    .fetch_one(self.get_sqlite_pool()?)
+                    .fetch_one(self.get_sqlite_pool().ok_or_else(|| Error::Other("SQLite pool not found".to_string()))?)
                     .await
                     .map_err(|e| Error::Database(e))?;
 
@@ -228,7 +231,7 @@ impl AccessKeyManager for SqlStore {
                     .bind(&key.secret_storage_id)
                     .bind(key.owner.as_ref().map(|o| o.to_string()))
                     .bind(&key.environment_id)
-                    .fetch_one(self.get_postgres_pool()?)
+                    .fetch_one(self.get_postgres_pool().ok_or_else(|| Error::Other("PostgreSQL pool not found".to_string()))?)
                     .await
                     .map_err(|e| Error::Database(e))?;
 
@@ -251,12 +254,12 @@ impl AccessKeyManager for SqlStore {
                     .bind(&key.secret_storage_id)
                     .bind(key.owner.as_ref().map(|o| o.to_string()))
                     .bind(&key.environment_id)
-                    .execute(self.get_mysql_pool()?)
+                    .execute(self.get_mysql_pool().ok_or_else(|| Error::Other("MySQL pool not found".to_string()))?)
                     .await
                     .map_err(|e| Error::Database(e))?;
 
                 let id: i32 = sqlx::query_scalar("SELECT LAST_INSERT_ID()")
-                    .fetch_one(self.get_mysql_pool()?)
+                    .fetch_one(self.get_mysql_pool().ok_or_else(|| Error::Other("MySQL pool not found".to_string()))?)
                     .await
                     .map_err(|e| Error::Database(e))?;
 
@@ -285,7 +288,7 @@ impl AccessKeyManager for SqlStore {
                     .bind(&key.environment_id)
                     .bind(key.id)
                     .bind(key.project_id.unwrap_or(0))
-                    .execute(self.get_sqlite_pool()?)
+                    .execute(self.get_sqlite_pool().ok_or_else(|| Error::Other("SQLite pool not found".to_string()))?)
                     .await
                     .map_err(|e| Error::Database(e))?;
             }
@@ -306,7 +309,7 @@ impl AccessKeyManager for SqlStore {
                     .bind(&key.environment_id)
                     .bind(key.id)
                     .bind(key.project_id.unwrap_or(0))
-                    .execute(self.get_postgres_pool()?)
+                    .execute(self.get_postgres_pool().ok_or_else(|| Error::Other("PostgreSQL pool not found".to_string()))?)
                     .await
                     .map_err(|e| Error::Database(e))?;
             }
@@ -327,7 +330,7 @@ impl AccessKeyManager for SqlStore {
                     .bind(&key.environment_id)
                     .bind(key.id)
                     .bind(key.project_id.unwrap_or(0))
-                    .execute(self.get_mysql_pool()?)
+                    .execute(self.get_mysql_pool().ok_or_else(|| Error::Other("MySQL pool not found".to_string()))?)
                     .await
                     .map_err(|e| Error::Database(e))?;
             }
@@ -342,7 +345,7 @@ impl AccessKeyManager for SqlStore {
                 sqlx::query(query)
                     .bind(key_id)
                     .bind(project_id)
-                    .execute(self.get_sqlite_pool()?)
+                    .execute(self.get_sqlite_pool().ok_or_else(|| Error::Other("SQLite pool not found".to_string()))?)
                     .await
                     .map_err(|e| Error::Database(e))?;
             }
@@ -351,7 +354,7 @@ impl AccessKeyManager for SqlStore {
                 sqlx::query(query)
                     .bind(key_id)
                     .bind(project_id)
-                    .execute(self.get_postgres_pool()?)
+                    .execute(self.get_postgres_pool().ok_or_else(|| Error::Other("PostgreSQL pool not found".to_string()))?)
                     .await
                     .map_err(|e| Error::Database(e))?;
             }
@@ -360,7 +363,7 @@ impl AccessKeyManager for SqlStore {
                 sqlx::query(query)
                     .bind(key_id)
                     .bind(project_id)
-                    .execute(self.get_mysql_pool()?)
+                    .execute(self.get_mysql_pool().ok_or_else(|| Error::Other("MySQL pool not found".to_string()))?)
                     .await
                     .map_err(|e| Error::Database(e))?;
             }

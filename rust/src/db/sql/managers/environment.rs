@@ -1,11 +1,14 @@
-//! Менеджер хранилища данных
+//! EnvironmentManager - управление окружениями
 //!
-//! Автоматически извлечён из mod.rs в рамках декомпозиции
+//! Реализация трейта EnvironmentManager для SqlStore
 
 use crate::db::sql::SqlStore;
+use crate::db::sql::types::SqlDialect;
 use crate::db::store::*;
+use crate::models::Environment;
 use crate::error::{Error, Result};
 use async_trait::async_trait;
+use sqlx::Row;
 
 #[async_trait]
 impl EnvironmentManager for SqlStore {
@@ -15,7 +18,7 @@ impl EnvironmentManager for SqlStore {
                 let query = "SELECT * FROM environment WHERE project_id = ? ORDER BY name";
                 let rows = sqlx::query(query)
                     .bind(project_id)
-                    .fetch_all(self.get_sqlite_pool()?)
+                    .fetch_all(self.get_sqlite_pool().ok_or_else(|| Error::Other("SQLite pool not found".to_string()))?)
                     .await
                     .map_err(|e| Error::Database(e))?;
 
@@ -33,7 +36,7 @@ impl EnvironmentManager for SqlStore {
                 let query = "SELECT * FROM environment WHERE project_id = $1 ORDER BY name";
                 let rows = sqlx::query(query)
                     .bind(project_id)
-                    .fetch_all(self.get_postgres_pool()?)
+                    .fetch_all(self.get_postgres_pool().ok_or_else(|| Error::Other("PostgreSQL pool not found".to_string()))?)
                     .await
                     .map_err(|e| Error::Database(e))?;
 
@@ -51,7 +54,7 @@ impl EnvironmentManager for SqlStore {
                 let query = "SELECT * FROM `environment` WHERE project_id = ? ORDER BY name";
                 let rows = sqlx::query(query)
                     .bind(project_id)
-                    .fetch_all(self.get_mysql_pool()?)
+                    .fetch_all(self.get_mysql_pool().ok_or_else(|| Error::Other("MySQL pool not found".to_string()))?)
                     .await
                     .map_err(|e| Error::Database(e))?;
 
@@ -75,7 +78,7 @@ impl EnvironmentManager for SqlStore {
                 let row = sqlx::query(query)
                     .bind(environment_id)
                     .bind(project_id)
-                    .fetch_one(self.get_sqlite_pool()?)
+                    .fetch_one(self.get_sqlite_pool().ok_or_else(|| Error::Other("SQLite pool not found".to_string()))?)
                     .await
                     .map_err(|e| match e {
                         sqlx::Error::RowNotFound => Error::NotFound("Окружение не найдено".to_string()),
@@ -97,7 +100,7 @@ impl EnvironmentManager for SqlStore {
                 let row = sqlx::query(query)
                     .bind(environment_id)
                     .bind(project_id)
-                    .fetch_one(self.get_postgres_pool()?)
+                    .fetch_one(self.get_postgres_pool().ok_or_else(|| Error::Other("PostgreSQL pool not found".to_string()))?)
                     .await
                     .map_err(|e| match e {
                         sqlx::Error::RowNotFound => Error::NotFound("Окружение не найдено".to_string()),
@@ -119,7 +122,7 @@ impl EnvironmentManager for SqlStore {
                 let row = sqlx::query(query)
                     .bind(environment_id)
                     .bind(project_id)
-                    .fetch_one(self.get_mysql_pool()?)
+                    .fetch_one(self.get_mysql_pool().ok_or_else(|| Error::Other("MySQL pool not found".to_string()))?)
                     .await
                     .map_err(|e| match e {
                         sqlx::Error::RowNotFound => Error::NotFound("Окружение не найдено".to_string()),
@@ -149,7 +152,7 @@ impl EnvironmentManager for SqlStore {
                     .bind(&environment.json)
                     .bind(&environment.secret_storage_id)
                     .bind(&environment.secrets)
-                    .fetch_one(self.get_sqlite_pool()?)
+                    .fetch_one(self.get_sqlite_pool().ok_or_else(|| Error::Other("SQLite pool not found".to_string()))?)
                     .await
                     .map_err(|e| Error::Database(e))?;
 
@@ -164,7 +167,7 @@ impl EnvironmentManager for SqlStore {
                     .bind(&environment.json)
                     .bind(&environment.secret_storage_id)
                     .bind(&environment.secrets)
-                    .fetch_one(self.get_postgres_pool()?)
+                    .fetch_one(self.get_postgres_pool().ok_or_else(|| Error::Other("PostgreSQL pool not found".to_string()))?)
                     .await
                     .map_err(|e| Error::Database(e))?;
 
@@ -179,12 +182,12 @@ impl EnvironmentManager for SqlStore {
                     .bind(&environment.json)
                     .bind(&environment.secret_storage_id)
                     .bind(&environment.secrets)
-                    .execute(self.get_mysql_pool()?)
+                    .execute(self.get_mysql_pool().ok_or_else(|| Error::Other("MySQL pool not found".to_string()))?)
                     .await
                     .map_err(|e| Error::Database(e))?;
 
                 let id: i32 = sqlx::query_scalar("SELECT LAST_INSERT_ID()")
-                    .fetch_one(self.get_mysql_pool()?)
+                    .fetch_one(self.get_mysql_pool().ok_or_else(|| Error::Other("MySQL pool not found".to_string()))?)
                     .await
                     .map_err(|e| Error::Database(e))?;
 
@@ -205,7 +208,7 @@ impl EnvironmentManager for SqlStore {
                     .bind(&environment.secrets)
                     .bind(environment.id)
                     .bind(environment.project_id)
-                    .execute(self.get_sqlite_pool()?)
+                    .execute(self.get_sqlite_pool().ok_or_else(|| Error::Other("SQLite pool not found".to_string()))?)
                     .await
                     .map_err(|e| Error::Database(e))?;
             }
@@ -218,7 +221,7 @@ impl EnvironmentManager for SqlStore {
                     .bind(&environment.secrets)
                     .bind(environment.id)
                     .bind(environment.project_id)
-                    .execute(self.get_postgres_pool()?)
+                    .execute(self.get_postgres_pool().ok_or_else(|| Error::Other("PostgreSQL pool not found".to_string()))?)
                     .await
                     .map_err(|e| Error::Database(e))?;
             }
@@ -231,7 +234,7 @@ impl EnvironmentManager for SqlStore {
                     .bind(&environment.secrets)
                     .bind(environment.id)
                     .bind(environment.project_id)
-                    .execute(self.get_mysql_pool()?)
+                    .execute(self.get_mysql_pool().ok_or_else(|| Error::Other("MySQL pool not found".to_string()))?)
                     .await
                     .map_err(|e| Error::Database(e))?;
             }
@@ -246,7 +249,7 @@ impl EnvironmentManager for SqlStore {
                 sqlx::query(query)
                     .bind(environment_id)
                     .bind(project_id)
-                    .execute(self.get_sqlite_pool()?)
+                    .execute(self.get_sqlite_pool().ok_or_else(|| Error::Other("SQLite pool not found".to_string()))?)
                     .await
                     .map_err(|e| Error::Database(e))?;
             }
@@ -255,7 +258,7 @@ impl EnvironmentManager for SqlStore {
                 sqlx::query(query)
                     .bind(environment_id)
                     .bind(project_id)
-                    .execute(self.get_postgres_pool()?)
+                    .execute(self.get_postgres_pool().ok_or_else(|| Error::Other("PostgreSQL pool not found".to_string()))?)
                     .await
                     .map_err(|e| Error::Database(e))?;
             }
@@ -264,7 +267,7 @@ impl EnvironmentManager for SqlStore {
                 sqlx::query(query)
                     .bind(environment_id)
                     .bind(project_id)
-                    .execute(self.get_mysql_pool()?)
+                    .execute(self.get_mysql_pool().ok_or_else(|| Error::Other("MySQL pool not found".to_string()))?)
                     .await
                     .map_err(|e| Error::Database(e))?;
             }

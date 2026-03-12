@@ -1,10 +1,9 @@
-//! Менеджер хранилища данных
-//!
-//! Автоматически извлечён из mod.rs в рамках декомпозиции
+//! TerraformInventoryManager - управление Terraform inventory
 
 use crate::db::sql::SqlStore;
 use crate::db::store::*;
 use crate::error::{Error, Result};
+use crate::models::{TerraformInventoryAlias, TerraformInventoryState};
 use async_trait::async_trait;
 
 #[async_trait]

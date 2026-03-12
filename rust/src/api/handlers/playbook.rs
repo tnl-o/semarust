@@ -7,19 +7,22 @@ use axum::{
 };
 use std::sync::Arc;
 use crate::api::state::AppState;
+use crate::api::middleware::ErrorResponse;
+use crate::db::store::PlaybookManager;
 use crate::models::playbook::{Playbook, PlaybookCreate, PlaybookUpdate};
-use crate::error::Error;
 
 /// GET /api/project/{project_id}/playbooks
 pub async fn get_project_playbooks(
     State(state): State<Arc<AppState>>,
     Path(project_id): Path<i32>,
-) -> Result<Json<Vec<Playbook>>, (StatusCode, Json<Error>)> {
-    let playbooks = state.store.get_playbooks(project_id).await.map_err(|e| (
-        StatusCode::INTERNAL_SERVER_ERROR,
-        Error::Database(e.to_string())
-    ))?;
-    
+) -> Result<Json<Vec<Playbook>>, (StatusCode, Json<ErrorResponse>)> {
+    let playbooks = state.store.get_playbooks(project_id).await.map_err(|e| {
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(ErrorResponse::new(e.to_string()))
+        )
+    })?;
+
     Ok(Json(playbooks))
 }
 
@@ -28,25 +31,29 @@ pub async fn create_playbook(
     State(state): State<Arc<AppState>>,
     Path(project_id): Path<i32>,
     Json(payload): Json<PlaybookCreate>,
-) -> Result<Json<Playbook>, (StatusCode, Json<Error>)> {
-    let playbook = state.store.create_playbook(project_id, payload).await.map_err(|e| (
-        StatusCode::INTERNAL_SERVER_ERROR,
-        Error::Database(e.to_string())
-    ))?;
-    
-    Ok(Json(playbook))
+) -> Result<(StatusCode, Json<Playbook>), (StatusCode, Json<ErrorResponse>)> {
+    let playbook = state.store.create_playbook(project_id, payload).await.map_err(|e| {
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(ErrorResponse::new(e.to_string()))
+        )
+    })?;
+
+    Ok((StatusCode::CREATED, Json(playbook)))
 }
 
 /// GET /api/project/{project_id}/playbooks/{id}
 pub async fn get_playbook(
     State(state): State<Arc<AppState>>,
     Path((project_id, id)): Path<(i32, i32)>,
-) -> Result<Json<Playbook>, (StatusCode, Json<Error>)> {
-    let playbook = state.store.get_playbook(id, project_id).await.map_err(|e| (
-        StatusCode::NOT_FOUND,
-        Error::Database(e.to_string())
-    ))?;
-    
+) -> Result<Json<Playbook>, (StatusCode, Json<ErrorResponse>)> {
+    let playbook = state.store.get_playbook(id, project_id).await.map_err(|e| {
+        (
+            StatusCode::NOT_FOUND,
+            Json(ErrorResponse::new(e.to_string()))
+        )
+    })?;
+
     Ok(Json(playbook))
 }
 
@@ -55,12 +62,14 @@ pub async fn update_playbook(
     State(state): State<Arc<AppState>>,
     Path((project_id, id)): Path<(i32, i32)>,
     Json(payload): Json<PlaybookUpdate>,
-) -> Result<Json<Playbook>, (StatusCode, Json<Error>)> {
-    let playbook = state.store.update_playbook(id, project_id, payload).await.map_err(|e| (
-        StatusCode::INTERNAL_SERVER_ERROR,
-        Error::Database(e.to_string())
-    ))?;
-    
+) -> Result<Json<Playbook>, (StatusCode, Json<ErrorResponse>)> {
+    let playbook = state.store.update_playbook(id, project_id, payload).await.map_err(|e| {
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(ErrorResponse::new(e.to_string()))
+        )
+    })?;
+
     Ok(Json(playbook))
 }
 
@@ -68,11 +77,13 @@ pub async fn update_playbook(
 pub async fn delete_playbook(
     State(state): State<Arc<AppState>>,
     Path((project_id, id)): Path<(i32, i32)>,
-) -> Result<StatusCode, (StatusCode, Json<Error>)> {
-    state.store.delete_playbook(id, project_id).await.map_err(|e| (
-        StatusCode::INTERNAL_SERVER_ERROR,
-        Error::Database(e.to_string())
-    ))?;
-    
+) -> Result<StatusCode, (StatusCode, Json<ErrorResponse>)> {
+    state.store.delete_playbook(id, project_id).await.map_err(|e| {
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(ErrorResponse::new(e.to_string()))
+        )
+    })?;
+
     Ok(StatusCode::NO_CONTENT)
 }

@@ -4,6 +4,7 @@
 
 use crate::db::sql::SqlStore;
 use crate::db::store::*;
+use crate::models::webhook::{Webhook, UpdateWebhook, WebhookLog};
 use crate::error::{Error, Result};
 use async_trait::async_trait;
 

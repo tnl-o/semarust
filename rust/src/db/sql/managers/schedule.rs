@@ -1,11 +1,14 @@
-//! Менеджер хранилища данных
+//! ScheduleManager - управление расписанием
 //!
-//! Автоматически извлечён из mod.rs в рамках декомпозиции
+//! Реализация трейта ScheduleManager для SqlStore
 
 use crate::db::sql::SqlStore;
+use crate::db::sql::types::SqlDialect;
 use crate::db::store::*;
+use crate::models::{Schedule, ScheduleWithTpl};
 use crate::error::{Error, Result};
 use async_trait::async_trait;
+use sqlx::Row;
 
 #[async_trait]
 impl ScheduleManager for SqlStore {
@@ -13,7 +16,7 @@ impl ScheduleManager for SqlStore {
         match self.get_dialect() {
             SqlDialect::SQLite => {
                 let query = "SELECT * FROM schedule WHERE project_id = ? ORDER BY name";
-                let rows = sqlx::query(query).bind(project_id).fetch_all(self.get_sqlite_pool()?).await.map_err(|e| Error::Database(e))?;
+                let rows = sqlx::query(query).bind(project_id).fetch_all(self.get_sqlite_pool().ok_or_else(|| Error::Other("SQLite pool not found".to_string()))?).await.map_err(|e| Error::Database(e))?;
                 Ok(rows.into_iter().map(|row| Schedule {
                     id: row.get("id"),
                     project_id: row.get("project_id"),
@@ -29,7 +32,7 @@ impl ScheduleManager for SqlStore {
             }
             SqlDialect::PostgreSQL => {
                 let query = "SELECT * FROM schedule WHERE project_id = $1 ORDER BY name";
-                let rows = sqlx::query(query).bind(project_id).fetch_all(self.get_postgres_pool()?).await.map_err(|e| Error::Database(e))?;
+                let rows = sqlx::query(query).bind(project_id).fetch_all(self.get_postgres_pool().ok_or_else(|| Error::Other("PostgreSQL pool not found".to_string()))?).await.map_err(|e| Error::Database(e))?;
                 Ok(rows.into_iter().map(|row| Schedule {
                     id: row.get("id"),
                     project_id: row.get("project_id"),
@@ -45,7 +48,7 @@ impl ScheduleManager for SqlStore {
             }
             SqlDialect::MySQL => {
                 let query = "SELECT * FROM `schedule` WHERE project_id = ? ORDER BY name";
-                let rows = sqlx::query(query).bind(project_id).fetch_all(self.get_mysql_pool()?).await.map_err(|e| Error::Database(e))?;
+                let rows = sqlx::query(query).bind(project_id).fetch_all(self.get_mysql_pool().ok_or_else(|| Error::Other("MySQL pool not found".to_string()))?).await.map_err(|e| Error::Database(e))?;
                 Ok(rows.into_iter().map(|row| Schedule {
                     id: row.get("id"),
                     project_id: row.get("project_id"),
@@ -66,7 +69,7 @@ impl ScheduleManager for SqlStore {
         match self.get_dialect() {
             SqlDialect::SQLite => {
                 let query = "SELECT * FROM schedule WHERE id = ?";
-                let row = sqlx::query(query).bind(schedule_id).fetch_one(self.get_sqlite_pool()?).await.map_err(|e| match e {
+                let row = sqlx::query(query).bind(schedule_id).fetch_one(self.get_sqlite_pool().ok_or_else(|| Error::Other("SQLite pool not found".to_string()))?).await.map_err(|e| match e {
                     sqlx::Error::RowNotFound => Error::NotFound("Расписание не найдено".to_string()),
                     _ => Error::Database(e),
                 })?;
@@ -85,7 +88,7 @@ impl ScheduleManager for SqlStore {
             }
             SqlDialect::PostgreSQL => {
                 let query = "SELECT * FROM schedule WHERE id = $1";
-                let row = sqlx::query(query).bind(schedule_id).fetch_one(self.get_postgres_pool()?).await.map_err(|e| match e {
+                let row = sqlx::query(query).bind(schedule_id).fetch_one(self.get_postgres_pool().ok_or_else(|| Error::Other("PostgreSQL pool not found".to_string()))?).await.map_err(|e| match e {
                     sqlx::Error::RowNotFound => Error::NotFound("Расписание не найдено".to_string()),
                     _ => Error::Database(e),
                 })?;
@@ -104,7 +107,7 @@ impl ScheduleManager for SqlStore {
             }
             SqlDialect::MySQL => {
                 let query = "SELECT * FROM `schedule` WHERE id = ?";
-                let row = sqlx::query(query).bind(schedule_id).fetch_one(self.get_mysql_pool()?).await.map_err(|e| match e {
+                let row = sqlx::query(query).bind(schedule_id).fetch_one(self.get_mysql_pool().ok_or_else(|| Error::Other("MySQL pool not found".to_string()))?).await.map_err(|e| match e {
                     sqlx::Error::RowNotFound => Error::NotFound("Расписание не найдено".to_string()),
                     _ => Error::Database(e),
                 })?;
@@ -135,7 +138,7 @@ impl ScheduleManager for SqlStore {
                     .bind(&schedule.name)
                     .bind(schedule.active)
                     .bind(&schedule.created)
-                    .fetch_one(self.get_sqlite_pool()?).await.map_err(|e| Error::Database(e))?;
+                    .fetch_one(self.get_sqlite_pool().ok_or_else(|| Error::Other("SQLite pool not found".to_string()))?).await.map_err(|e| Error::Database(e))?;
                 schedule.id = id;
                 Ok(schedule)
             }
@@ -148,7 +151,7 @@ impl ScheduleManager for SqlStore {
                     .bind(&schedule.name)
                     .bind(schedule.active)
                     .bind(&schedule.created)
-                    .fetch_one(self.get_postgres_pool()?).await.map_err(|e| Error::Database(e))?;
+                    .fetch_one(self.get_postgres_pool().ok_or_else(|| Error::Other("PostgreSQL pool not found".to_string()))?).await.map_err(|e| Error::Database(e))?;
                 schedule.id = id;
                 Ok(schedule)
             }
@@ -161,7 +164,7 @@ impl ScheduleManager for SqlStore {
                     .bind(&schedule.name)
                     .bind(schedule.active)
                     .bind(&schedule.created)
-                    .execute(self.get_mysql_pool()?).await.map_err(|e| Error::Database(e))?;
+                    .execute(self.get_mysql_pool().ok_or_else(|| Error::Other("MySQL pool not found".to_string()))?).await.map_err(|e| Error::Database(e))?;
                 schedule.id = result.last_insert_id() as i32;
                 Ok(schedule)
             }
@@ -177,7 +180,7 @@ impl ScheduleManager for SqlStore {
                     .bind(&schedule.name)
                     .bind(schedule.active)
                     .bind(schedule.id)
-                    .execute(self.get_sqlite_pool()?).await.map_err(|e| Error::Database(e))?;
+                    .execute(self.get_sqlite_pool().ok_or_else(|| Error::Other("SQLite pool not found".to_string()))?).await.map_err(|e| Error::Database(e))?;
             }
             SqlDialect::PostgreSQL => {
                 let query = "UPDATE schedule SET cron = $1, name = $2, active = $3 WHERE id = $4";
@@ -186,7 +189,7 @@ impl ScheduleManager for SqlStore {
                     .bind(&schedule.name)
                     .bind(schedule.active)
                     .bind(schedule.id)
-                    .execute(self.get_postgres_pool()?).await.map_err(|e| Error::Database(e))?;
+                    .execute(self.get_postgres_pool().ok_or_else(|| Error::Other("PostgreSQL pool not found".to_string()))?).await.map_err(|e| Error::Database(e))?;
             }
             SqlDialect::MySQL => {
                 let query = "UPDATE `schedule` SET cron = ?, name = ?, active = ? WHERE id = ?";
@@ -195,7 +198,7 @@ impl ScheduleManager for SqlStore {
                     .bind(&schedule.name)
                     .bind(schedule.active)
                     .bind(schedule.id)
-                    .execute(self.get_mysql_pool()?).await.map_err(|e| Error::Database(e))?;
+                    .execute(self.get_mysql_pool().ok_or_else(|| Error::Other("MySQL pool not found".to_string()))?).await.map_err(|e| Error::Database(e))?;
             }
         }
         Ok(())
@@ -205,15 +208,15 @@ impl ScheduleManager for SqlStore {
         match self.get_dialect() {
             SqlDialect::SQLite => {
                 let query = "DELETE FROM schedule WHERE id = ?";
-                sqlx::query(query).bind(schedule_id).execute(self.get_sqlite_pool()?).await.map_err(|e| Error::Database(e))?;
+                sqlx::query(query).bind(schedule_id).execute(self.get_sqlite_pool().ok_or_else(|| Error::Other("SQLite pool not found".to_string()))?).await.map_err(|e| Error::Database(e))?;
             }
             SqlDialect::PostgreSQL => {
                 let query = "DELETE FROM schedule WHERE id = $1";
-                sqlx::query(query).bind(schedule_id).execute(self.get_postgres_pool()?).await.map_err(|e| Error::Database(e))?;
+                sqlx::query(query).bind(schedule_id).execute(self.get_postgres_pool().ok_or_else(|| Error::Other("PostgreSQL pool not found".to_string()))?).await.map_err(|e| Error::Database(e))?;
             }
             SqlDialect::MySQL => {
                 let query = "DELETE FROM `schedule` WHERE id = ?";
-                sqlx::query(query).bind(schedule_id).execute(self.get_mysql_pool()?).await.map_err(|e| Error::Database(e))?;
+                sqlx::query(query).bind(schedule_id).execute(self.get_mysql_pool().ok_or_else(|| Error::Other("MySQL pool not found".to_string()))?).await.map_err(|e| Error::Database(e))?;
             }
         }
         Ok(())
@@ -223,15 +226,15 @@ impl ScheduleManager for SqlStore {
         match self.get_dialect() {
             SqlDialect::SQLite => {
                 let query = "UPDATE schedule SET active = ? WHERE id = ?";
-                sqlx::query(query).bind(active).bind(schedule_id).execute(self.get_sqlite_pool()?).await.map_err(|e| Error::Database(e))?;
+                sqlx::query(query).bind(active).bind(schedule_id).execute(self.get_sqlite_pool().ok_or_else(|| Error::Other("SQLite pool not found".to_string()))?).await.map_err(|e| Error::Database(e))?;
             }
             SqlDialect::PostgreSQL => {
                 let query = "UPDATE schedule SET active = $1 WHERE id = $2";
-                sqlx::query(query).bind(active).bind(schedule_id).execute(self.get_postgres_pool()?).await.map_err(|e| Error::Database(e))?;
+                sqlx::query(query).bind(active).bind(schedule_id).execute(self.get_postgres_pool().ok_or_else(|| Error::Other("PostgreSQL pool not found".to_string()))?).await.map_err(|e| Error::Database(e))?;
             }
             SqlDialect::MySQL => {
                 let query = "UPDATE `schedule` SET active = ? WHERE id = ?";
-                sqlx::query(query).bind(active).bind(schedule_id).execute(self.get_mysql_pool()?).await.map_err(|e| Error::Database(e))?;
+                sqlx::query(query).bind(active).bind(schedule_id).execute(self.get_mysql_pool().ok_or_else(|| Error::Other("MySQL pool not found".to_string()))?).await.map_err(|e| Error::Database(e))?;
             }
         }
         Ok(())
@@ -243,7 +246,7 @@ impl ScheduleManager for SqlStore {
                 sqlx::query("UPDATE schedule SET last_commit_hash = ? WHERE id = ?")
                     .bind(hash)
                     .bind(schedule_id)
-                    .execute(self.get_sqlite_pool()?)
+                    .execute(self.get_sqlite_pool().ok_or_else(|| Error::Other("SQLite pool not found".to_string()))?)
                     .await
                     .map_err(|e| Error::Database(e))?;
             }
@@ -251,7 +254,7 @@ impl ScheduleManager for SqlStore {
                 sqlx::query("UPDATE schedule SET last_commit_hash = $1 WHERE id = $2")
                     .bind(hash)
                     .bind(schedule_id)
-                    .execute(self.get_postgres_pool()?)
+                    .execute(self.get_postgres_pool().ok_or_else(|| Error::Other("PostgreSQL pool not found".to_string()))?)
                     .await
                     .map_err(|e| Error::Database(e))?;
             }
@@ -259,7 +262,7 @@ impl ScheduleManager for SqlStore {
                 sqlx::query("UPDATE `schedule` SET last_commit_hash = ? WHERE id = ?")
                     .bind(hash)
                     .bind(schedule_id)
-                    .execute(self.get_mysql_pool()?)
+                    .execute(self.get_mysql_pool().ok_or_else(|| Error::Other("MySQL pool not found".to_string()))?)
                     .await
                     .map_err(|e| Error::Database(e))?;
             }

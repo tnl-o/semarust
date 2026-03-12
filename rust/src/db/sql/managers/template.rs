@@ -1,11 +1,14 @@
-//! Менеджер хранилища данных
+//! TemplateManager - управление шаблонами
 //!
-//! Автоматически извлечён из mod.rs в рамках декомпозиции
+//! Реализация трейта TemplateManager для SqlStore
 
 use crate::db::sql::SqlStore;
+use crate::db::sql::types::SqlDialect;
 use crate::db::store::*;
+use crate::models::Template;
 use crate::error::{Error, Result};
 use async_trait::async_trait;
+use sqlx::Row;
 
 #[async_trait]
 impl TemplateManager for SqlStore {
@@ -15,7 +18,7 @@ impl TemplateManager for SqlStore {
                 let query = "SELECT * FROM template WHERE project_id = ? ORDER BY name";
                 let rows = sqlx::query(query)
                     .bind(project_id)
-                    .fetch_all(self.get_sqlite_pool()?)
+                    .fetch_all(self.get_sqlite_pool().ok_or_else(|| Error::Other("SQLite pool not found".to_string()))?)
                     .await
                     .map_err(|e| Error::Database(e))?;
 
@@ -40,7 +43,7 @@ impl TemplateManager for SqlStore {
                 let query = "SELECT * FROM template WHERE project_id = $1 ORDER BY name";
                 let rows = sqlx::query(query)
                     .bind(project_id)
-                    .fetch_all(self.get_postgres_pool()?)
+                    .fetch_all(self.get_postgres_pool().ok_or_else(|| Error::Other("PostgreSQL pool not found".to_string()))?)
                     .await
                     .map_err(|e| Error::Database(e))?;
 
@@ -65,7 +68,7 @@ impl TemplateManager for SqlStore {
                 let query = "SELECT * FROM `template` WHERE project_id = ? ORDER BY name";
                 let rows = sqlx::query(query)
                     .bind(project_id)
-                    .fetch_all(self.get_mysql_pool()?)
+                    .fetch_all(self.get_mysql_pool().ok_or_else(|| Error::Other("MySQL pool not found".to_string()))?)
                     .await
                     .map_err(|e| Error::Database(e))?;
 
@@ -96,7 +99,7 @@ impl TemplateManager for SqlStore {
                 let row = sqlx::query(query)
                     .bind(template_id)
                     .bind(project_id)
-                    .fetch_one(self.get_sqlite_pool()?)
+                    .fetch_one(self.get_sqlite_pool().ok_or_else(|| Error::Other("SQLite pool not found".to_string()))?)
                     .await
                     .map_err(|e| match e {
                         sqlx::Error::RowNotFound => Error::NotFound("Шаблон не найден".to_string()),
@@ -125,7 +128,7 @@ impl TemplateManager for SqlStore {
                 let row = sqlx::query(query)
                     .bind(template_id)
                     .bind(project_id)
-                    .fetch_one(self.get_postgres_pool()?)
+                    .fetch_one(self.get_postgres_pool().ok_or_else(|| Error::Other("PostgreSQL pool not found".to_string()))?)
                     .await
                     .map_err(|e| match e {
                         sqlx::Error::RowNotFound => Error::NotFound("Шаблон не найден".to_string()),
@@ -154,7 +157,7 @@ impl TemplateManager for SqlStore {
                 let row = sqlx::query(query)
                     .bind(template_id)
                     .bind(project_id)
-                    .fetch_one(self.get_mysql_pool()?)
+                    .fetch_one(self.get_mysql_pool().ok_or_else(|| Error::Other("MySQL pool not found".to_string()))?)
                     .await
                     .map_err(|e| match e {
                         sqlx::Error::RowNotFound => Error::NotFound("Шаблон не найден".to_string()),
@@ -199,7 +202,7 @@ impl TemplateManager for SqlStore {
                     .bind(template.created)
                     .bind(&template.arguments)
                     .bind(template.vault_key_id)
-                    .fetch_one(self.get_sqlite_pool()?)
+                    .fetch_one(self.get_sqlite_pool().ok_or_else(|| Error::Other("SQLite pool not found".to_string()))?)
                     .await
                     .map_err(|e| Error::Database(e))?;
 
@@ -222,7 +225,7 @@ impl TemplateManager for SqlStore {
                     .bind(template.created)
                     .bind(&template.arguments)
                     .bind(template.vault_key_id)
-                    .fetch_one(self.get_postgres_pool()?)
+                    .fetch_one(self.get_postgres_pool().ok_or_else(|| Error::Other("PostgreSQL pool not found".to_string()))?)
                     .await
                     .map_err(|e| Error::Database(e))?;
 
@@ -245,12 +248,12 @@ impl TemplateManager for SqlStore {
                     .bind(template.created)
                     .bind(&template.arguments)
                     .bind(template.vault_key_id)
-                    .execute(self.get_mysql_pool()?)
+                    .execute(self.get_mysql_pool().ok_or_else(|| Error::Other("MySQL pool not found".to_string()))?)
                     .await
                     .map_err(|e| Error::Database(e))?;
 
                 let id: i32 = sqlx::query_scalar("SELECT LAST_INSERT_ID()")
-                    .fetch_one(self.get_mysql_pool()?)
+                    .fetch_one(self.get_mysql_pool().ok_or_else(|| Error::Other("MySQL pool not found".to_string()))?)
                     .await
                     .map_err(|e| Error::Database(e))?;
 
@@ -278,7 +281,7 @@ impl TemplateManager for SqlStore {
                     .bind(&template.vault_key_id)
                     .bind(template.id)
                     .bind(template.project_id)
-                    .execute(self.get_sqlite_pool()?)
+                    .execute(self.get_sqlite_pool().ok_or_else(|| Error::Other("SQLite pool not found".to_string()))?)
                     .await
                     .map_err(|e| Error::Database(e))?;
             }
@@ -298,7 +301,7 @@ impl TemplateManager for SqlStore {
                     .bind(&template.vault_key_id)
                     .bind(template.id)
                     .bind(template.project_id)
-                    .execute(self.get_postgres_pool()?)
+                    .execute(self.get_postgres_pool().ok_or_else(|| Error::Other("PostgreSQL pool not found".to_string()))?)
                     .await
                     .map_err(|e| Error::Database(e))?;
             }
@@ -318,7 +321,7 @@ impl TemplateManager for SqlStore {
                     .bind(&template.vault_key_id)
                     .bind(template.id)
                     .bind(template.project_id)
-                    .execute(self.get_mysql_pool()?)
+                    .execute(self.get_mysql_pool().ok_or_else(|| Error::Other("MySQL pool not found".to_string()))?)
                     .await
                     .map_err(|e| Error::Database(e))?;
             }
@@ -334,7 +337,7 @@ impl TemplateManager for SqlStore {
                 sqlx::query(query)
                     .bind(template_id)
                     .bind(project_id)
-                    .execute(self.get_sqlite_pool()?)
+                    .execute(self.get_sqlite_pool().ok_or_else(|| Error::Other("SQLite pool not found".to_string()))?)
                     .await
                     .map_err(|e| Error::Database(e))?;
             }
@@ -343,7 +346,7 @@ impl TemplateManager for SqlStore {
                 sqlx::query(query)
                     .bind(template_id)
                     .bind(project_id)
-                    .execute(self.get_postgres_pool()?)
+                    .execute(self.get_postgres_pool().ok_or_else(|| Error::Other("PostgreSQL pool not found".to_string()))?)
                     .await
                     .map_err(|e| Error::Database(e))?;
             }
@@ -352,7 +355,7 @@ impl TemplateManager for SqlStore {
                 sqlx::query(query)
                     .bind(template_id)
                     .bind(project_id)
-                    .execute(self.get_mysql_pool()?)
+                    .execute(self.get_mysql_pool().ok_or_else(|| Error::Other("MySQL pool not found".to_string()))?)
                     .await
                     .map_err(|e| Error::Database(e))?;
             }

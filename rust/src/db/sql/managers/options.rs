@@ -1,11 +1,12 @@
-//! Менеджер хранилища данных
-//!
-//! Автоматически извлечён из mod.rs в рамках декомпозиции
+//! OptionsManager - управление опциями
 
 use crate::db::sql::SqlStore;
+use crate::db::sql::types::SqlDialect;
 use crate::db::store::*;
 use crate::error::{Error, Result};
 use async_trait::async_trait;
+use sqlx::Row;
+use std::collections::HashMap;
 
 #[async_trait]
 impl OptionsManager for SqlStore {
@@ -14,7 +15,7 @@ impl OptionsManager for SqlStore {
             SqlDialect::SQLite => {
                 let query = "SELECT key, value FROM option";
                 let rows = sqlx::query(query)
-                    .fetch_all(self.get_sqlite_pool()?)
+                    .fetch_all(self.get_sqlite_pool().ok_or_else(|| Error::Other("SQLite pool not found".to_string()))?)
                     .await
                     .map_err(|e| Error::Database(e))?;
 
@@ -27,7 +28,7 @@ impl OptionsManager for SqlStore {
             SqlDialect::PostgreSQL => {
                 let query = "SELECT key, value FROM option";
                 let rows = sqlx::query(query)
-                    .fetch_all(self.get_postgres_pool()?)
+                    .fetch_all(self.get_postgres_pool().ok_or_else(|| Error::Other("PostgreSQL pool not found".to_string()))?)
                     .await
                     .map_err(|e| Error::Database(e))?;
 
@@ -40,7 +41,7 @@ impl OptionsManager for SqlStore {
             SqlDialect::MySQL => {
                 let query = "SELECT key, value FROM option";
                 let rows = sqlx::query(query)
-                    .fetch_all(self.get_mysql_pool()?)
+                    .fetch_all(self.get_mysql_pool().ok_or_else(|| Error::Other("MySQL pool not found".to_string()))?)
                     .await
                     .map_err(|e| Error::Database(e))?;
 
@@ -59,7 +60,7 @@ impl OptionsManager for SqlStore {
                 let query = "SELECT value FROM option WHERE key = ?";
                 let result = sqlx::query_scalar::<_, String>(query)
                     .bind(key)
-                    .fetch_optional(self.get_sqlite_pool()?)
+                    .fetch_optional(self.get_sqlite_pool().ok_or_else(|| Error::Other("SQLite pool not found".to_string()))?)
                     .await
                     .map_err(|e| Error::Database(e))?;
                 Ok(result)
@@ -68,7 +69,7 @@ impl OptionsManager for SqlStore {
                 let query = "SELECT value FROM option WHERE key = $1";
                 let result = sqlx::query_scalar::<_, String>(query)
                     .bind(key)
-                    .fetch_optional(self.get_postgres_pool()?)
+                    .fetch_optional(self.get_postgres_pool().ok_or_else(|| Error::Other("PostgreSQL pool not found".to_string()))?)
                     .await
                     .map_err(|e| Error::Database(e))?;
                 Ok(result)
@@ -77,7 +78,7 @@ impl OptionsManager for SqlStore {
                 let query = "SELECT value FROM option WHERE key = ?";
                 let result = sqlx::query_scalar::<_, String>(query)
                     .bind(key)
-                    .fetch_optional(self.get_mysql_pool()?)
+                    .fetch_optional(self.get_mysql_pool().ok_or_else(|| Error::Other("MySQL pool not found".to_string()))?)
                     .await
                     .map_err(|e| Error::Database(e))?;
                 Ok(result)
@@ -92,7 +93,7 @@ impl OptionsManager for SqlStore {
                 sqlx::query(query)
                     .bind(key)
                     .bind(value)
-                    .execute(self.get_sqlite_pool()?)
+                    .execute(self.get_sqlite_pool().ok_or_else(|| Error::Other("SQLite pool not found".to_string()))?)
                     .await
                     .map_err(|e| Error::Database(e))?;
             }
@@ -101,7 +102,7 @@ impl OptionsManager for SqlStore {
                 sqlx::query(query)
                     .bind(key)
                     .bind(value)
-                    .execute(self.get_postgres_pool()?)
+                    .execute(self.get_postgres_pool().ok_or_else(|| Error::Other("PostgreSQL pool not found".to_string()))?)
                     .await
                     .map_err(|e| Error::Database(e))?;
             }
@@ -110,7 +111,7 @@ impl OptionsManager for SqlStore {
                 sqlx::query(query)
                     .bind(key)
                     .bind(value)
-                    .execute(self.get_mysql_pool()?)
+                    .execute(self.get_mysql_pool().ok_or_else(|| Error::Other("MySQL pool not found".to_string()))?)
                     .await
                     .map_err(|e| Error::Database(e))?;
             }
@@ -124,7 +125,7 @@ impl OptionsManager for SqlStore {
                 let query = "DELETE FROM option WHERE key = ?";
                 sqlx::query(query)
                     .bind(key)
-                    .execute(self.get_sqlite_pool()?)
+                    .execute(self.get_sqlite_pool().ok_or_else(|| Error::Other("SQLite pool not found".to_string()))?)
                     .await
                     .map_err(|e| Error::Database(e))?;
             }
@@ -132,7 +133,7 @@ impl OptionsManager for SqlStore {
                 let query = "DELETE FROM option WHERE key = $1";
                 sqlx::query(query)
                     .bind(key)
-                    .execute(self.get_postgres_pool()?)
+                    .execute(self.get_postgres_pool().ok_or_else(|| Error::Other("PostgreSQL pool not found".to_string()))?)
                     .await
                     .map_err(|e| Error::Database(e))?;
             }
@@ -140,7 +141,7 @@ impl OptionsManager for SqlStore {
                 let query = "DELETE FROM option WHERE key = ?";
                 sqlx::query(query)
                     .bind(key)
-                    .execute(self.get_mysql_pool()?)
+                    .execute(self.get_mysql_pool().ok_or_else(|| Error::Other("MySQL pool not found".to_string()))?)
                     .await
                     .map_err(|e| Error::Database(e))?;
             }

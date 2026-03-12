@@ -721,3 +721,205 @@ Authorization: Bearer <token>
   "error": "Описание ошибки"
 }
 ```
+
+---
+
+## 📚 Playbook API
+
+API для управления Playbook (Ansible, Terraform, Shell).
+
+### Базовый URL
+
+```
+GET    /api/project/{project_id}/playbooks      # Получить список playbooks проекта
+POST   /api/project/{project_id}/playbooks      # Создать playbook
+GET    /api/project/{project_id}/playbooks/{id} # Получить playbook по ID
+PUT    /api/project/{project_id}/playbooks/{id} # Обновить playbook
+DELETE /api/project/{project_id}/playbooks/{id} # Удалить playbook
+```
+
+### Модель Playbook
+
+```json
+{
+  "id": 1,                    // Уникальный идентификатор (auto)
+  "project_id": 1,            // ID проекта
+  "name": "Deploy App",       // Название плейбука
+  "content": "- hosts: all\n  tasks:\n    - name: Deploy\n      debug:\n        msg: \"Deploying...\"",
+  "description": "Deployment playbook",  // Описание (опционально)
+  "playbook_type": "ansible", // Тип: ansible, terraform, shell
+  "repository_id": null,      // ID репозитория Git (опционально)
+  "created": "2026-03-11T10:00:00Z",
+  "updated": "2026-03-11T10:00:00Z"
+}
+```
+
+### Получить список Playbooks
+
+**Запрос:**
+
+```bash
+GET /api/project/{project_id}/playbooks
+Authorization: Bearer {token}
+```
+
+**Ответ:**
+
+```json
+[
+  {
+    "id": 1,
+    "project_id": 1,
+    "name": "Deploy App",
+    "content": "- hosts: all...",
+    "description": "Deployment playbook",
+    "playbook_type": "ansible",
+    "repository_id": null,
+    "created": "2026-03-11T10:00:00Z",
+    "updated": "2026-03-11T10:00:00Z"
+  }
+]
+```
+
+### Создать Playbook
+
+**Запрос:**
+
+```bash
+POST /api/project/{project_id}/playbooks
+Authorization: Bearer {token}
+Content-Type: application/json
+
+{
+  "name": "Deploy App",
+  "content": "- hosts: all\n  tasks:\n    - name: Deploy\n      debug:\n        msg: \"Deploying...\"",
+  "description": "Deployment playbook",
+  "playbook_type": "ansible",
+  "repository_id": null
+}
+```
+
+**Ответ:**
+
+```json
+{
+  "id": 1,
+  "project_id": 1,
+  "name": "Deploy App",
+  "content": "- hosts: all...",
+  "description": "Deployment playbook",
+  "playbook_type": "ansible",
+  "repository_id": null,
+  "created": "2026-03-11T10:00:00Z",
+  "updated": "2026-03-11T10:00:00Z"
+}
+```
+
+### Получить Playbook по ID
+
+**Запрос:**
+
+```bash
+GET /api/project/{project_id}/playbooks/{id}
+Authorization: Bearer {token}
+```
+
+**Ответ:**
+
+```json
+{
+  "id": 1,
+  "project_id": 1,
+  "name": "Deploy App",
+  "content": "- hosts: all...",
+  "description": "Deployment playbook",
+  "playbook_type": "ansible",
+  "repository_id": null,
+  "created": "2026-03-11T10:00:00Z",
+  "updated": "2026-03-11T10:00:00Z"
+}
+```
+
+### Обновить Playbook
+
+**Запрос:**
+
+```bash
+PUT /api/project/{project_id}/playbooks/{id}
+Authorization: Bearer {token}
+Content-Type: application/json
+
+{
+  "name": "Deploy App Updated",
+  "content": "- hosts: all\n  tasks:\n    - name: Updated Deploy\n      debug:\n        msg: \"Updated!\"",
+  "description": "Updated deployment playbook",
+  "playbook_type": "ansible"
+}
+```
+
+**Ответ:**
+
+```json
+{
+  "id": 1,
+  "project_id": 1,
+  "name": "Deploy App Updated",
+  "content": "- hosts: all...",
+  "description": "Updated deployment playbook",
+  "playbook_type": "ansible",
+  "repository_id": null,
+  "created": "2026-03-11T10:00:00Z",
+  "updated": "2026-03-11T11:00:00Z"
+}
+```
+
+### Удалить Playbook
+
+**Запрос:**
+
+```bash
+DELETE /api/project/{project_id}/playbooks/{id}
+Authorization: Bearer {token}
+```
+
+**Ответ:**
+
+```
+204 No Content
+```
+
+---
+
+### Тестирование Playbook API
+
+Для тестирования используйте скрипт `test-playbook-api.sh`:
+
+```bash
+# Настроить переменные окружения
+export BASE_URL=http://localhost:3000/api
+export PROJECT_ID=1
+export TOKEN=your_token_here
+
+# Запустить тесты
+./test-playbook-api.sh
+```
+
+Или через curl вручную:
+
+```bash
+# Получить токен
+TOKEN=$(curl -s -X POST http://localhost:3000/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"login":"admin","password":"admin123"}' \
+  | jq -r '.token')
+
+# Создать playbook
+curl -X POST http://localhost:3000/api/project/1/playbooks \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $TOKEN" \
+  -d '{
+    "name": "Test Playbook",
+    "content": "- hosts: localhost\n  tasks:\n    - debug:\n        msg: Hello",
+    "playbook_type": "ansible"
+  }'
+```

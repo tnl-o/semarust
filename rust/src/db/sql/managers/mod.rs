@@ -88,6 +88,8 @@ pub use playbook::*;
 // ============================================================================
 
 use async_trait::async_trait;
+use crate::db::Store;
+use crate::db::sql::SqlStore;
 
 #[async_trait]
 impl Store for SqlStore {}

@@ -1,11 +1,13 @@
-//! Менеджер хранилища данных
-//!
-//! Автоматически извлечён из mod.rs в рамках декомпозиции
+//! SessionManager - управление сессиями
 
 use crate::db::sql::SqlStore;
+use crate::db::sql::types::SqlDialect;
 use crate::db::store::*;
 use crate::error::{Error, Result};
+use crate::models::{Session, SessionVerificationMethod};
 use async_trait::async_trait;
+use chrono::{DateTime, Utc};
+use sqlx::Row;
 
 #[async_trait]
 impl SessionManager for SqlStore {
@@ -13,10 +15,14 @@ impl SessionManager for SqlStore {
         match self.get_dialect() {
             SqlDialect::SQLite => {
                 let query = "SELECT * FROM session WHERE id = ?";
-                let row = sqlx::query(query).bind(session_id).fetch_one(self.get_sqlite_pool()?).await.map_err(|e| match e {
-                    sqlx::Error::RowNotFound => Error::NotFound("Сессия не найдена".to_string()),
-                    _ => Error::Database(e),
-                })?;
+                let row = sqlx::query(query)
+                    .bind(session_id)
+                    .fetch_optional(self.get_sqlite_pool().ok_or_else(|| Error::Other("SQLite pool not found".to_string()))?)
+                    .await
+                    .map_err(|e| Error::Database(e))?;
+                
+                let row = row.ok_or_else(|| Error::NotFound("Сессия не найдена".to_string()))?;
+                
                 Ok(Session {
                     id: row.get("id"),
                     user_id: row.get("user_id"),
@@ -31,10 +37,14 @@ impl SessionManager for SqlStore {
             }
             SqlDialect::PostgreSQL => {
                 let query = "SELECT * FROM session WHERE id = $1";
-                let row = sqlx::query(query).bind(session_id).fetch_one(self.get_postgres_pool()?).await.map_err(|e| match e {
-                    sqlx::Error::RowNotFound => Error::NotFound("Сессия не найдена".to_string()),
-                    _ => Error::Database(e),
-                })?;
+                let row = sqlx::query(query)
+                    .bind(session_id)
+                    .fetch_optional(self.get_postgres_pool().ok_or_else(|| Error::Other("PostgreSQL pool not found".to_string()))?)
+                    .await
+                    .map_err(|e| Error::Database(e))?;
+                
+                let row = row.ok_or_else(|| Error::NotFound("Сессия не найдена".to_string()))?;
+                
                 Ok(Session {
                     id: row.get("id"),
                     user_id: row.get("user_id"),
@@ -49,10 +59,14 @@ impl SessionManager for SqlStore {
             }
             SqlDialect::MySQL => {
                 let query = "SELECT * FROM `session` WHERE id = ?";
-                let row = sqlx::query(query).bind(session_id).fetch_one(self.get_mysql_pool()?).await.map_err(|e| match e {
-                    sqlx::Error::RowNotFound => Error::NotFound("Сессия не найдена".to_string()),
-                    _ => Error::Database(e),
-                })?;
+                let row = sqlx::query(query)
+                    .bind(session_id)
+                    .fetch_optional(self.get_mysql_pool().ok_or_else(|| Error::Other("MySQL pool not found".to_string()))?)
+                    .await
+                    .map_err(|e| Error::Database(e))?;
+                
+                let row = row.ok_or_else(|| Error::NotFound("Сессия не найдена".to_string()))?;
+                
                 Ok(Session {
                     id: row.get("id"),
                     user_id: row.get("user_id"),
@@ -81,7 +95,7 @@ impl SessionManager for SqlStore {
                     .bind(session.expired)
                     .bind(&session.verification_method)
                     .bind(session.verified)
-                    .fetch_one(self.get_sqlite_pool()?).await.map_err(|e| Error::Database(e))?;
+                    .fetch_one(self.get_sqlite_pool().ok_or_else(|| Error::Other("SQLite pool not found".to_string()))?).await.map_err(|e| Error::Database(e))?;
                 session.id = id;
                 Ok(session)
             }
@@ -96,7 +110,7 @@ impl SessionManager for SqlStore {
                     .bind(session.expired)
                     .bind(&session.verification_method)
                     .bind(session.verified)
-                    .fetch_one(self.get_postgres_pool()?).await.map_err(|e| Error::Database(e))?;
+                    .fetch_one(self.get_postgres_pool().ok_or_else(|| Error::Other("PostgreSQL pool not found".to_string()))?).await.map_err(|e| Error::Database(e))?;
                 session.id = id;
                 Ok(session)
             }
@@ -111,7 +125,7 @@ impl SessionManager for SqlStore {
                     .bind(session.expired)
                     .bind(&session.verification_method)
                     .bind(session.verified)
-                    .execute(self.get_mysql_pool()?).await.map_err(|e| Error::Database(e))?;
+                    .execute(self.get_mysql_pool().ok_or_else(|| Error::Other("MySQL pool not found".to_string()))?).await.map_err(|e| Error::Database(e))?;
                 session.id = result.last_insert_id() as i32;
                 Ok(session)
             }
@@ -122,15 +136,15 @@ impl SessionManager for SqlStore {
         match self.get_dialect() {
             SqlDialect::SQLite => {
                 let query = "UPDATE session SET expired = 1 WHERE id = ?";
-                sqlx::query(query).bind(session_id).execute(self.get_sqlite_pool()?).await.map_err(|e| Error::Database(e))?;
+                sqlx::query(query).bind(session_id).execute(self.get_sqlite_pool().ok_or_else(|| Error::Other("SQLite pool not found".to_string()))?).await.map_err(|e| Error::Database(e))?;
             }
             SqlDialect::PostgreSQL => {
                 let query = "UPDATE session SET expired = TRUE WHERE id = $1";
-                sqlx::query(query).bind(session_id).execute(self.get_postgres_pool()?).await.map_err(|e| Error::Database(e))?;
+                sqlx::query(query).bind(session_id).execute(self.get_postgres_pool().ok_or_else(|| Error::Other("PostgreSQL pool not found".to_string()))?).await.map_err(|e| Error::Database(e))?;
             }
             SqlDialect::MySQL => {
                 let query = "UPDATE `session` SET expired = 1 WHERE id = ?";
-                sqlx::query(query).bind(session_id).execute(self.get_mysql_pool()?).await.map_err(|e| Error::Database(e))?;
+                sqlx::query(query).bind(session_id).execute(self.get_mysql_pool().ok_or_else(|| Error::Other("MySQL pool not found".to_string()))?).await.map_err(|e| Error::Database(e))?;
             }
         }
         Ok(())
@@ -145,15 +159,15 @@ impl SessionManager for SqlStore {
         match self.get_dialect() {
             SqlDialect::SQLite => {
                 let query = "UPDATE session SET last_active = ? WHERE id = ?";
-                sqlx::query(query).bind(Utc::now()).bind(session_id).execute(self.get_sqlite_pool()?).await.map_err(|e| Error::Database(e))?;
+                sqlx::query(query).bind(Utc::now()).bind(session_id).execute(self.get_sqlite_pool().ok_or_else(|| Error::Other("SQLite pool not found".to_string()))?).await.map_err(|e| Error::Database(e))?;
             }
             SqlDialect::PostgreSQL => {
                 let query = "UPDATE session SET last_active = $1 WHERE id = $2";
-                sqlx::query(query).bind(Utc::now()).bind(session_id).execute(self.get_postgres_pool()?).await.map_err(|e| Error::Database(e))?;
+                sqlx::query(query).bind(Utc::now()).bind(session_id).execute(self.get_postgres_pool().ok_or_else(|| Error::Other("PostgreSQL pool not found".to_string()))?).await.map_err(|e| Error::Database(e))?;
             }
             SqlDialect::MySQL => {
                 let query = "UPDATE `session` SET last_active = ? WHERE id = ?";
-                sqlx::query(query).bind(Utc::now()).bind(session_id).execute(self.get_mysql_pool()?).await.map_err(|e| Error::Database(e))?;
+                sqlx::query(query).bind(Utc::now()).bind(session_id).execute(self.get_mysql_pool().ok_or_else(|| Error::Other("MySQL pool not found".to_string()))?).await.map_err(|e| Error::Database(e))?;
             }
         }
         Ok(())
