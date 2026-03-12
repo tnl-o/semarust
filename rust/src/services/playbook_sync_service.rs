@@ -204,10 +204,14 @@ mod tests {
     #[test]
     fn test_determine_playbook_path() {
         let temp_dir = TempDir::new().unwrap();
-        
+
         // Создаем тестовые файлы
         std::fs::write(temp_dir.path().join("deploy.yml"), "---").unwrap();
-        std::fs::write(temp_dir.path().join("playbooks").join("site.yaml"), "---").unwrap();
+        
+        // Создаем директорию playbooks и файл в ней
+        let playbooks_dir = temp_dir.path().join("playbooks");
+        std::fs::create_dir_all(&playbooks_dir).unwrap();
+        std::fs::write(playbooks_dir.join("site.yaml"), "---").unwrap();
 
         // Тест 1: Прямой путь
         let path = determine_playbook_path(temp_dir.path(), "deploy.yml");
@@ -215,6 +219,10 @@ mod tests {
 
         // Тест 2: Путь без расширения
         let path = determine_playbook_path(temp_dir.path(), "deploy");
+        assert!(path.exists());
+        
+        // Тест 3: Путь в поддиректории
+        let path = determine_playbook_path(temp_dir.path(), "playbooks/site.yaml");
         assert!(path.exists());
     }
 }
