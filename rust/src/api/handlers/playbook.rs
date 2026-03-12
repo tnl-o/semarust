@@ -10,6 +10,7 @@ use crate::api::state::AppState;
 use crate::api::middleware::ErrorResponse;
 use crate::db::store::PlaybookManager;
 use crate::models::playbook::{Playbook, PlaybookCreate, PlaybookUpdate};
+use crate::validators::PlaybookValidator;
 
 /// GET /api/project/{project_id}/playbooks
 pub async fn get_project_playbooks(
@@ -32,6 +33,14 @@ pub async fn create_playbook(
     Path(project_id): Path<i32>,
     Json(payload): Json<PlaybookCreate>,
 ) -> Result<(StatusCode, Json<Playbook>), (StatusCode, Json<ErrorResponse>)> {
+    // Валидация playbook
+    if let Err(e) = PlaybookValidator::validate(&payload.content, &payload.playbook_type) {
+        return Err((
+            StatusCode::BAD_REQUEST,
+            Json(ErrorResponse::new(format!("Ошибка валидации: {}", e)))
+        ));
+    }
+
     let playbook = state.store.create_playbook(project_id, payload).await.map_err(|e| {
         (
             StatusCode::INTERNAL_SERVER_ERROR,
@@ -63,6 +72,16 @@ pub async fn update_playbook(
     Path((project_id, id)): Path<(i32, i32)>,
     Json(payload): Json<PlaybookUpdate>,
 ) -> Result<Json<Playbook>, (StatusCode, Json<ErrorResponse>)> {
+    // Валидация playbook
+    // Для обновления предполагаем, что тип не меняется (берем из БД)
+    // Упрощенная валидация - только YAML синтаксис
+    if let Err(e) = PlaybookValidator::check_yaml_syntax(&payload.content) {
+        return Err((
+            StatusCode::BAD_REQUEST,
+            Json(ErrorResponse::new(format!("Ошибка YAML синтаксиса: {}", e)))
+        ));
+    }
+
     let playbook = state.store.update_playbook(id, project_id, payload).await.map_err(|e| {
         (
             StatusCode::INTERNAL_SERVER_ERROR,

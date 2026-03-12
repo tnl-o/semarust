@@ -680,3 +680,26 @@ impl WebhookManager for MockStore {
         Err(Error::Database(sqlx::Error::Protocol("Not implemented in mock".to_string())))
     }
 }
+
+#[async_trait]
+impl PlaybookManager for MockStore {
+    async fn get_playbooks(&self, _project_id: i32) -> Result<Vec<crate::models::Playbook>> {
+        Ok(Vec::new())
+    }
+
+    async fn get_playbook(&self, _id: i32, _project_id: i32) -> Result<crate::models::Playbook> {
+        Err(Error::NotFound("Playbook not found".to_string()))
+    }
+
+    async fn create_playbook(&self, _project_id: i32, _playbook: crate::models::PlaybookCreate) -> Result<crate::models::Playbook> {
+        Err(Error::Database(sqlx::Error::Protocol("Not implemented in mock".to_string())))
+    }
+
+    async fn update_playbook(&self, _id: i32, _project_id: i32, _playbook: crate::models::PlaybookUpdate) -> Result<crate::models::Playbook> {
+        Err(Error::Database(sqlx::Error::Protocol("Not implemented in mock".to_string())))
+    }
+
+    async fn delete_playbook(&self, _id: i32, _project_id: i32) -> Result<()> {
+        Ok(())
+    }
+}
