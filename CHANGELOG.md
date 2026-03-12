@@ -5,6 +5,76 @@
 Формат основан на [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 этот проект придерживается [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.1] - 2026-03-12
+
+### 🎉 Playbook API Release
+
+#### ✨ Добавлено
+
+##### Playbook API
+- ✅ Полный CRUD API для Playbook (Ansible, Terraform, Shell)
+- ✅ Endpoints:
+  - `GET /api/project/{id}/playbooks` - список playbooks
+  - `POST /api/project/{id}/playbooks` - создать playbook
+  - `GET /api/project/{id}/playbooks/{id}` - получить playbook
+  - `PUT /api/project/{id}/playbooks/{id}` - обновить playbook
+  - `DELETE /api/project/{id}/playbooks/{id}` - удалить playbook
+- ✅ Поддержка всех СУБД: SQLite, PostgreSQL, MySQL
+- ✅ Интеграция с StoreWrapper
+- ✅ Валидация и обработка ошибок
+
+##### Документация
+- ✅ PLAYBOOK_API.md - полное руководство по Playbook API
+- ✅ API.md - добавлена секция Playbook API
+- ✅ test-playbook-api.sh - скрипт автоматического тестирования
+- ✅ README.md - обновлена секция возможностей
+
+#### 🔧 Исправлено
+
+##### Компиляция
+- ✅ Исправлены все ошибки компиляции (800+ → 0)
+- ✅ Добавлены импорты моделей во все менеджеры БД
+- ✅ Исправлены импорты `sqlx::Row` для методов `row.get()`/`row.try_get()`
+- ✅ Изменены методы `get_*_pool()` на возврат `Option<&Pool>`
+- ✅ Исправлены типы ошибок в handlers (ErrorResponse)
+
+##### Менеджеры БД
+- ✅ rust/src/db/sql/managers/*.rs - добавлены импорты моделей
+- ✅ rust/src/db/sql/managers/playbook.rs - полная реализация
+- ✅ rust/src/db/sql/mod.rs - исправлены методы pool
+- ✅ rust/src/api/handlers/playbook.rs - исправлены типы ошибок
+
+#### 📊 Статистика изменений
+
+- **29 файлов** изменено
+- **1106 строк** добавлено
+- **418 строк** удалено
+- **1 коммит** создан
+
+#### 🚀 Как использовать
+
+```bash
+# Получить токен
+export TOKEN=$(curl -s -X POST http://localhost:3000/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"login":"admin","password":"admin123"}' | jq -r '.token')
+
+# Создать playbook
+curl -X POST http://localhost:3000/api/project/1/playbooks \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $TOKEN" \
+  -d '{
+    "name": "Deploy App",
+    "content": "- hosts: all\n  tasks:\n    - debug:\n        msg: Hello",
+    "playbook_type": "ansible"
+  }'
+
+# Запустить тесты
+./test-playbook-api.sh
+```
+
+---
+
 ## [0.4.0] - 2026-03-10
 
 ### 🎉 Q4 2026 Release

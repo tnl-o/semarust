@@ -192,6 +192,7 @@ cargo test
 | [API.md](API.md) | REST API документация |
 | [AUTH.md](AUTH.md) | Аутентификация и авторизация |
 | [DOCKER_DEMO.md](DOCKER_DEMO.md) | Docker демонстрация |
+| [PLAYBOOK_API.md](PLAYBOOK_API.md) | 📚 Playbook API (Ansible/Terraform) |
 | [scripts/README.md](scripts/README.md) | Скрипты запуска |
 
 ---
@@ -202,6 +203,19 @@ cargo test
 - **Frontend:** Vue 2
 - **Базы данных:** SQLite, PostgreSQL, MySQL
 - **Аутентификация:** JWT + bcrypt
+- **Автоматизация:** Ansible, Terraform, OpenTofu, Terragrunt, PowerShell
+
+## ✨ Возможности
+
+- ✅ **Управление проектами** - мультипроектная архитектура с ролевой моделью
+- ✅ **Шаблоны задач** - настройка параметров запуска для Ansible/Terraform
+- ✅ **Инвентари** - динамические и статические инвентари Ansible
+- ✅ **Расписания** - автоматический запуск задач по cron
+- ✅ **Playbook API** - CRUD для Playbook (Ansible, Terraform, Shell) 🆕
+- ✅ **Аудит логирование** - полный аудит всех действий
+- ✅ **Webhooks** - интеграция с внешними системами
+- ✅ **Terraform State** - управление состоянием Terraform
+- ✅ **Хранилище секретов** - безопасное хранение чувствительных данных
 
 ---
 
