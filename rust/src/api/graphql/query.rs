@@ -56,11 +56,12 @@ impl QueryRoot {
     async fn tasks(&self, ctx: &Context<'_>, project_id: i32) -> Result<Vec<Task>> {
         let state = ctx.data::<AppState>()?;
         let store = &state.store;
-        
+
         let tasks = store.get_tasks(project_id, None).await?;
         Ok(tasks.into_iter().map(|t| Task {
             id: t.task.id,
             template_id: t.task.template_id,
+            project_id: t.task.project_id,
             status: t.task.status.to_string(),
         }).collect())
     }

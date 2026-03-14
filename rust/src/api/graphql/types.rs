@@ -1,4 +1,4 @@
-//! GraphQL типы - минимальная версия
+//! GraphQL типы
 
 use async_graphql::{SimpleObject, InputObject};
 
@@ -33,30 +33,6 @@ pub struct Template {
 pub struct Task {
     pub id: i32,
     pub template_id: i32,
-    pub status: String,
-}
-
-/// Input для создания пользователя
-#[derive(InputObject, Debug)]
-pub struct CreateUserInput {
-    pub username: String,
-    pub name: String,
-    pub email: String,
-    pub password: String,
-    #[graphql(default = false)]
-    pub admin: bool,
-}
-
-/// Input для создания проекта
-#[derive(InputObject, Debug)]
-pub struct CreateProjectInput {
-    pub name: String,
-}
-
-/// Input для создания шаблона
-#[derive(InputObject, Debug)]
-pub struct CreateTemplateInput {
     pub project_id: i32,
-    pub name: String,
-    pub playbook: String,
+    pub status: String,
 }
