@@ -313,7 +313,8 @@ impl SqlStore {
                 build_template_id INTEGER,
                 view_id INTEGER,
                 autorun INTEGER NOT NULL DEFAULT 0,
-                survey_vars TEXT
+                survey_vars TEXT,
+                deleted INTEGER NOT NULL DEFAULT 0
             )",
         )
         .execute(pool)
@@ -366,6 +367,19 @@ impl SqlStore {
                 last_commit_hash TEXT,
                 repository_id INTEGER,
                 created DATETIME
+            )",
+        )
+        .execute(pool)
+        .await
+        .map_err(Error::Database)?;
+
+        // view — представления (группировки шаблонов)
+        sqlx::query(
+            "CREATE TABLE IF NOT EXISTS view (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                project_id INTEGER NOT NULL REFERENCES project(id) ON DELETE CASCADE,
+                title TEXT NOT NULL DEFAULT '',
+                position INTEGER NOT NULL DEFAULT 0
             )",
         )
         .execute(pool)

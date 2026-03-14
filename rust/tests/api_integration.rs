@@ -986,3 +986,241 @@ async fn test_create_task_from_template() {
     let tasks = list.as_array().expect("tasks array");
     assert!(tasks.iter().any(|t| t["id"].as_i64() == Some(task_id)), "created task must appear in history");
 }
+
+// ── Task output endpoint ──────────────────────────────────────────────────
+
+#[tokio::test]
+async fn test_get_task_output() {
+    let (app, _temp) = seeded_app().await;
+    let token = register_and_login(&app).await;
+
+    let (_, proj) = post_json_with_token(
+        app.clone(),
+        "/api/projects",
+        json!({ "name": "Output Project", "max_parallel_tasks": 1, "alert": false }),
+        Some(&token),
+    )
+    .await;
+    let project_id = proj["id"].as_i64().expect("project id");
+
+    let (_, tpl) = post_json_with_token(
+        app.clone(),
+        &format!("/api/projects/{}/templates", project_id),
+        json!({ "name": "out-tpl", "playbook": "out.yml" }),
+        Some(&token),
+    )
+    .await;
+    let tpl_id = tpl["id"].as_i64().expect("template id");
+
+    let (_, task) = post_json_with_token(
+        app.clone(),
+        &format!("/api/project/{}/tasks", project_id),
+        json!({ "template_id": tpl_id }),
+        Some(&token),
+    )
+    .await;
+    let task_id = task["id"].as_i64().expect("task id");
+
+    // Output endpoint should return 200 with an array (may be empty if task not yet run)
+    let (status, output) = get_json(
+        app.clone(),
+        &format!("/api/project/{}/tasks/{}/output", project_id, task_id),
+        Some(&token),
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK, "get task output; body={:?}", output);
+    assert!(output.is_array(), "task output should be an array");
+}
+
+// ── Delete inventory ──────────────────────────────────────────────────────
+
+#[tokio::test]
+async fn test_delete_inventory() {
+    let (app, _temp) = seeded_app().await;
+    let token = register_and_login(&app).await;
+
+    let (_, proj) = post_json_with_token(
+        app.clone(),
+        "/api/projects",
+        json!({ "name": "Del Inv Project", "max_parallel_tasks": 0, "alert": false }),
+        Some(&token),
+    )
+    .await;
+    let project_id = proj["id"].as_i64().expect("project id");
+
+    let (_, inv) = post_json_with_token(
+        app.clone(),
+        &format!("/api/projects/{}/inventories", project_id),
+        json!({ "name": "to-delete", "inventory": "static" }),
+        Some(&token),
+    )
+    .await;
+    let inv_id = inv["id"].as_i64().expect("inventory id");
+
+    let status = delete_req(
+        app.clone(),
+        &format!("/api/projects/{}/inventories/{}", project_id, inv_id),
+        Some(&token),
+    )
+    .await;
+    assert!(
+        status == StatusCode::NO_CONTENT || status == StatusCode::OK,
+        "delete inventory returned {:?}",
+        status
+    );
+
+    // Verify gone
+    let (not_found_status, _) = get_json(
+        app.clone(),
+        &format!("/api/projects/{}/inventories/{}", project_id, inv_id),
+        Some(&token),
+    )
+    .await;
+    assert_eq!(not_found_status, StatusCode::NOT_FOUND, "deleted inventory should return 404");
+}
+
+// ── Delete template ───────────────────────────────────────────────────────
+
+#[tokio::test]
+async fn test_delete_template() {
+    let (app, _temp) = seeded_app().await;
+    let token = register_and_login(&app).await;
+
+    let (_, proj) = post_json_with_token(
+        app.clone(),
+        "/api/projects",
+        json!({ "name": "Del Tpl Project", "max_parallel_tasks": 0, "alert": false }),
+        Some(&token),
+    )
+    .await;
+    let project_id = proj["id"].as_i64().expect("project id");
+
+    let (_, tpl) = post_json_with_token(
+        app.clone(),
+        &format!("/api/projects/{}/templates", project_id),
+        json!({ "name": "to-delete", "playbook": "del.yml" }),
+        Some(&token),
+    )
+    .await;
+    let tpl_id = tpl["id"].as_i64().expect("template id");
+
+    let status = delete_req(
+        app.clone(),
+        &format!("/api/projects/{}/templates/{}", project_id, tpl_id),
+        Some(&token),
+    )
+    .await;
+    assert!(
+        status == StatusCode::NO_CONTENT || status == StatusCode::OK,
+        "delete template returned {:?}",
+        status
+    );
+}
+
+// ── Views CRUD ────────────────────────────────────────────────────────────
+
+#[tokio::test]
+async fn test_create_and_list_views() {
+    let (app, _temp) = seeded_app().await;
+    let token = register_and_login(&app).await;
+
+    let (_, proj) = post_json_with_token(
+        app.clone(),
+        "/api/projects",
+        json!({ "name": "Views Project", "max_parallel_tasks": 0, "alert": false }),
+        Some(&token),
+    )
+    .await;
+    let project_id = proj["id"].as_i64().expect("project id");
+
+    let (status, body) = post_json_with_token(
+        app.clone(),
+        &format!("/api/projects/{}/views", project_id),
+        json!({ "id": 0, "title": "Production", "position": 0, "project_id": project_id }),
+        Some(&token),
+    )
+    .await;
+    assert_eq!(status, StatusCode::CREATED, "create view; body={:?}", body);
+    let view_id = body["id"].as_i64().expect("view id");
+
+    let (status, list) = get_json(
+        app.clone(),
+        &format!("/api/projects/{}/views", project_id),
+        Some(&token),
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK, "list views; body={:?}", list);
+    let views = list.as_array().expect("views array");
+    assert!(views.iter().any(|v| v["id"].as_i64() == Some(view_id)), "created view must appear in list");
+}
+
+// ── Users list (admin) ────────────────────────────────────────────────────
+
+#[tokio::test]
+async fn test_list_users_as_admin() {
+    let (app, _temp) = seeded_app().await;
+    let token = register_and_login(&app).await;
+
+    let (status, body) = get_json(app.clone(), "/api/users", Some(&token)).await;
+    assert_eq!(status, StatusCode::OK, "list users; body={:?}", body);
+    let users = body.as_array().expect("users array");
+    assert!(!users.is_empty(), "should have at least the seeded admin user");
+    assert!(
+        users.iter().any(|u| u["username"].as_str() == Some("testadmin")),
+        "testadmin should be in user list"
+    );
+}
+
+// ── Delete schedule ───────────────────────────────────────────────────────
+
+#[tokio::test]
+async fn test_delete_schedule() {
+    let (app, _temp) = seeded_app().await;
+    let token = register_and_login(&app).await;
+
+    let (_, proj) = post_json_with_token(
+        app.clone(),
+        "/api/projects",
+        json!({ "name": "Del Sched Project", "max_parallel_tasks": 0, "alert": false }),
+        Some(&token),
+    )
+    .await;
+    let project_id = proj["id"].as_i64().expect("project id");
+
+    let (_, tpl) = post_json_with_token(
+        app.clone(),
+        &format!("/api/projects/{}/templates", project_id),
+        json!({ "name": "del-sched-tpl", "playbook": "del.yml" }),
+        Some(&token),
+    )
+    .await;
+    let tpl_id = tpl["id"].as_i64().expect("template id");
+
+    let (_, sched) = post_json_with_token(
+        app.clone(),
+        &format!("/api/projects/{}/schedules", project_id),
+        json!({
+            "id": 0,
+            "template_id": tpl_id,
+            "project_id": project_id,
+            "name": "daily",
+            "cron": "0 0 * * *",
+            "active": false
+        }),
+        Some(&token),
+    )
+    .await;
+    let sched_id = sched["id"].as_i64().expect("schedule id");
+
+    let status = delete_req(
+        app.clone(),
+        &format!("/api/projects/{}/schedules/{}", project_id, sched_id),
+        Some(&token),
+    )
+    .await;
+    assert!(
+        status == StatusCode::NO_CONTENT || status == StatusCode::OK,
+        "delete schedule returned {:?}",
+        status
+    );
+}

@@ -9,11 +9,11 @@ use async_trait::async_trait;
 
 #[async_trait]
 impl ViewManager for SqlStore {
-    async fn get_views(&self, _project_id: i32) -> Result<Vec<View>> { Ok(vec![]) }
-    async fn get_view(&self, _project_id: i32, _view_id: i32) -> Result<View> { Err(Error::NotFound("Представление не найдено".to_string())) }
-    async fn create_view(&self, _view: View) -> Result<View> { Err(Error::Other("Не реализовано".to_string())) }
-    async fn update_view(&self, _view: View) -> Result<()> { Err(Error::Other("Не реализовано".to_string())) }
-    async fn delete_view(&self, _project_id: i32, _view_id: i32) -> Result<()> { Err(Error::Other("Не реализовано".to_string())) }
+    async fn get_views(&self, project_id: i32) -> Result<Vec<View>> { self.db.get_views(project_id).await }
+    async fn get_view(&self, project_id: i32, view_id: i32) -> Result<View> { self.db.get_view(project_id, view_id).await }
+    async fn create_view(&self, view: View) -> Result<View> { self.db.create_view(view).await }
+    async fn update_view(&self, view: View) -> Result<()> { self.db.update_view(view).await }
+    async fn delete_view(&self, project_id: i32, view_id: i32) -> Result<()> { self.db.delete_view(project_id, view_id).await }
 
     async fn set_view_positions(&self, project_id: i32, positions: Vec<(i32, i32)>) -> Result<()> {
         // positions: Vec<(view_id, position)>

@@ -12,7 +12,7 @@ impl SqlDb {
         match self.get_dialect() {
             crate::db::sql::types::SqlDialect::SQLite => {
                 let views = sqlx::query_as::<_, View>(
-                    "SELECT * FROM view WHERE project_id = ? ORDER BY position, name"
+                    "SELECT * FROM view WHERE project_id = ? ORDER BY position, title"
                 )
                 .bind(project_id)
                 .fetch_all(self.get_sqlite_pool().ok_or(Error::Other("SQLite pool not found".to_string()))?)
