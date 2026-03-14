@@ -18,6 +18,7 @@ import { EnvironmentForm } from './components/environment-form.js';
 import { KeyForm } from './components/key-form.js';
 import { UserForm } from './components/user-form.js';
 import { PlaybookList } from './components/playbook-list.js';
+import { TaskLogViewer } from './components/task-log-viewer.js';
 
 // ==================== Global State ====================
 
@@ -39,6 +40,7 @@ const routes = [
   { path: '/projects', handler: handleProjects },
   { path: '/project/:projectId', redirect: '/project/:projectId/history' },
   { path: '/project/:projectId/history', handler: handleHistory },
+  { path: '/project/:projectId/tasks/:taskId', handler: handleTaskDetail },
   { path: '/project/:projectId/templates', handler: handleTemplates },
   { path: '/project/:projectId/playbooks', handler: handlePlaybooks },
   { path: '/project/:projectId/inventory', handler: handleInventory },
@@ -204,6 +206,124 @@ async function handleHistory(params) {
       }
     });
   }
+}
+
+// ── Task detail + live log ────────────────────────────────────────────────
+
+let _activeLogViewer = null;
+
+async function handleTaskDetail(params) {
+  // Destroy previous log viewer if navigating between tasks
+  if (_activeLogViewer) {
+    _activeLogViewer.destroy();
+    _activeLogViewer = null;
+  }
+
+  await loadLayout(params.projectId);
+  store.state.currentProjectId = params.projectId;
+
+  const content = $('#page-content');
+  if (!content) return;
+
+  content.innerHTML = `
+    <div class="task-detail">
+      <div class="d-flex align-center mb-4" style="gap:12px">
+        <button class="v-btn v-btn--text" id="td-back-btn">
+          <i class="v-icon mdi mdi-arrow-left"></i> Назад
+        </button>
+        <h1 class="text-h4" style="flex:1">Задача #${params.taskId}</h1>
+        <button class="v-btn v-btn--outlined v-btn--error" id="td-stop-btn" style="display:none">
+          <i class="v-icon mdi mdi-stop"></i> Остановить
+        </button>
+      </div>
+
+      <div class="task-detail-meta mb-4" id="td-meta">
+        <span class="v-skeleton v-skeleton--text" style="width:200px"></span>
+      </div>
+
+      <div id="td-log-container"></div>
+    </div>
+  `;
+
+  // Back button
+  $('#td-back-btn').addEventListener('click', () => {
+    router.push(`/project/${params.projectId}/history`);
+  });
+
+  // Load task metadata
+  let task = null;
+  try {
+    task = await api.getTask(params.projectId, params.taskId);
+    _renderTaskMeta(task);
+  } catch (e) {
+    showError('Не удалось загрузить задачу');
+  }
+
+  // Show stop button for running/waiting tasks
+  const stopBtn = $('#td-stop-btn');
+  if (task && (task.status === 'running' || task.status === 'waiting')) {
+    stopBtn.style.display = '';
+    stopBtn.addEventListener('click', async () => {
+      const yes = await confirm({ title: 'Остановить задачу?', content: 'Задача будет прервана.' });
+      if (!yes) return;
+      try {
+        await api.stopTask(params.projectId, params.taskId);
+        showSuccess('Задача остановлена');
+        stopBtn.style.display = 'none';
+      } catch {
+        showError('Не удалось остановить задачу');
+      }
+    });
+  }
+
+  // Create log viewer
+  const logContainer = $('#td-log-container');
+  _activeLogViewer = new TaskLogViewer(logContainer, {
+    projectId: params.projectId,
+    taskId: params.taskId,
+    onStatusChange: (status) => {
+      if (task) {
+        task.status = status;
+        _renderTaskMeta(task);
+      }
+      if (status !== 'running' && status !== 'waiting') {
+        stopBtn.style.display = 'none';
+      }
+    },
+    onDone: () => {
+      stopBtn.style.display = 'none';
+    }
+  });
+
+  // Load existing log from REST API for completed/errored tasks
+  if (task && task.status !== 'running' && task.status !== 'waiting') {
+    try {
+      const log = await api.getTaskLog(params.projectId, params.taskId);
+      _activeLogViewer.appendHistoricLog(log || []);
+    } catch {
+      // Not critical — WS will also deliver lines for running tasks
+    }
+    _activeLogViewer.disconnect(); // no WS needed for finished tasks
+  }
+}
+
+function _renderTaskMeta(task) {
+  const meta = $('#td-meta');
+  if (!meta) return;
+  meta.innerHTML = `
+    <div class="task-meta-grid">
+      <span class="task-meta-label">Статус:</span>
+      <span>${formatTaskStatus(task.status)}</span>
+      <span class="task-meta-label">Шаблон:</span>
+      <span>${escapeHtml(task.template_name || String(task.template_id || '—'))}</span>
+      <span class="task-meta-label">Запущен:</span>
+      <span>${formatDate(task.start || task.created)}</span>
+      <span class="task-meta-label">Завершён:</span>
+      <span>${task.end ? formatDate(task.end) : '—'}</span>
+      <span class="task-meta-label">Длительность:</span>
+      <span>${formatDuration(task.start || task.created, task.end)}</span>
+    </div>
+  `;
 }
 
 async function handleTemplates(params) {

@@ -5,7 +5,7 @@
 >
 > **Репозиторий:** https://github.com/tnl-o/rust_semaphore
 > **Upstream (Go оригинал):** https://github.com/semaphoreui/semaphore
-> **Последнее обновление:** 2026-03-14 (обновление 2 — sync после upstream merge + реализация B-06b, B-09, B-12)
+> **Последнее обновление:** 2026-03-14 (обновление 3 — TaskLogViewer WebSocket + ANSI colors, закрыт B-10)
 
 ---
 
@@ -128,7 +128,7 @@
 | Vue 2 фронтенд (из upstream) | ✅ Работает | Базис, EOL декабрь 2023 |
 | Миграция на Vanilla JS | 🔄 В работе | Активная разработка — см. VANILLA_JS_STATUS.md |
 | Vue 3 миграция | ❌ Отменена | Заменена стратегией Vanilla JS |
-| Task Run UI + WebSocket лог | ⚠️ Частично | Бэкенд WS готов, фронтенд в процессе |
+| Task Run UI + WebSocket лог | ✅ Готово | TaskLogViewer с ANSI-цветами + live streaming |
 | Mobile-адаптивность | ⚠️ Частично | |
 
 ---
@@ -418,7 +418,7 @@ POST /api/project/{id}/tasks  →  TaskPoolQueue  →  TaskPoolRunner
 - [x] **5.4** `broadcast::Sender` в AppState — `services/task_runner/websocket.rs`
 - [x] **5.5** Heartbeat ping/pong — реализовано в websocket.rs
 - [x] **5.6** Закрытие WS при завершении задачи — реализовано
-- [ ] **5.7** Фронтенд: Vue 2 не подключён к WebSocket *(задача фазы 6)*
+- [x] **5.7** Фронтенд: TaskLogViewer подключён к WebSocket *(2026-03-14)*
 
 ### API WebSocket
 
@@ -787,7 +787,7 @@ events        ← audit log
 | B-07 | Cron-runner | 🟠 Высокий | ✅ Закрыт |
 | B-08 | Нет тестов | 🟡 Средний | ✅ Частично — unit-тесты есть, E2E нет |
 | B-09 | LDAP auth не подключён к auth flow | 🟡 Средний | ✅ Закрыт — подключён 2026-03-14 |
-| B-10 | Фронтенд не использует WS для логов | 🟠 Высокий | 🔄 В работе — Vanilla JS миграция |
+| B-10 | Фронтенд не использует WS для логов | 🟠 Высокий | ✅ Закрыт — TaskLogViewer + WebSocket 2026-03-14 |
 | B-11 | Slack/Telegram уведомления | 🟡 Средний | ✅ Закрыт — встроено в `services/alert.rs` |
 | B-12 | Нет Rust clippy в CI | 🟡 Средний | ✅ Закрыт — `.github/workflows/rust.yml` 2026-03-14 |
 
