@@ -154,6 +154,12 @@ pub fn api_routes() -> Router<Arc<AppState>> {
         .route("/api/project/{project_id}/schedules/{id}", delete(schedules::delete_schedule))
         .route("/api/project/{project_id}/schedules/validate", post(schedules::validate_schedule_cron_format))
 
+        // Analytics
+        .route("/api/project/{project_id}/analytics", get(handlers::analytics::get_project_analytics))
+        .route("/api/project/{project_id}/analytics/tasks-chart", get(handlers::analytics::get_tasks_chart))
+        .route("/api/project/{project_id}/analytics/status-distribution", get(handlers::analytics::get_status_distribution))
+        .route("/api/analytics/system", get(handlers::analytics::get_system_analytics))
+
         // Представления (Views)
         .route("/api/projects/{project_id}/views", get(views::get_views))
         .route("/api/projects/{project_id}/views", post(views::add_view))

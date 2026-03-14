@@ -5,6 +5,7 @@
 pub mod auth;
 pub mod oidc;
 pub mod metrics;
+pub mod analytics;
 #[cfg(test)]
 mod tests;
 pub mod users;
@@ -36,3 +37,4 @@ pub use totp::*;
 pub use mailer::*;
 pub use audit_log::*;
 pub use playbook::*;
+pub use analytics::*;
