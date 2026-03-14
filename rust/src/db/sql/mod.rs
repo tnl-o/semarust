@@ -344,8 +344,8 @@ impl SqlStore {
                 arguments TEXT,
                 params TEXT,
                 playbook TEXT,
-                start DATETIME,
-                end DATETIME,
+                start_time DATETIME,
+                end_time DATETIME,
                 created DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
             )",
         )

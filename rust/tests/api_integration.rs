@@ -608,3 +608,150 @@ async fn test_create_and_list_environments() {
     let envs = list.as_array().expect("environments array");
     assert!(envs.iter().any(|e| e["id"].as_i64() == Some(env_id)));
 }
+
+// ── Templates CRUD ────────────────────────────────────────────────────────
+
+#[tokio::test]
+async fn test_create_and_list_templates() {
+    let (app, _temp) = seeded_app().await;
+    let token = register_and_login(&app).await;
+
+    let (_, proj) = post_json_with_token(
+        app.clone(),
+        "/api/projects",
+        json!({ "name": "Tpl Project", "max_parallel_tasks": 0, "alert": false }),
+        Some(&token),
+    )
+    .await;
+    let project_id = proj["id"].as_i64().expect("project id");
+
+    let (status, body) = post_json_with_token(
+        app.clone(),
+        &format!("/api/projects/{}/templates", project_id),
+        json!({
+            "name": "deploy",
+            "playbook": "deploy.yml"
+        }),
+        Some(&token),
+    )
+    .await;
+    assert_eq!(status, StatusCode::CREATED, "create template; body={:?}", body);
+    let tpl_id = body["id"].as_i64().expect("template id");
+
+    let (status, list) = get_json(
+        app.clone(),
+        &format!("/api/projects/{}/templates", project_id),
+        Some(&token),
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK, "list templates; body={:?}", list);
+    let tpls = list.as_array().expect("templates array");
+    assert!(tpls.iter().any(|t| t["id"].as_i64() == Some(tpl_id)), "created template must appear in list");
+}
+
+#[tokio::test]
+async fn test_get_template_by_id() {
+    let (app, _temp) = seeded_app().await;
+    let token = register_and_login(&app).await;
+
+    let (_, proj) = post_json_with_token(
+        app.clone(),
+        "/api/projects",
+        json!({ "name": "TplGet Project", "max_parallel_tasks": 0, "alert": false }),
+        Some(&token),
+    )
+    .await;
+    let project_id = proj["id"].as_i64().expect("project id");
+
+    let (_, created) = post_json_with_token(
+        app.clone(),
+        &format!("/api/projects/{}/templates", project_id),
+        json!({ "name": "my-tpl", "playbook": "site.yml" }),
+        Some(&token),
+    )
+    .await;
+    let tpl_id = created["id"].as_i64().expect("template id");
+
+    let (status, got) = get_json(
+        app.clone(),
+        &format!("/api/projects/{}/templates/{}", project_id, tpl_id),
+        Some(&token),
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK, "get template; body={:?}", got);
+    assert_eq!(got["id"].as_i64(), Some(tpl_id));
+    assert_eq!(got["name"].as_str(), Some("my-tpl"));
+}
+
+#[tokio::test]
+async fn test_get_template_not_found() {
+    let (app, _temp) = seeded_app().await;
+    let token = register_and_login(&app).await;
+
+    let (_, proj) = post_json_with_token(
+        app.clone(),
+        "/api/projects",
+        json!({ "name": "Tpl404", "max_parallel_tasks": 0, "alert": false }),
+        Some(&token),
+    )
+    .await;
+    let project_id = proj["id"].as_i64().expect("project id");
+
+    let (status, _) = get_json(
+        app.clone(),
+        &format!("/api/projects/{}/templates/99999", project_id),
+        Some(&token),
+    )
+    .await;
+    assert_eq!(status, StatusCode::NOT_FOUND);
+}
+
+// ── Task run (create task from template) ─────────────────────────────────
+
+#[tokio::test]
+async fn test_create_task_from_template() {
+    let (app, _temp) = seeded_app().await;
+    let token = register_and_login(&app).await;
+
+    let (_, proj) = post_json_with_token(
+        app.clone(),
+        "/api/projects",
+        json!({ "name": "Task Run Project", "max_parallel_tasks": 1, "alert": false }),
+        Some(&token),
+    )
+    .await;
+    let project_id = proj["id"].as_i64().expect("project id");
+
+    // Create a template to run
+    let (_, tpl) = post_json_with_token(
+        app.clone(),
+        &format!("/api/projects/{}/templates", project_id),
+        json!({ "name": "run-me", "playbook": "run.yml" }),
+        Some(&token),
+    )
+    .await;
+    let tpl_id = tpl["id"].as_i64().expect("template id");
+
+    // Start a task — route is POST /api/project/{id}/tasks
+    let (status, task) = post_json_with_token(
+        app.clone(),
+        &format!("/api/project/{}/tasks", project_id),
+        json!({ "template_id": tpl_id }),
+        Some(&token),
+    )
+    .await;
+    // 201 = task queued successfully
+    assert_eq!(status, StatusCode::CREATED, "create task; body={:?}", task);
+    let task_id = task["id"].as_i64().expect("task id");
+
+    // Verify task appears in history
+    let (status, list) = get_json(
+        app.clone(),
+        &format!("/api/project/{}/tasks", project_id),
+        Some(&token),
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK, "list tasks; body={:?}", list);
+    let tasks = list.as_array().expect("tasks array");
+    assert!(tasks.iter().any(|t| t["id"].as_i64() == Some(task_id)), "created task must appear in history");
+}
