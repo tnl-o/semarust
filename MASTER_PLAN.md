@@ -5,7 +5,7 @@
 >
 > **Репозиторий:** https://github.com/tnl-o/rust_semaphore
 > **Upstream (Go оригинал):** https://github.com/semaphoreui/semaphore
-> **Последнее обновление:** 2026-03-14 (обновление 4 — integration tests, plan discrepancy fixes)
+> **Последнее обновление:** 2026-03-14 (обновление 5 — 16 integration tests all green, ROADMAP.md rewrite)
 
 ---
 
@@ -586,8 +586,8 @@ web/src/
 
 #### 8.4 Тесты
 - [x] 524 unit-теста — `cargo test` green
-- [x] 10 integration-тестов — `cargo test --test api_integration` green (2026-03-14)
-- [x] Integration тесты с реальной SQLite БД — `rust/tests/api_integration.rs` (10 тестов, 2026-03-14)
+- [x] 16 integration-тестов — `cargo test --test api_integration` green (2026-03-14)
+- [x] Integration тесты с реальной SQLite БД — `rust/tests/api_integration.rs` (16 тестов: auth, projects, access keys, inventories, repositories, environments, tasks, 2026-03-14)
 - [ ] E2E тесты через `reqwest` (расширение api_integration)
 - [ ] Покрытие ≥ 60% критических путей
 
