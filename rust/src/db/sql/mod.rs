@@ -353,6 +353,25 @@ impl SqlStore {
         .await
         .map_err(Error::Database)?;
 
+        // schedule — расписания (cron)
+        sqlx::query(
+            "CREATE TABLE IF NOT EXISTS schedule (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                project_id INTEGER NOT NULL REFERENCES project(id) ON DELETE CASCADE,
+                template_id INTEGER NOT NULL,
+                name TEXT NOT NULL DEFAULT '',
+                cron TEXT NOT NULL,
+                cron_format TEXT,
+                active BOOLEAN NOT NULL DEFAULT 1,
+                last_commit_hash TEXT,
+                repository_id INTEGER,
+                created DATETIME
+            )",
+        )
+        .execute(pool)
+        .await
+        .map_err(Error::Database)?;
+
         tracing::info!("Схема БД инициализирована");
         Ok(())
     }

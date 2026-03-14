@@ -87,6 +87,44 @@ async fn post_json_with_token(
     (status, json)
 }
 
+/// DELETE with optional Bearer token, returns status code only.
+async fn delete_req(
+    app: axum::Router,
+    uri: &str,
+    token: Option<&str>,
+) -> StatusCode {
+    let mut req = Request::builder().method("DELETE").uri(uri);
+    if let Some(tok) = token {
+        req = req.header(header::AUTHORIZATION, format!("Bearer {}", tok));
+    }
+    let request = req.body(Body::empty()).unwrap();
+    let response = app.oneshot(request).await.expect("oneshot");
+    response.status()
+}
+
+/// PUT JSON body with optional Bearer token.
+async fn put_json(
+    app: axum::Router,
+    uri: &str,
+    body: Value,
+    token: Option<&str>,
+) -> (StatusCode, Value) {
+    let body_str = serde_json::to_string(&body).unwrap();
+    let mut req = Request::builder()
+        .method("PUT")
+        .uri(uri)
+        .header(header::CONTENT_TYPE, "application/json");
+    if let Some(tok) = token {
+        req = req.header(header::AUTHORIZATION, format!("Bearer {}", tok));
+    }
+    let request = req.body(Body::from(body_str)).unwrap();
+    let response = app.oneshot(request).await.expect("oneshot");
+    let status = response.status();
+    let bytes = response.into_body().collect().await.unwrap().to_bytes();
+    let json: Value = serde_json::from_slice(&bytes).unwrap_or(Value::Null);
+    (status, json)
+}
+
 /// GET with optional Bearer token.
 async fn get_json(
     app: axum::Router,
@@ -704,6 +742,199 @@ async fn test_get_template_not_found() {
     )
     .await;
     assert_eq!(status, StatusCode::NOT_FOUND);
+}
+
+// ── GET project by ID ────────────────────────────────────────────────────
+
+#[tokio::test]
+async fn test_get_project_by_id() {
+    let (app, _temp) = seeded_app().await;
+    let token = register_and_login(&app).await;
+
+    let (_, body) = post_json_with_token(
+        app.clone(),
+        "/api/projects",
+        json!({ "name": "Get By ID Project", "max_parallel_tasks": 0, "alert": false }),
+        Some(&token),
+    )
+    .await;
+    let project_id = body["id"].as_i64().expect("project id");
+
+    let (status, got) = get_json(
+        app.clone(),
+        &format!("/api/project/{}", project_id),
+        Some(&token),
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK, "get project by id; body={:?}", got);
+    assert_eq!(got["id"].as_i64(), Some(project_id));
+    assert_eq!(got["name"].as_str(), Some("Get By ID Project"));
+}
+
+// ── GET project not found ─────────────────────────────────────────────────
+
+#[tokio::test]
+async fn test_get_project_not_found() {
+    let (app, _temp) = seeded_app().await;
+    let token = register_and_login(&app).await;
+
+    let (status, _) = get_json(app.clone(), "/api/project/99999", Some(&token)).await;
+    assert_eq!(status, StatusCode::NOT_FOUND);
+}
+
+// ── DELETE access key ─────────────────────────────────────────────────────
+
+#[tokio::test]
+async fn test_delete_access_key() {
+    let (app, _temp) = seeded_app().await;
+    let token = register_and_login(&app).await;
+
+    let (_, proj) = post_json_with_token(
+        app.clone(),
+        "/api/projects",
+        json!({ "name": "Key Delete Project", "max_parallel_tasks": 0, "alert": false }),
+        Some(&token),
+    )
+    .await;
+    let project_id = proj["id"].as_i64().expect("project id");
+
+    let (_, key_body) = post_json_with_token(
+        app.clone(),
+        &format!("/api/projects/{}/keys", project_id),
+        json!({ "name": "temp-key", "type": "none" }),
+        Some(&token),
+    )
+    .await;
+    let key_id = key_body["id"].as_i64().expect("key id");
+
+    let status = delete_req(
+        app.clone(),
+        &format!("/api/projects/{}/keys/{}", project_id, key_id),
+        Some(&token),
+    )
+    .await;
+    assert!(
+        status == StatusCode::NO_CONTENT || status == StatusCode::OK,
+        "delete key returned {:?}",
+        status
+    );
+
+    // Key should no longer appear in list
+    let (_, list) = get_json(
+        app.clone(),
+        &format!("/api/projects/{}/keys", project_id),
+        Some(&token),
+    )
+    .await;
+    let empty = vec![];
+    let keys = list.as_array().unwrap_or(&empty);
+    assert!(
+        !keys.iter().any(|k| k["id"].as_i64() == Some(key_id)),
+        "deleted key must not appear in list"
+    );
+}
+
+// ── Schedules CRUD ────────────────────────────────────────────────────────
+
+#[tokio::test]
+async fn test_create_and_list_schedules() {
+    let (app, _temp) = seeded_app().await;
+    let token = register_and_login(&app).await;
+
+    let (_, proj) = post_json_with_token(
+        app.clone(),
+        "/api/projects",
+        json!({ "name": "Sched Project", "max_parallel_tasks": 0, "alert": false }),
+        Some(&token),
+    )
+    .await;
+    let project_id = proj["id"].as_i64().expect("project id");
+
+    // Need a template for the schedule
+    let (_, tpl) = post_json_with_token(
+        app.clone(),
+        &format!("/api/projects/{}/templates", project_id),
+        json!({ "name": "sched-tpl", "playbook": "cron.yml" }),
+        Some(&token),
+    )
+    .await;
+    let tpl_id = tpl["id"].as_i64().expect("template id");
+
+    let (status, body) = post_json_with_token(
+        app.clone(),
+        &format!("/api/projects/{}/schedules", project_id),
+        json!({
+            "id": 0,
+            "template_id": tpl_id,
+            "project_id": project_id,
+            "name": "hourly",
+            "cron": "0 * * * *",
+            "active": true
+        }),
+        Some(&token),
+    )
+    .await;
+    assert_eq!(status, StatusCode::CREATED, "create schedule; body={:?}", body);
+    let sched_id = body["id"].as_i64().expect("schedule id");
+
+    let (status, list) = get_json(
+        app.clone(),
+        &format!("/api/projects/{}/schedules", project_id),
+        Some(&token),
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK, "list schedules; body={:?}", list);
+    let scheds = list.as_array().expect("schedules array");
+    assert!(
+        scheds.iter().any(|s| s["id"].as_i64() == Some(sched_id)),
+        "created schedule must appear in list"
+    );
+}
+
+// ── Update project name (PUT) ─────────────────────────────────────────────
+
+#[tokio::test]
+async fn test_update_project_name() {
+    let (app, _temp) = seeded_app().await;
+    let token = register_and_login(&app).await;
+
+    let (_, body) = post_json_with_token(
+        app.clone(),
+        "/api/projects",
+        json!({ "name": "Before Update", "max_parallel_tasks": 0, "alert": false }),
+        Some(&token),
+    )
+    .await;
+    let project_id = body["id"].as_i64().expect("project id");
+
+    let (status, updated) = put_json(
+        app.clone(),
+        &format!("/api/projects/{}", project_id),
+        json!({ "name": "After Update", "max_parallel_tasks": 2, "alert": false }),
+        Some(&token),
+    )
+    .await;
+    assert!(
+        status == StatusCode::OK || status == StatusCode::NO_CONTENT,
+        "update project returned {:?}; body={:?}",
+        status,
+        updated
+    );
+
+    // Verify the change persisted
+    let (status, got) = get_json(
+        app.clone(),
+        &format!("/api/project/{}", project_id),
+        Some(&token),
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK, "get after update; body={:?}", got);
+    assert_eq!(
+        got["name"].as_str(),
+        Some("After Update"),
+        "project name should be updated; body={:?}",
+        got
+    );
 }
 
 // ── Task run (create task from template) ─────────────────────────────────

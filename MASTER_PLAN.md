@@ -5,7 +5,7 @@
 >
 > **Репозиторий:** https://github.com/tnl-o/rust_semaphore
 > **Upstream (Go оригинал):** https://github.com/semaphoreui/semaphore
-> **Последнее обновление:** 2026-03-14 (обновление 7 — 20 tests, charts, Docker distroless)
+> **Последнее обновление:** 2026-03-14 (обновление 8 — cleanup Vue 3 stale tasks, schema parity, dev compose)
 
 ---
 
@@ -155,14 +155,14 @@ dotenvy            — .env файлы
 
 ### Фронтенд
 ```
-Vue 3.4+
-Vite 5             — сборщик (замена webpack)
-TypeScript 5       — типизация
-Pinia              — state management (замена Vuex)
-Vue Router 4       — роутинг
-Axios / fetch API  — HTTP-запросы
-Tailwind CSS 3     — стили (или сохранить текущие)
+Vanilla JS (ES2020+)  — без фреймворков
+History API           — SPA-роутинг
+Proxy-based store     — реактивное состояние
+fetch API             — HTTP-запросы
+SCSS                  — стили (скомпилированы в web/public/)
+Chart.js (CDN)        — аналитика / графики
 ```
+> ⚠️ Vue 3 + Vite + Pinia — **отменено**. Стратегия изменена на Vanilla JS (см. VANILLA_JS_STATUS.md)
 
 ### Инфраструктура
 ```
@@ -239,7 +239,7 @@ rust_semaphore/
 - [x] **1.4** Таблица Go → Rust обновлена в секции 13 *(2026-03-14)*
 - [x] **1.5** `tracing` + `tracing-subscriber` настроены — `src/logging.rs` существует
 - [x] **1.6** `clippy` в CI — `cargo clippy -- -D warnings` green (0 errors, 2026-03-14)
-- [ ] **1.7** Убедиться, что миграции SQLite и PostgreSQL идентичны по схеме
+- [x] **1.7** Убедиться, что миграции SQLite и PostgreSQL идентичны по схеме *(проверено 2026-03-14: схемы совпадают, различия только в синтаксисе: `?` vs `$N`, `"user"` квотирование)*
 - [x] **1.8** `CONTRIBUTING.md` написан
 
 ### Критерии готовности
@@ -436,106 +436,44 @@ ws://host/api/project/{id}/tasks/{task_id}/ws
 
 ---
 
-## Фаза 6 — Фронтенд: Vue 2 → Vue 3
+## Фаза 6 — Фронтенд: Vanilla JS миграция
 
-**Цель:** Обновить фронтенд до актуального стека, убрать EOL зависимости.
+**Цель:** Заменить Vue 2 (EOL) на чистый Vanilla JS без зависимостей от фреймворков.
 
-**Оценка:** 7–14 дней
+**Статус фазы: ✅ Завершена** *(2026-03-14)*
 
-> Vue 2 достиг End-of-Life в декабре 2023. Нет обновлений безопасности.
+> ⚠️ **Стратегия изменена:** Vue 3 + Vite + Pinia — **отменено**. Вместо этого реализован полноценный
+> Vanilla JS SPA с History API, Proxy-based store и fetch API. Детали в `VANILLA_JS_STATUS.md`.
 
-### Стратегия миграции
+### Реализованные страницы (все ✅)
 
-Рекомендуется **постепенная миграция компонент за компонентом** через промежуточный слой, а не "большой взрыв" переписывания всего сразу.
+- [x] Login / Logout — JWT-аутентификация
+- [x] Dashboard — обзор проектов и задач
+- [x] Projects — список и создание проектов
+- [x] Project → Templates, Tasks, Inventory, Keys, Repositories, Environments, Schedules, Views
+- [x] Task Log — ANSI-цвета, WebSocket live-стриминг, кнопка Stop
+- [x] Analytics — Chart.js line chart + doughnut, period switcher (week/month/year)
+- [x] Users & Settings — управление пользователями
 
-**Порядок миграции:**
-1. Настроить новый Vite + Vue 3 проект в `web/` рядом со старым
-2. Перенести routing, stores, API-клиент
-3. Переписывать компоненты по одному, начиная с листовых (без зависимостей)
-4. Проверять каждый компонент вручную перед следующим
-
-### 6.1 Подготовка
-
-- [ ] Зафиксировать полный список компонентов Vue 2 (`find web/src -name "*.vue" | sort`)
-- [ ] Изучить Vue Migration Guide: https://v3-migration.vuejs.org/
-- [ ] Установить `@vue/compat` для режима совместимости (опционально)
-- [ ] Настроить Vite: `web/vite.config.ts`
-- [ ] Настроить TypeScript: `web/tsconfig.json`
-
-### 6.2 Архитектура нового фронтенда
+### Архитектура (`web/vanilla/`)
 
 ```
-web/src/
-├── main.ts                    # createApp() вместо new Vue()
-├── App.vue
-├── router/
-│   └── index.ts               # createRouter() (Vue Router 4)
-├── stores/
-│   ├── auth.ts                # Pinia store (вместо Vuex)
-│   ├── projects.ts
-│   ├── tasks.ts
-│   └── ...
-├── api/
-│   └── client.ts              # axios instance с interceptors
-├── components/
-│   ├── common/
-│   └── ...
-├── views/
-│   ├── LoginView.vue
-│   ├── ProjectsView.vue
-│   ├── TasksView.vue
-│   └── ...
-└── types/
-    └── api.ts                 # TypeScript типы из API
+web/vanilla/
+├── js/
+│   ├── app.js          # SPA router (History API) + все страницы
+│   ├── store.js        # Proxy-based reactive store
+│   └── api.js          # fetch API client + interceptors
+├── css/
+│   ├── main.scss
+│   └── components/     # analytics.scss и др.
+└── index.html          # single entry point
 ```
 
-### 6.3 Breaking changes Vue 2 → Vue 3
-
-| Vue 2 | Vue 3 | Действие |
-|---|---|---|
-| `new Vue()` | `createApp()` | Обновить `main.js` |
-| `Vue.use(Router)` | `app.use(router)` | Обновить |
-| Vuex | Pinia | Переписать stores |
-| `this.$store` | `useStore()` | Во всех компонентах |
-| `Vue.set()` | Нет (реактивность автоматическая) | Удалить |
-| `v-model` (событие `input`) | `v-model` (событие `update:modelValue`) | Проверить кастомные компоненты |
-| `$listeners` | Слитось с `$attrs` | Проверить |
-| Filters `{{ value \| filter }}` | Убраны, заменить computed | Найти и заменить |
-| `beforeDestroy` | `onBeforeUnmount` | Переименовать |
-| `destroyed` | `onUnmounted` | Переименовать |
-| `<template slot="...">` | `<template #...>` | Обновить |
-
-### 6.4 Компоненты для переписывания (приоритет)
-
-- [ ] `App.vue` — главный компонент, layout
-- [ ] `LoginView.vue` — страница входа
-- [ ] `ProjectsView.vue` — список проектов
-- [ ] `ProjectView.vue` — страница проекта
-- [ ] `TasksView.vue` — список задач, создание задачи
-- [ ] `TaskView.vue` — детали задачи + **WebSocket лог** (новый компонент!)
-- [ ] `TemplatesView.vue`
-- [ ] `InventoryView.vue`
-- [ ] `KeysView.vue`
-- [ ] `RepositoriesView.vue`
-- [ ] `SchedulesView.vue`
-- [ ] `UsersView.vue`
-- [ ] `SettingsView.vue`
-
-### 6.5 Новые компоненты (которых нет в Vue 2 версии)
-
-- [ ] `TaskLogViewer.vue` — рендеринг ANSI-логов через WebSocket
-  - Использовать `xterm.js` или `ansi_up`
-  - Автоскролл вниз
-  - Кнопка "стоп" с подтверждением
-- [ ] `CronEditor.vue` — редактор cron-выражений с превью следующих запусков
-- [ ] `SecretInput.vue` — инпут для секретов (маскировка, "показать/скрыть")
-- [ ] `StatusBadge.vue` — бейдж статуса задачи с анимацией для `running`
-
-### Критерии готовности фазы 6
-- `npm run build` — success, 0 ошибок TypeScript
-- Все страницы работают
-- Лог задачи стримится в реальном времени через WebSocket
-- Lighthouse: accessibility ≥ 90, performance ≥ 80
+### Критерии готовности
+- ✅ Все страницы работают без фреймворка
+- ✅ WebSocket лог-стриминг подключён
+- ✅ Analytics с Chart.js (CDN lazy-load)
+- ✅ Mobile-адаптивность (базовая)
 
 ---
 
@@ -570,13 +508,13 @@ web/src/
 - [x] `docker-compose.yml` — существует (postgres + backend)
 - [x] `docker-compose.single.yml` — single-container режим
 - [x] Multi-stage минимальный образ — distroless/cc-debian12:nonroot (2026-03-14)
-- [ ] `docker-compose.dev.yml` с hot-reload — нет
+- [x] `docker-compose.dev.yml` с hot-reload — `cargo-watch` + PostgreSQL (2026-03-14)
 
 #### 8.2 CI/CD (GitHub Actions)
 - [x] `.github/workflows/dev.yml` — build + test на каждый push
 - [x] `.github/workflows/community_release.yml` — сборка release binaries
 - [x] `.github/workflows/community_beta.yml` — beta releases
-- [ ] Clippy шаг для Rust — **отсутствует** в workflows (CI использует Go Taskfile)
+- [x] Clippy шаг для Rust — `cargo clippy --all-features -- -D warnings` в `.github/workflows/rust.yml` ✅
 - [ ] Кросс-компиляция musl — не проверена
 
 #### 8.3 Конфигурация
@@ -586,8 +524,8 @@ web/src/
 
 #### 8.4 Тесты
 - [x] 524 unit-теста — `cargo test` green
-- [x] 16 integration-тестов — `cargo test --test api_integration` green (2026-03-14)
-- [x] Integration тесты с реальной SQLite БД — `rust/tests/api_integration.rs` (16 тестов: auth, projects, access keys, inventories, repositories, environments, tasks, 2026-03-14)
+- [x] 25 integration-тестов — `cargo test --test api_integration` green (2026-03-14)
+- [x] Integration тесты с реальной SQLite БД — `rust/tests/api_integration.rs` (25 тестов: auth, projects, CRUD, delete, update, schedules, templates, 2026-03-14)
 - [ ] E2E тесты через `reqwest` (расширение api_integration)
 - [ ] Покрытие ≥ 60% критических путей
 
