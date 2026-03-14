@@ -5,6 +5,110 @@
 Формат основан на [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 этот проект придерживается [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.0] - 2026-03-14
+
+### 🎉 Major Release - Analytics, Webhooks, Schedules, Playbook Runs
+
+#### ✨ Добавлено
+
+##### Analytics API & UI
+- ✅ Analytics API endpoints:
+  - `GET /api/project/{id}/analytics` - основная аналитика проекта
+  - `GET /api/project/{id}/analytics/tasks-chart` - данные для графика задач
+  - `GET /api/project/{id}/analytics/status-distribution` - распределение по статусам
+  - `GET /api/analytics/system` - системная аналитика
+- ✅ Analytics Dashboard UI (analytics.html):
+  - Карточки статистики: всего задач, успешных %, ошибок, среднее время
+  - Графики: задачи по времени, распределение по статусам (Chart.js)
+  - Детальная статистика по ресурсам проекта
+  - Фильтрация по периоду (день, неделя, месяц)
+  - Градиентные карточки с иконками
+- ✅ Backend handlers/analytics.rs - подсчёт статистики задач
+
+##### Webhooks Management UI
+- ✅ Webhooks CRUD страница (webhooks.html):
+  - Список webhooks в виде таблицы
+  - Создание/редактирование/удаление
+  - Тестирование webhook (отправка тестового запроса)
+  - Фильтрация по типу (Generic, Slack, Teams, Discord, Telegram)
+  - Фильтрация по статусу (активен/неактивен)
+  - Поиск по названию
+- ✅ Поля webhook: название, тип, URL, secret, статус, события, заголовки
+- ✅ Модальное окно с валидацией формы
+- ✅ Toast уведомления об операциях
+
+##### Schedules Management
+- ✅ Schedules CRUD полностью реализован:
+  - Страница schedules.html - управление расписаниями
+  - Создание, редактирование, удаление расписаний
+  - Валидация cron выражений
+  - Фильтрация по статусу
+  - Включение/отключение расписания (toggle)
+- ✅ Cron примеры: 0 2 * * *, 0 */6 * * *, 0 0 1 * *
+
+##### Playbook Runs UI
+- ✅ Run форма (run.html):
+  - Запуск playbook с параметрами
+  - Выбор инвентаря, окружения
+  - Дополнительные переменные (JSON)
+  - Опции: --limit, --tags, --skip-tags
+  - Debug режим, Dry run, Diff режим
+- ✅ Task просмотр (task.html):
+  - Информация о задаче
+  - Статус в реальном времени (автообновление 5с)
+  - Лог выполнения с ANSI подсветкой
+  - Скачивание лога
+
+##### Integration Tests
+- ✅ test-schedules-api.sh - CRUD тесты для расписаний:
+  - Создание, чтение, обновление, удаление
+  - Валидация cron выражений
+  - Фильтрация по статусу
+  - Статистика
+- ✅ test-playbook-runs-api.sh - тесты запуска задач:
+  - Запуск задачи с параметрами
+  - Мониторинг статуса с ожиданием
+  - Получение лога выполнения
+  - Статистика задач по статусам
+
+##### Навигация
+- ✅ Добавлена ссылка на Analytics во все страницы проекта
+- ✅ Добавлена ссылка на Webhooks во все страницы проекта
+
+#### 🔧 Изменено
+
+##### ROADMAP.md
+- ✅ Отмечены завершённые задачи Q4 2026
+- ✅ Обновлена дата: 14 марта 2026 г.
+- ✅ Перемещён WASM Plugin Loader в Q1 2027
+
+#### 📊 Статистика изменений
+
+- **15+ файлов** изменено
+- **1000+ строк** добавлено
+- **5 коммитов** создано
+
+#### 🚀 Как использовать
+
+```bash
+# Запуск Analytics UI
+http://localhost:3000/analytics.html?id=1
+
+# Запуск Webhooks UI
+http://localhost:3000/webhooks.html?id=1
+
+# Запуск Schedules UI
+http://localhost:3000/schedules.html?id=1
+
+# Тестирование Schedules API
+./test-schedules-api.sh
+
+# Тестирование Playbook Runs API
+./test-playbook-runs-api.sh
+```
+
+---
+
 ## [0.4.1] - 2026-03-12
 
 ### 🎉 Playbook API Release
