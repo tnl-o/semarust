@@ -390,3 +390,221 @@ async fn test_get_current_user_with_token() {
         body
     );
 }
+
+// ── Access Keys CRUD ──────────────────────────────────────────────────────
+
+#[tokio::test]
+async fn test_create_and_list_access_keys() {
+    let (app, _temp) = seeded_app().await;
+    let token = register_and_login(&app).await;
+
+    // Create a project first
+    let (_, proj) = post_json_with_token(
+        app.clone(),
+        "/api/projects",
+        json!({ "name": "Keys Project", "max_parallel_tasks": 1, "alert": false }),
+        Some(&token),
+    )
+    .await;
+    let project_id = proj["id"].as_i64().expect("project id");
+
+    // Create a 'none' key (simplest type, no secrets needed)
+    let (status, body) = post_json_with_token(
+        app.clone(),
+        &format!("/api/projects/{}/keys", project_id),
+        json!({ "name": "no-op key", "type": "none" }),
+        Some(&token),
+    )
+    .await;
+    assert_eq!(status, StatusCode::CREATED, "create key; body={:?}", body);
+    let key_id = body["id"].as_i64().expect("key id");
+
+    // List keys
+    let (status, list) = get_json(
+        app.clone(),
+        &format!("/api/projects/{}/keys", project_id),
+        Some(&token),
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK, "list keys; body={:?}", list);
+    let keys = list.as_array().expect("keys array");
+    assert!(
+        keys.iter().any(|k| k["id"].as_i64() == Some(key_id)),
+        "created key must appear in list"
+    );
+}
+
+// ── Inventories CRUD ──────────────────────────────────────────────────────
+
+#[tokio::test]
+async fn test_create_and_list_inventories() {
+    let (app, _temp) = seeded_app().await;
+    let token = register_and_login(&app).await;
+
+    // Create project
+    let (_, proj) = post_json_with_token(
+        app.clone(),
+        "/api/projects",
+        json!({ "name": "Inv Project", "max_parallel_tasks": 0, "alert": false }),
+        Some(&token),
+    )
+    .await;
+    let project_id = proj["id"].as_i64().expect("project id");
+
+    // Create inventory
+    let (status, body) = post_json_with_token(
+        app.clone(),
+        &format!("/api/projects/{}/inventories", project_id),
+        json!({ "name": "localhost", "inventory": "static" }),
+        Some(&token),
+    )
+    .await;
+    assert_eq!(status, StatusCode::CREATED, "create inventory; body={:?}", body);
+    let inv_id = body["id"].as_i64().expect("inventory id");
+
+    // List inventories
+    let (status, list) = get_json(
+        app.clone(),
+        &format!("/api/projects/{}/inventories", project_id),
+        Some(&token),
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK, "list inventories; body={:?}", list);
+    let invs = list.as_array().expect("inventories array");
+    assert!(
+        invs.iter().any(|i| i["id"].as_i64() == Some(inv_id)),
+        "created inventory must appear in list"
+    );
+}
+
+#[tokio::test]
+async fn test_get_inventory_not_found() {
+    let (app, _temp) = seeded_app().await;
+    let token = register_and_login(&app).await;
+
+    let (_, proj) = post_json_with_token(
+        app.clone(),
+        "/api/projects",
+        json!({ "name": "NF Project", "max_parallel_tasks": 0, "alert": false }),
+        Some(&token),
+    )
+    .await;
+    let project_id = proj["id"].as_i64().expect("project id");
+
+    let (status, _) = get_json(
+        app,
+        &format!("/api/projects/{}/inventories/99999", project_id),
+        Some(&token),
+    )
+    .await;
+    assert_eq!(status, StatusCode::NOT_FOUND);
+}
+
+// ── Repositories CRUD ─────────────────────────────────────────────────────
+
+#[tokio::test]
+async fn test_create_and_list_repositories() {
+    let (app, _temp) = seeded_app().await;
+    let token = register_and_login(&app).await;
+
+    let (_, proj) = post_json_with_token(
+        app.clone(),
+        "/api/projects",
+        json!({ "name": "Repo Project", "max_parallel_tasks": 0, "alert": false }),
+        Some(&token),
+    )
+    .await;
+    let project_id = proj["id"].as_i64().expect("project id");
+
+    let (status, body) = post_json_with_token(
+        app.clone(),
+        &format!("/api/projects/{}/repositories", project_id),
+        json!({
+            "name": "test-repo",
+            "git_url": "https://github.com/example/repo.git"
+        }),
+        Some(&token),
+    )
+    .await;
+    assert_eq!(status, StatusCode::CREATED, "create repo; body={:?}", body);
+    let repo_id = body["id"].as_i64().expect("repo id");
+
+    let (status, list) = get_json(
+        app,
+        &format!("/api/projects/{}/repositories", project_id),
+        Some(&token),
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK, "list repos; body={:?}", list);
+    let repos = list.as_array().expect("repos array");
+    assert!(repos.iter().any(|r| r["id"].as_i64() == Some(repo_id)));
+}
+
+// ── Tasks CRUD ────────────────────────────────────────────────────────────
+
+#[tokio::test]
+async fn test_list_tasks_empty() {
+    let (app, _temp) = seeded_app().await;
+    let token = register_and_login(&app).await;
+
+    let (_, proj) = post_json_with_token(
+        app.clone(),
+        "/api/projects",
+        json!({ "name": "Tasks Project", "max_parallel_tasks": 0, "alert": false }),
+        Some(&token),
+    )
+    .await;
+    let project_id = proj["id"].as_i64().expect("project id");
+
+    let (status, body) = get_json(
+        app,
+        &format!("/api/projects/{}/tasks", project_id),
+        Some(&token),
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK, "list tasks; body={:?}", body);
+    // Empty project has no tasks
+    let tasks = body.as_array().expect("tasks array");
+    assert!(tasks.is_empty(), "new project should have no tasks");
+}
+
+// ── Environments CRUD ─────────────────────────────────────────────────────
+
+#[tokio::test]
+async fn test_create_and_list_environments() {
+    let (app, _temp) = seeded_app().await;
+    let token = register_and_login(&app).await;
+
+    let (_, proj) = post_json_with_token(
+        app.clone(),
+        "/api/projects",
+        json!({ "name": "Env Project", "max_parallel_tasks": 0, "alert": false }),
+        Some(&token),
+    )
+    .await;
+    let project_id = proj["id"].as_i64().expect("project id");
+
+    let (status, body) = post_json_with_token(
+        app.clone(),
+        &format!("/api/projects/{}/environments", project_id),
+        json!({
+            "project_id": project_id,
+            "name": "production",
+            "json": "{\"DEPLOY_ENV\": \"prod\"}"
+        }),
+        Some(&token),
+    )
+    .await;
+    assert_eq!(status, StatusCode::CREATED, "create env; body={:?}", body);
+    let env_id = body["id"].as_i64().expect("env id");
+
+    let (status, list) = get_json(
+        app,
+        &format!("/api/projects/{}/environments", project_id),
+        Some(&token),
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK, "list envs; body={:?}", list);
+    let envs = list.as_array().expect("environments array");
+    assert!(envs.iter().any(|e| e["id"].as_i64() == Some(env_id)));
+}

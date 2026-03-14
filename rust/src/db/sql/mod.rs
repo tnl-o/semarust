@@ -210,6 +210,149 @@ impl SqlStore {
         .await
         .map_err(|e| Error::Database(e))?;
 
+        // access_key — ключи доступа (SSH, login_password, none, token)
+        sqlx::query(
+            "CREATE TABLE IF NOT EXISTS access_key (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                project_id INTEGER REFERENCES project(id) ON DELETE CASCADE,
+                name TEXT NOT NULL,
+                type TEXT NOT NULL DEFAULT 'none',
+                user_id INTEGER,
+                login_password_login TEXT,
+                login_password_password TEXT,
+                ssh_key TEXT,
+                ssh_passphrase TEXT,
+                access_key_access_key TEXT,
+                access_key_secret_key TEXT,
+                secret_storage_id INTEGER,
+                owner TEXT,
+                environment_id INTEGER,
+                created DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+            )",
+        )
+        .execute(pool)
+        .await
+        .map_err(|e| Error::Database(e))?;
+
+        // inventory — инвентари Ansible
+        sqlx::query(
+            "CREATE TABLE IF NOT EXISTS inventory (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                project_id INTEGER NOT NULL REFERENCES project(id) ON DELETE CASCADE,
+                name TEXT NOT NULL,
+                inventory_type TEXT NOT NULL DEFAULT 'static',
+                inventory_data TEXT NOT NULL DEFAULT '',
+                key_id INTEGER,
+                secret_storage_id INTEGER,
+                ssh_login TEXT,
+                ssh_port INTEGER,
+                extra_vars TEXT,
+                ssh_key_id INTEGER,
+                become_key_id INTEGER,
+                vaults TEXT,
+                created DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+            )",
+        )
+        .execute(pool)
+        .await
+        .map_err(|e| Error::Database(e))?;
+
+        // repository — Git-репозитории
+        sqlx::query(
+            "CREATE TABLE IF NOT EXISTS repository (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                project_id INTEGER NOT NULL REFERENCES project(id) ON DELETE CASCADE,
+                name TEXT NOT NULL,
+                git_url TEXT NOT NULL DEFAULT '',
+                git_type TEXT NOT NULL DEFAULT 'git',
+                git_branch TEXT,
+                key_id INTEGER,
+                git_path TEXT,
+                created DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+            )",
+        )
+        .execute(pool)
+        .await
+        .map_err(|e| Error::Database(e))?;
+
+        // environment — переменные окружения (JSON)
+        sqlx::query(
+            "CREATE TABLE IF NOT EXISTS environment (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                project_id INTEGER NOT NULL REFERENCES project(id) ON DELETE CASCADE,
+                name TEXT NOT NULL,
+                json TEXT NOT NULL DEFAULT '{}',
+                secret_storage_id INTEGER,
+                secrets TEXT,
+                created DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+            )",
+        )
+        .execute(pool)
+        .await
+        .map_err(|e| Error::Database(e))?;
+
+        // template — шаблоны задач
+        sqlx::query(
+            "CREATE TABLE IF NOT EXISTS template (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                project_id INTEGER NOT NULL REFERENCES project(id) ON DELETE CASCADE,
+                name TEXT NOT NULL,
+                playbook TEXT NOT NULL DEFAULT '',
+                description TEXT NOT NULL DEFAULT '',
+                inventory_id INTEGER,
+                repository_id INTEGER,
+                environment_id INTEGER,
+                type TEXT NOT NULL DEFAULT 'ansible',
+                app TEXT NOT NULL DEFAULT '',
+                git_branch TEXT,
+                created DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                arguments TEXT,
+                vault_key_id INTEGER,
+                allow_override_args_vars INTEGER NOT NULL DEFAULT 0,
+                start_version TEXT,
+                build_template_id INTEGER,
+                view_id INTEGER,
+                autorun INTEGER NOT NULL DEFAULT 0,
+                survey_vars TEXT
+            )",
+        )
+        .execute(pool)
+        .await
+        .map_err(|e| Error::Database(e))?;
+
+        // task — история запусков задач
+        sqlx::query(
+            "CREATE TABLE IF NOT EXISTS task (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                project_id INTEGER NOT NULL,
+                template_id INTEGER,
+                status TEXT NOT NULL DEFAULT 'waiting',
+                message TEXT,
+                commit_hash TEXT,
+                commit_message TEXT,
+                version TEXT,
+                inventory_id INTEGER,
+                repository_id INTEGER,
+                environment_id INTEGER,
+                environment TEXT,
+                secret TEXT,
+                user_id INTEGER,
+                integration_id INTEGER,
+                schedule_id INTEGER,
+                build_task_id INTEGER,
+                git_branch TEXT,
+                arguments TEXT,
+                params TEXT,
+                playbook TEXT,
+                start DATETIME,
+                end DATETIME,
+                created DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+            )",
+        )
+        .execute(pool)
+        .await
+        .map_err(|e| Error::Database(e))?;
+
         tracing::info!("Схема БД инициализирована");
         Ok(())
     }
