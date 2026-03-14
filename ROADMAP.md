@@ -1,6 +1,6 @@
 # 🗺️ Дорожная карта проекта Semaphore UI (Rust)
 
-> **Последнее обновление:** 9 марта 2026 г.
+> **Последнее обновление:** 14 марта 2026 г. (Analytics, Webhooks UI, Integration Tests)
 > **Статус:** Q2-Q3 2026 завершены
 
 ---
@@ -290,6 +290,15 @@ docker stop semaphore && docker rm semaphore
 - [x] WASM загрузчик плагинов — отложен на Q1 2027
 - [x] Webhook API — CRUD операции, тестирование, история уведомлений
 - [x] Security middleware — Rate limiting, CORS, Security Headers (CSP, HSTS)
+- [x] Analytics API — эндпоинты для аналитики проектов и системных метрик
+- [x] Analytics UI — дашборды с графиками Chart.js, карточки статистики
+- [x] Schedules CRUD — расписания с cron выражениями, валидация, фильтрация
+- [x] Playbook Runs API — запуск задач, мониторинг статуса, логи выполнения
+- [x] Frontend: Analytics Dashboard ✅
+- [x] Frontend: Webhooks Management ✅
+- [x] Frontend: Schedules Management ✅
+- [x] Frontend: Playbook Runs UI ✅
+- [x] Integration Tests — тесты для Schedules и Playbook Runs API
 
 ### 📅 Запланировано (Q1 2027)
 
@@ -303,11 +312,8 @@ docker stop semaphore && docker rm semaphore
 - [ ] Terraform провайдер
 - [ ] Grafana дашборды
 - [ ] Distributed tracing (OpenTelemetry)
-- [x] Frontend: Audit Log UI ✅
-- [x] Frontend: Webhooks UI ✅
-- [x] Frontend: Analytics дашборды ✅
-- [x] OpenAPI спецификация (Swagger) ✅
-- [x] Backup strategy — автоматические бэкапы ✅
+- [ ] WASM Plugin Loader
+- [ ] AI ассистент для playbook
 
 ### 🔮 Будущее (2027+)
 
@@ -463,7 +469,7 @@ http://localhost:3000
 
 ---
 
-*Последнее обновление: 10 марта 2026 г. (Webhook API + Security)*
+*Последнее обновление: 14 марта 2026 г. (Analytics, Webhooks, Schedules, Playbook Runs, Tests)*
 
 ---
 
