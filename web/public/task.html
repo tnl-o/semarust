@@ -414,7 +414,139 @@
             const btn = $('#modal-rerun-btn');
             const templateId = btn && btn.dataset.templateId;
             if (!templateId) return;
-            window.location.href = 'run.html?id=' + projectId + '&tpl=' + templateId;
+            // Fetch template to build enhanced run dialog (B-FE-58)
+            api.getTemplate(projectId, templateId).then(tpl => {
+                openEnhancedRunDialog(tpl, templateId);
+            }).catch(() => {
+                window.location.href = 'run.html?id=' + projectId + '&tpl=' + templateId;
+            });
+        }
+
+        function openEnhancedRunDialog(tpl, templateId) {
+            // Load build tasks if deploy type (B-FE-58)
+            const loadBuildTasks = (tpl.type === 'deploy')
+                ? api.getTasks(projectId).then(ts => (ts || []).filter(t => t.type === 'build' || t.status === 'success'))
+                : Promise.resolve([]);
+
+            loadBuildTasks.then(buildTasks => {
+                const modal = document.createElement('div');
+                modal.className = 'modal-overlay';
+                modal.id = 'enhanced-run-modal';
+
+                // Survey vars - parse from template
+                let surveyVars = [];
+                try { surveyVars = JSON.parse(tpl.survey_vars || tpl.survey_variables || '[]'); } catch(e) {}
+                const hasSurvey = Array.isArray(surveyVars) && surveyVars.length > 0;
+
+                modal.innerHTML = `
+                    <div class="modal" style="max-width:560px;">
+                        <div class="modal-header"><h2>▶ ${escapeHtml(tpl.name || 'Запуск задачи')}</h2></div>
+                        <form id="enhanced-run-form">
+                            <div class="form-group">
+                                <label>Сообщение <span style="color:var(--text-light); font-size:12px;">(необязательно)</span></label>
+                                <input type="text" id="er-message" class="form-control" placeholder="Описание запуска...">
+                            </div>
+
+                            <div class="form-group">
+                                <label>Git ветка <span style="color:var(--text-light); font-size:12px;">(оставьте пустым для: ${escapeHtml(tpl.git_branch || 'main')})</span></label>
+                                <input type="text" id="er-branch" class="form-control" placeholder="${escapeHtml(tpl.git_branch || 'main')}">
+                            </div>
+
+                            ${tpl.allow_override_args_in_task ? `
+                            <div class="form-group">
+                                <label>CLI аргументы</label>
+                                <input type="text" id="er-args" class="form-control" placeholder="--limit=host1 --tags=deploy">
+                            </div>` : ''}
+
+                            ${tpl.allow_override_args_in_task ? `
+                            <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+                                <div class="form-group">
+                                    <label>--limit</label>
+                                    <input type="text" id="er-limit" class="form-control" placeholder="web-servers">
+                                </div>
+                                <div class="form-group">
+                                    <label>--tags</label>
+                                    <input type="text" id="er-tags" class="form-control" placeholder="deploy,config">
+                                </div>
+                                <div class="form-group">
+                                    <label>--skip-tags</label>
+                                    <input type="text" id="er-skip-tags" class="form-control" placeholder="notify">
+                                </div>
+                            </div>` : ''}
+
+                            ${tpl.type === 'deploy' && buildTasks.length > 0 ? `
+                            <div class="form-group">
+                                <label>Задача сборки (build_task_id)</label>
+                                <select id="er-build-task" class="form-control">
+                                    <option value="">— последняя успешная —</option>
+                                    ${buildTasks.slice(0, 20).map(t => `<option value="${t.id}">#${t.id} ${t.status === 'success' ? '✓' : ''} ${formatDate(t.created)}</option>`).join('')}
+                                </select>
+                            </div>` : ''}
+
+                            ${hasSurvey ? `
+                            <div style="border-top:1px solid var(--border); margin:12px 0 8px; padding-top:12px;">
+                                <strong style="font-size:13px;">Переменные запуска</strong>
+                            </div>
+                            <div id="survey-vars-container">
+                                ${surveyVars.map((v, idx) => `
+                                    <div class="form-group">
+                                        <label>${escapeHtml(v.title || v.name || ('Переменная ' + (idx+1)))}</label>
+                                        ${v.description ? `<small style="color:var(--text-light);">${escapeHtml(v.description)}</small>` : ''}
+                                        <input type="${v.type === 'secret' ? 'password' : 'text'}" id="sv-${idx}"
+                                            class="form-control" placeholder="${escapeHtml(v.default_value || '')}"
+                                            value="${escapeHtml(v.default_value || '')}">
+                                    </div>
+                                `).join('')}
+                            </div>` : ''}
+
+                            <div class="modal-footer">
+                                <button type="button" class="btn" onclick="document.getElementById('enhanced-run-modal').remove()">Отмена</button>
+                                <button type="submit" class="btn btn-primary">▶ Запустить</button>
+                            </div>
+                        </form>
+                    </div>
+                `;
+                document.body.appendChild(modal);
+                modal.addEventListener('click', e => { if (e.target === modal) modal.remove(); });
+
+                document.getElementById('enhanced-run-form').addEventListener('submit', e => {
+                    e.preventDefault();
+                    const body = { template_id: parseInt(templateId) };
+                    const msg = document.getElementById('er-message')?.value.trim();
+                    const br  = document.getElementById('er-branch')?.value.trim();
+                    const args = document.getElementById('er-args')?.value.trim();
+                    const limit = document.getElementById('er-limit')?.value.trim();
+                    const tags = document.getElementById('er-tags')?.value.trim();
+                    const skipTags = document.getElementById('er-skip-tags')?.value.trim();
+                    const buildTask = document.getElementById('er-build-task')?.value;
+
+                    if (msg)      body.message      = msg;
+                    if (br)       body.git_branch   = br;
+                    if (args)     body.arguments    = args;
+                    if (limit)    body.limit        = limit;
+                    if (tags)     body.tags         = tags;
+                    if (skipTags) body.skip_tags    = skipTags;
+                    if (buildTask) body.build_task_id = parseInt(buildTask);
+
+                    // Collect survey vars
+                    if (hasSurvey) {
+                        const vars = {};
+                        surveyVars.forEach((v, idx) => {
+                            const el = document.getElementById('sv-' + idx);
+                            if (el) vars[v.name || ('var' + idx)] = el.value;
+                        });
+                        body.variables = vars;
+                    }
+
+                    modal.remove();
+                    api.post('/project/' + projectId + '/tasks', body)
+                        .then(task => {
+                            openTaskDetail(task.id);
+                            loadTasks();
+                        })
+                        .catch(err => ui.showAlert('Ошибка: ' + err.message, 'danger'));
+                });
+            });
         }
 
         function downloadCurrentLog() {

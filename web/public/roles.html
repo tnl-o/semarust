@@ -64,13 +64,13 @@
         }
 
         function loadRoles() {
-            api.request(`/project/${projectId}/roles`, { method: 'GET' })
+            api.get(`/project/${projectId}/roles`)
                 .then(data => {
                     roles = data || [];
                     renderRoles();
                 })
                 .catch(err => {
-                    // Если 404/501/405 — показываем заглушку, а не \"красный\" экран
+                    // Если 404/501/405 — показываем заглушку, а не "красный" экран
                     if (err && /not implemented|not found|405|404/i.test(err.message)) {
                         showBackendStub(err.message);
                     } else {
@@ -99,7 +99,7 @@
                             <tr>
                                 <th>Название</th>
                                 <th>Идентификатор</th>
-                                <th>Права (bitmask)</th>
+                                <th>Права</th>
                                 <th style="width:140px;">Действия</th>
                             </tr>
                         </thead>
@@ -108,7 +108,7 @@
                                 <tr>
                                     <td><strong>${escapeHtml(r.name || '')}</strong></td>
                                     <td><code>${escapeHtml(r.slug || '')}</code></td>
-                                    <td><span class="badge">${typeof r.permissions === 'number' ? r.permissions : '—'}</span></td>
+                                    <td>${renderPermissionsBadges(r.permissions)}</td>
                                     <td>
                                         <button class="btn btn-sm" onclick="openRoleModal(${r.id})">✏️</button>
                                         <button class="btn btn-danger btn-sm" onclick="deleteRole(${r.id})">🗑️</button>
@@ -220,10 +220,10 @@
                 permissions
             };
 
-            const method = id ? 'PUT' : 'POST';
             const url = `/project/${projectId}/roles` + (id ? `/${id}` : '');
+            const promise = id ? api.put(url, payload) : api.post(url, payload);
 
-            api.request(url, { method, body: JSON.stringify(payload) })
+            promise
                 .then(() => {
                     ui.showAlert(id ? 'Роль обновлена' : 'Роль создана', 'success');
                     closeRoleModal();
@@ -236,12 +236,23 @@
 
         function deleteRole(id) {
             if (!confirm('Удалить эту роль?')) return;
-            api.request(`/project/${projectId}/roles/${id}`, { method: 'DELETE' })
+            api.delete(`/project/${projectId}/roles/${id}`)
                 .then(() => {
                     ui.showAlert('Роль удалена', 'success');
                     loadRoles();
                 })
                 .catch(err => ui.showAlert('Ошибка удаления: ' + err.message, 'danger'));
+        }
+
+        function renderPermissionsBadges(permissions) {
+            if (typeof permissions !== 'number') return '<span class="badge badge-secondary">—</span>';
+            const labels = [];
+            if (permissions & 1)  labels.push('Запуск задач');
+            if (permissions & 2)  labels.push('Управление проектом');
+            if (permissions & 4)  labels.push('Управление ресурсами');
+            if (permissions & 8)  labels.push('Управление пользователями');
+            if (!labels.length)   return '<span class="badge badge-secondary">Нет прав</span>';
+            return labels.map(l => `<span class="badge badge-primary" style="margin-right:4px; font-size:11px;">${l}</span>`).join('');
         }
 
         addRoleBtn.addEventListener('click', () => openRoleModal());

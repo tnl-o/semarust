@@ -423,7 +423,8 @@
                 <div class="toolbar">
                     <button class="btn btn-primary" onclick="openRunDialog()">▶ Запустить</button>
                     <button class="btn btn-sm" onclick="openEditDialog()">✏️ Редактировать</button>
-                    <button class="btn btn-danger btn-sm" onclick="deleteTpl()">🗑️ Удалить</button>
+                    <button class="btn btn-sm" style="color:#c53030;" onclick="stopAllTasks()" title="Остановить все выполняющиеся задачи">■ Стоп всё</button>
+                    <button class="btn btn-danger btn-sm" onclick="deleteTplWithRefsCheck()">🗑️ Удалить</button>
                     <div style="flex:1"></div>
                     <a href="templates.html?id=${projectId}" class="btn btn-sm">← Шаблоны</a>
                 </div>
@@ -433,10 +434,12 @@
                 <div class="tpl-tabs">
                     <div class="tpl-tab active" id="tab-tasks" onclick="switchTab('tasks')">Задачи</div>
                     <div class="tpl-tab" id="tab-details" onclick="switchTab('details')">Детали</div>
+                    <div class="tpl-tab" id="tab-permissions" onclick="switchTab('permissions')">Права доступа</div>
                 </div>
 
                 <div id="tab-content-tasks"></div>
                 <div id="tab-content-details" style="display:none;"></div>
+                <div id="tab-content-permissions" style="display:none;"></div>
             `;
             loadTasksTab();
             renderDetailsTab();
@@ -448,6 +451,10 @@
             $('#tab-' + name).classList.add('active');
             document.querySelectorAll('[id^="tab-content-"]').forEach(el => el.style.display = 'none');
             $('#tab-content-' + name).style.display = '';
+            // Lazy-load permissions tab (B-FE-54)
+            if (name === 'permissions') {
+                renderPermissionsTab();
+            }
         }
 
         function loadTasksTab() {
@@ -684,6 +691,106 @@
             if (l.includes('failed=') || l.includes('fatal') || l.includes('error')) return 'run-log-error';
             if (l.includes('warning') || l.includes('warn')) return 'run-log-warning';
             return 'run-log-info';
+        }
+
+        // ---- Permissions tab (B-FE-54) ----
+        function renderPermissionsTab() {
+            const container = $('#tab-content-permissions');
+            container.innerHTML = '<div class="loading"><div class="loading-spinner"></div><p>Загрузка прав...</p></div>';
+
+            Promise.all([
+                api.get('/project/' + projectId + '/templates/' + tplId + '/roles').catch(() => []),
+                api.get('/project/' + projectId + '/roles').catch(() => [])
+            ]).then(([tplRoles, allRoles]) => {
+                const assignedIds = new Set((tplRoles || []).map(r => r.id || r.role_id));
+                const available = (allRoles || []).filter(r => !assignedIds.has(r.id));
+
+                container.innerHTML = `
+                    <div class="card">
+                        <h3 style="margin-bottom:12px; font-size:15px;">Роли с доступом к шаблону</h3>
+                        <div id="perm-assigned-list">
+                            ${(tplRoles || []).length === 0
+                                ? '<p style="color:var(--text-light); font-size:13px;">Нет назначенных ролей — шаблон доступен всем в рамках проекта.</p>'
+                                : `<table class="table" style="margin-bottom:12px;">
+                                    <thead><tr><th>Роль</th><th>Идентификатор</th><th style="width:80px;"></th></tr></thead>
+                                    <tbody>
+                                        ${(tplRoles || []).map(r => `
+                                            <tr>
+                                                <td><strong>${escapeHtml(r.name || '')}</strong></td>
+                                                <td><code>${escapeHtml(r.slug || '')}</code></td>
+                                                <td>
+                                                    <button class="btn btn-danger btn-sm" onclick="removeTemplateRole(${r.id || r.role_id})">✕</button>
+                                                </td>
+                                            </tr>
+                                        `).join('')}
+                                    </tbody>
+                                </table>`
+                            }
+                        </div>
+                        ${available.length > 0 ? `
+                            <div style="display:flex; gap:8px; align-items:center; margin-top:8px;">
+                                <select id="add-role-select" class="form-control" style="max-width:260px;">
+                                    <option value="">— выбрать роль —</option>
+                                    ${available.map(r => `<option value="${r.id}">${escapeHtml(r.name)} (${escapeHtml(r.slug)})</option>`).join('')}
+                                </select>
+                                <button class="btn btn-primary btn-sm" onclick="addTemplateRole()">+ Добавить</button>
+                            </div>
+                        ` : '<p style="color:var(--text-light); font-size:12px; margin-top:8px;">Все доступные роли уже назначены.</p>'}
+                    </div>
+                `;
+            }).catch(err => {
+                container.innerHTML = `<div class="alert alert-warning">Права доступа к шаблонам не поддерживаются сервером: ${escapeHtml(err.message)}</div>`;
+            });
+        }
+
+        function addTemplateRole() {
+            const sel = document.getElementById('add-role-select');
+            if (!sel || !sel.value) { ui.showAlert('Выберите роль', 'warning'); return; }
+            api.post('/project/' + projectId + '/templates/' + tplId + '/roles', { role_id: parseInt(sel.value) })
+                .then(() => { ui.showAlert('Роль добавлена', 'success'); renderPermissionsTab(); })
+                .catch(err => ui.showAlert('Ошибка: ' + err.message, 'danger'));
+        }
+
+        function removeTemplateRole(roleId) {
+            if (!confirm('Убрать эту роль с шаблона?')) return;
+            api.delete('/project/' + projectId + '/templates/' + tplId + '/roles/' + roleId)
+                .then(() => { ui.showAlert('Роль удалена', 'success'); renderPermissionsTab(); })
+                .catch(err => ui.showAlert('Ошибка: ' + err.message, 'danger'));
+        }
+
+        // ---- Stop All Tasks (B-FE-55) ----
+        function stopAllTasks() {
+            if (!confirm('Остановить все выполняющиеся задачи для этого шаблона?')) return;
+            api.post('/project/' + projectId + '/templates/' + tplId + '/stop_all_tasks', {})
+                .then(() => { ui.showAlert('Все задачи остановлены', 'success'); loadTasksTab(); })
+                .catch(err => ui.showAlert('Ошибка: ' + err.message, 'danger'));
+        }
+
+        // ---- Delete with refs check (B-FE-56) ----
+        function deleteTplWithRefsCheck() {
+            api.get('/project/' + projectId + '/templates/' + tplId + '/refs')
+                .then(refs => {
+                    if (refs && refs.length > 0) {
+                        const refList = refs.map(r => `• ${escapeHtml(r.name || JSON.stringify(r))}`).join('\n');
+                        const msg = 'Этот шаблон используется в:\n' + refList + '\n\nУдалить всё равно?';
+                        if (!confirm(msg)) return;
+                        proceedDeleteTpl();
+                    } else {
+                        if (!confirm('Удалить шаблон "' + tpl.name + '"? Это действие нельзя отменить.')) return;
+                        proceedDeleteTpl();
+                    }
+                })
+                .catch(() => {
+                    // If refs endpoint not supported, fall back to simple delete
+                    if (!confirm('Удалить шаблон "' + tpl.name + '"? Это действие нельзя отменить.')) return;
+                    proceedDeleteTpl();
+                });
+        }
+
+        function proceedDeleteTpl() {
+            api.deleteTemplate(projectId, tplId)
+                .then(() => { window.location.href = 'templates.html?id=' + projectId; })
+                .catch(err => ui.showAlert('Ошибка: ' + err.message, 'danger'));
         }
 
         // ---- Run dialog ----
