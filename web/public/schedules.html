@@ -176,7 +176,7 @@
                                 <label for="name">Название *</label>
                                 <input type="text" id="name" class="form-control" required value="${escapeHtml(sched?.name || '')}" placeholder="Ежедневный бэкап">
                             </div>
-                            
+
                             <div class="form-group">
                                 <label for="template_id">Шаблон *</label>
                                 <select id="template_id" class="form-control" required>
@@ -185,17 +185,58 @@
                                 </select>
                             </div>
 
+                            <!-- Cron visual editor -->
                             <div class="form-group">
-                                <label for="cron">Cron выражение *</label>
-                                <input type="text" id="cron" class="form-control" required value="${escapeHtml(sched?.cron || '')}" placeholder="0 2 * * *">
-                                <small style="color: var(--text-light);">
-                                    <strong>Формат:</strong> минута час день месяц день_недели<br>
-                                    <strong>Примеры:</strong><br>
-                                    <code>0 2 * * *</code> - каждый день в 02:00<br>
-                                    <code>0 0 * * 0</code> - каждое воскресенье в 00:00<br>
-                                    <code>0 */6 * * *</code> - каждые 6 часов<br>
-                                    <code>0 0 1 * *</code> - 1-го числа каждого месяца в 00:00
-                                </small>
+                                <label>Расписание *</label>
+                                <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:10px;">
+                                    ${[
+                                        ['hourly',  'Каждый час',   '0 * * * *'],
+                                        ['daily',   'Каждый день',  '0 0 * * *'],
+                                        ['weekly',  'Каждую неделю','0 0 * * 0'],
+                                        ['monthly', 'Каждый месяц', '0 0 1 * *'],
+                                        ['custom',  'Вручную',      ''],
+                                    ].map(([val, label]) =>
+                                        `<button type="button" class="btn btn-sm cron-preset" data-preset="${val}"
+                                            style="border:2px solid transparent;"
+                                            onclick="setCronPreset('${val}')">${label}</button>`
+                                    ).join('')}
+                                </div>
+
+                                <!-- Visual fields shown for non-custom presets -->
+                                <div id="cron-visual" style="display:none; gap:12px; flex-wrap:wrap; margin-bottom:10px;">
+                                    <div id="cron-time-group" style="display:flex; gap:8px; align-items:center;">
+                                        <div>
+                                            <div style="font-size:11px; color:var(--text-light); margin-bottom:3px;">Час</div>
+                                            <input type="number" id="cron-hour" class="form-control" min="0" max="23" value="0" style="width:68px;" oninput="rebuildCron()">
+                                        </div>
+                                        <div>
+                                            <div style="font-size:11px; color:var(--text-light); margin-bottom:3px;">Минута</div>
+                                            <input type="number" id="cron-minute" class="form-control" min="0" max="59" value="0" style="width:68px;" oninput="rebuildCron()">
+                                        </div>
+                                        <div id="cron-weekday-group" style="display:none;">
+                                            <div style="font-size:11px; color:var(--text-light); margin-bottom:3px;">День недели</div>
+                                            <select id="cron-weekday" class="form-control" style="width:130px;" onchange="rebuildCron()">
+                                                <option value="0">Воскресенье</option>
+                                                <option value="1">Понедельник</option>
+                                                <option value="2">Вторник</option>
+                                                <option value="3">Среда</option>
+                                                <option value="4">Четверг</option>
+                                                <option value="5">Пятница</option>
+                                                <option value="6">Суббота</option>
+                                            </select>
+                                        </div>
+                                        <div id="cron-monthday-group" style="display:none;">
+                                            <div style="font-size:11px; color:var(--text-light); margin-bottom:3px;">День месяца</div>
+                                            <input type="number" id="cron-monthday" class="form-control" min="1" max="31" value="1" style="width:68px;" oninput="rebuildCron()">
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div style="margin-bottom:4px;">
+                                    <label for="cron" style="font-size:12px; color:var(--text-light);">Cron выражение</label>
+                                </div>
+                                <input type="text" id="cron" class="form-control" required value="${escapeHtml(sched?.cron || '')}" placeholder="0 2 * * *" oninput="onCronInput()" style="font-family:monospace;">
+                                <small id="cron-hint" style="color:var(--text-light); display:block; margin-top:4px;">Формат: минута час день месяц день_недели</small>
                             </div>
 
                             <div class="form-group">
@@ -213,6 +254,9 @@
                     </div>
                 `;
                 document.body.appendChild(modal);
+
+                // Init cron visual editor
+                initCronEditor(sched?.cron || '');
 
                 $('#schedule-form').addEventListener('submit', (e) => {
                     e.preventDefault();
@@ -285,6 +329,124 @@
         window.editSchedule = editSchedule;
         window.toggleSchedule = toggleSchedule;
         window.deleteSchedule = deleteSchedule;
+
+        // Cron visual editor helpers (attached to window so inline onclick works)
+        let cronPresetMode = 'custom';
+
+        window.setCronPreset = function(preset) {
+            cronPresetMode = preset;
+            // Highlight selected preset button
+            document.querySelectorAll('.cron-preset').forEach(btn => {
+                btn.style.borderColor = btn.dataset.preset === preset ? 'var(--primary)' : 'transparent';
+                btn.style.background  = btn.dataset.preset === preset ? 'rgba(0,80,87,.1)' : '';
+            });
+
+            const visual = document.getElementById('cron-visual');
+            const wdGroup = document.getElementById('cron-weekday-group');
+            const mdGroup = document.getElementById('cron-monthday-group');
+            const timeGroup = document.getElementById('cron-time-group');
+
+            if (preset === 'custom') {
+                if (visual) visual.style.display = 'none';
+            } else {
+                if (visual) visual.style.display = 'flex';
+            }
+            if (wdGroup) wdGroup.style.display = preset === 'weekly'  ? '' : 'none';
+            if (mdGroup) mdGroup.style.display = preset === 'monthly' ? '' : 'none';
+            if (timeGroup) timeGroup.style.display = preset === 'hourly' ? 'none' : 'flex';
+
+            rebuildCron();
+        };
+
+        window.rebuildCron = function() {
+            const hour   = parseInt(document.getElementById('cron-hour')?.value    || 0);
+            const minute = parseInt(document.getElementById('cron-minute')?.value  || 0);
+            const wd     = document.getElementById('cron-weekday')?.value   || '0';
+            const md     = parseInt(document.getElementById('cron-monthday')?.value || 1);
+            let expr = '';
+            switch (cronPresetMode) {
+                case 'hourly':  expr = '0 * * * *'; break;
+                case 'daily':   expr = `${minute} ${hour} * * *`; break;
+                case 'weekly':  expr = `${minute} ${hour} * * ${wd}`; break;
+                case 'monthly': expr = `${minute} ${hour} ${md} * *`; break;
+                default: return;
+            }
+            const cronInput = document.getElementById('cron');
+            if (cronInput) cronInput.value = expr;
+            updateCronHint(expr);
+        };
+
+        window.onCronInput = function() {
+            cronPresetMode = 'custom';
+            document.querySelectorAll('.cron-preset').forEach(btn => {
+                btn.style.borderColor = btn.dataset.preset === 'custom' ? 'var(--primary)' : 'transparent';
+                btn.style.background  = btn.dataset.preset === 'custom' ? 'rgba(0,80,87,.1)' : '';
+            });
+            const visual = document.getElementById('cron-visual');
+            if (visual) visual.style.display = 'none';
+            updateCronHint(document.getElementById('cron')?.value || '');
+        };
+
+        function updateCronHint(expr) {
+            const hint = document.getElementById('cron-hint');
+            if (!hint) return;
+            const descMap = {
+                '0 * * * *': 'Каждый час (в 0 минут)',
+            };
+            if (descMap[expr]) { hint.textContent = descMap[expr]; return; }
+            const parts = (expr || '').trim().split(/\s+/);
+            if (parts.length !== 5) { hint.textContent = 'Формат: минута час день месяц день_недели'; return; }
+            const [m, h, dom, mon, dow] = parts;
+            const days = ['Вс','Пн','Вт','Ср','Чт','Пт','Сб'];
+            if (dom === '*' && mon === '*' && dow === '*') {
+                hint.textContent = `Каждый день в ${h.padStart(2,'0')}:${m.padStart(2,'0')}`;
+            } else if (dom === '*' && mon === '*' && dow !== '*') {
+                hint.textContent = `Каждую неделю в ${days[parseInt(dow)] || 'день '+dow}, ${h.padStart(2,'0')}:${m.padStart(2,'0')}`;
+            } else if (dom !== '*' && mon === '*' && dow === '*') {
+                hint.textContent = `${dom}-го числа каждого месяца в ${h.padStart(2,'0')}:${m.padStart(2,'0')}`;
+            } else {
+                hint.textContent = 'Формат: минута час день месяц день_недели';
+            }
+        }
+
+        // Auto-detect preset from existing cron value and initialise visual
+        function initCronEditor(cronValue) {
+            if (!cronValue) return;
+            const presetMap = {
+                '0 * * * *': 'hourly',
+            };
+            if (presetMap[cronValue]) {
+                setCronPreset(presetMap[cronValue]);
+                return;
+            }
+            const parts = cronValue.trim().split(/\s+/);
+            if (parts.length === 5) {
+                const [m, h, dom, mon, dow] = parts;
+                let detected = 'custom';
+                if (dom === '*' && mon === '*' && dow !== '*') detected = 'weekly';
+                else if (dom !== '*' && mon === '*' && dow === '*' && dom !== '*') detected = 'monthly';
+                else if (dom === '*' && mon === '*' && dow === '*') detected = 'daily';
+
+                if (detected !== 'custom') {
+                    const minuteEl = document.getElementById('cron-minute');
+                    const hourEl   = document.getElementById('cron-hour');
+                    if (minuteEl) minuteEl.value = m;
+                    if (hourEl)   hourEl.value   = h;
+                    if (detected === 'weekly') {
+                        const wdEl = document.getElementById('cron-weekday');
+                        if (wdEl) wdEl.value = dow;
+                    }
+                    if (detected === 'monthly') {
+                        const mdEl = document.getElementById('cron-monthday');
+                        if (mdEl) mdEl.value = dom;
+                    }
+                    setCronPreset(detected);
+                    return;
+                }
+            }
+            setCronPreset('custom');
+            updateCronHint(cronValue);
+        }
     </script>
 </body>
 </html>

@@ -59,36 +59,64 @@
                     if (templates.length === 0) {
                         ui.showEmpty(container, '📋', 'Нет шаблонов', 'Создайте первый шаблон для запуска playbook');
                     } else {
-                        container.innerHTML = `
-                            <table class="table">
-                                <thead>
-                                    <tr>
-                                        <th>Название</th>
-                                        <th>Playbook</th>
-                                        <th>Инвентарь</th>
-                                        <th>Окружение</th>
-                                        <th>Репозиторий</th>
-                                        <th>Действия</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    ${templates.map(tpl => `
+                        // Load last tasks for status column
+                        api.getTasks(projectId).catch(() => []).then(tasks => {
+                            const lastByTpl = {};
+                            (tasks || []).forEach(t => {
+                                if (!lastByTpl[t.template_id] || t.id > lastByTpl[t.template_id].id) {
+                                    lastByTpl[t.template_id] = t;
+                                }
+                            });
+
+                            const statusBadge = (t) => {
+                                if (!t) return '<span style="color:#999">—</span>';
+                                const cls = { waiting:'status-waiting', running:'status-running', success:'status-success',
+                                    error:'status-error', failed:'status-error', cancelled:'status-cancelled' }[t.status] || '';
+                                const lbl = { waiting:'Ожидание', running:'Выполняется', success:'Успешно',
+                                    error:'Ошибка', failed:'Ошибка', cancelled:'Отменено' }[t.status] || t.status;
+                                return `<a href="task.html?id=${projectId}&task=${t.id}" style="text-decoration:none;">
+                                    <span class="status-badge ${cls}" style="font-size:11px;">${lbl}</span>
+                                </a>`;
+                            };
+
+                            container.innerHTML = `
+                                <table class="table">
+                                    <thead>
                                         <tr>
-                                            <td><strong>${escapeHtml(tpl.name)}</strong></td>
-                                            <td><code>${escapeHtml(tpl.playbook)}</code></td>
-                                            <td>${tpl.inventory_id ? '📦 ID: ' + tpl.inventory_id : '—'}</td>
-                                            <td>${tpl.environment_id ? '⚙️ ID: ' + tpl.environment_id : '—'}</td>
-                                            <td>${tpl.repository_id ? '🗂️ ID: ' + tpl.repository_id : '—'}</td>
-                                            <td>
-                                                <button class="btn btn-success btn-sm" onclick="runTemplate(${tpl.id})" title="Запустить">▶</button>
-                                                <button class="btn btn-sm" onclick="editTemplate(${tpl.id})" title="Редактировать">✏️</button>
-                                                <button class="btn btn-danger btn-sm" onclick="deleteTemplate(${tpl.id})" title="Удалить">🗑️</button>
-                                            </td>
+                                            <th>Название</th>
+                                            <th>Playbook</th>
+                                            <th>Последний запуск</th>
+                                            <th>Действия</th>
                                         </tr>
-                                    `).join('')}
-                                </tbody>
-                            </table>
-                        `;
+                                    </thead>
+                                    <tbody>
+                                        ${templates.map(tpl => `
+                                            <tr>
+                                                <td>
+                                                    <a href="template.html?id=${projectId}&tpl=${tpl.id}" style="font-weight:600; text-decoration:none; color:var(--primary);">${escapeHtml(tpl.name)}</a>
+                                                    <div style="font-size:11px; color:var(--text-light); margin-top:2px;"><code>${escapeHtml(tpl.playbook)}</code></div>
+                                                </td>
+                                                <td style="color:var(--text-light); font-size:13px;">${escapeHtml(tpl.playbook)}</td>
+                                                <td>${statusBadge(lastByTpl[tpl.id])}</td>
+                                                <td>
+                                                    <button class="btn btn-success btn-sm" onclick="runTemplate(${tpl.id}, '${escapeHtml(tpl.name).replace(/'/g,"\\'")}', ${!!tpl.allow_override_args_in_task})" title="Запустить">▶ Запустить</button>
+                                                    <button class="btn btn-sm" onclick="editTemplate(${tpl.id})" title="Редактировать">✏️</button>
+                                                    <button class="btn btn-danger btn-sm" onclick="deleteTemplate(${tpl.id})" title="Удалить">🗑️</button>
+                                                </td>
+                                            </tr>
+                                        `).join('')}
+                                    </tbody>
+                                </table>
+                                <style>
+                                    .status-badge { display:inline-block; padding:2px 8px; border-radius:10px; font-weight:600; }
+                                    .status-waiting  { background:#f0f0f0; color:#666; }
+                                    .status-running  { background:#e3f2fd; color:#1976d2; }
+                                    .status-success  { background:#c6f6d5; color:#276749; }
+                                    .status-error    { background:#fed7d7; color:#c53030; }
+                                    .status-cancelled{ background:#e0e0e0; color:#424242; }
+                                </style>
+                            `;
+                        });
                     }
                 })
                 .catch(error => {
@@ -125,19 +153,63 @@
                 });
         }
 
-        function runTemplate(templateId) {
-            const btn = document.querySelector(`button[onclick="runTemplate(${templateId})"]`);
-            if (btn) { btn.disabled = true; btn.textContent = '⏳'; }
+        function runTemplate(templateId, tplName, allowArgs) {
+            openNewTaskDialog(templateId, tplName || ('Шаблон #' + templateId), allowArgs);
+        }
 
-            api.runTask(projectId, templateId)
-                .then(task => {
-                    if (btn) { btn.disabled = false; btn.textContent = '▶'; }
-                    openRunModal(task.id, templateId);
-                })
-                .catch(error => {
-                    ui.showAlert('Ошибка запуска: ' + error.message, 'danger');
-                    if (btn) { btn.disabled = false; btn.textContent = '▶'; }
-                });
+        function openNewTaskDialog(templateId, tplName, allowArgs) {
+            const existing = document.getElementById('new-task-dialog');
+            if (existing) existing.remove();
+
+            const modal = document.createElement('div');
+            modal.id = 'new-task-dialog';
+            modal.className = 'modal-overlay';
+            modal.innerHTML = `
+                <div class="modal" style="max-width:520px;">
+                    <div class="modal-header">
+                        <h2>▶ ${escapeHtml(tplName)}</h2>
+                    </div>
+                    <form id="new-task-form">
+                        <div class="form-group">
+                            <label>Сообщение <span style="color:var(--text-light); font-size:12px;">(необязательно)</span></label>
+                            <input type="text" id="task-message" class="form-control" placeholder="Описание запуска, коммент...">
+                        </div>
+                        <div class="form-group">
+                            <label>Git ветка <span style="color:var(--text-light); font-size:12px;">(оставьте пустым для дефолтной)</span></label>
+                            <input type="text" id="task-branch" class="form-control" placeholder="main">
+                        </div>
+                        ${allowArgs ? `
+                        <div class="form-group">
+                            <label>CLI аргументы <span style="color:var(--text-light); font-size:12px;">(переопределить)</span></label>
+                            <input type="text" id="task-args" class="form-control" placeholder="--limit=host1 --tags=deploy">
+                        </div>` : ''}
+                        <div class="modal-footer">
+                            <button type="button" class="btn" onclick="document.getElementById('new-task-dialog').remove()">Отмена</button>
+                            <button type="submit" class="btn btn-primary">▶ Запустить</button>
+                        </div>
+                    </form>
+                </div>
+            `;
+            document.body.appendChild(modal);
+            modal.addEventListener('click', e => { if (e.target === modal) modal.remove(); });
+
+            document.getElementById('new-task-form').addEventListener('submit', e => {
+                e.preventDefault();
+                const message = document.getElementById('task-message').value.trim() || null;
+                const branch = document.getElementById('task-branch').value.trim() || null;
+                const args = allowArgs ? (document.getElementById('task-args')?.value.trim() || null) : null;
+                modal.remove();
+                launchTask(templateId, tplName, { message, git_branch: branch, arguments: args });
+            });
+        }
+
+        function launchTask(templateId, tplName, params) {
+            const body = Object.fromEntries(
+                Object.entries({ template_id: templateId, ...params }).filter(([,v]) => v != null)
+            );
+            api.post('/project/' + projectId + '/tasks', body)
+                .then(task => openRunModal(task.id, templateId, tplName))
+                .catch(error => ui.showAlert('Ошибка запуска: ' + error.message, 'danger'));
         }
 
         // ---- Run modal ----
@@ -145,10 +217,9 @@
         let runWs = null;
         let runPollTimer = null;
 
-        function openRunModal(taskId, templateId) {
+        function openRunModal(taskId, templateId, tplName) {
             runModalTaskId = taskId;
-            const tplName = document.querySelector(`button[onclick="runTemplate(${templateId})"]`)
-                ?.closest('tr')?.querySelector('strong')?.textContent || 'Шаблон #' + templateId;
+            tplName = tplName || 'Шаблон #' + templateId;
 
             // Create modal
             const modal = document.createElement('div');

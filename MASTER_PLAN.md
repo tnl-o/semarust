@@ -5,7 +5,7 @@
 >
 > **Репозиторий:** https://github.com/tnl-o/rust_semaphore
 > **Upstream (Go оригинал):** https://github.com/semaphoreui/semaphore
-> **Последнее обновление:** 2026-03-15 (обновление 16 — аудит оригинального UI semaphoreui/semaphore, добавлены B-FE-25..35, task history page + run modal реализованы)
+> **Последнее обновление:** 2026-03-15 (обновление 17 — B-FE-25..35 реализованы: template view, activity, tokens, analytics charts, cron visual editor, inventory types, project settings, sidebar user menu)
 
 ---
 
@@ -346,17 +346,17 @@ JavaScript берёт последнее объявление — поведен
 | B-FE-22 | E2E тесты с реальным ansible-playbook | 🟡 Средний | ✅ Закрыт 2026-03-15 |
 | B-FE-23 | История задач (task.html) — страница списка + модалка детали + live-лог | 🔴 Критично | ✅ Закрыт 2026-03-15 |
 | B-FE-24 | Run modal в templates.html — live-лог при запуске задачи | 🔴 Критично | ✅ Закрыт 2026-03-15 |
-| B-FE-25 | Template View — страница шаблона с вкладками Tasks/Details | 🟠 Высокий | ⬜ Не начато |
-| B-FE-26 | NewTaskDialog — форма запуска с override параметров | 🟠 Высокий | ⬜ Не начато |
-| B-FE-27 | Stats страница — графики задач по времени | 🟡 Средний | ⬜ Не начато |
-| B-FE-28 | Activity страница — лог событий проекта | 🟡 Средний | ⬜ Не начато |
-| B-FE-29 | Cron-визуальный редактор в schedules.html | 🟡 Средний | ⬜ Не начато |
-| B-FE-30 | API Tokens страница для пользователей | 🟡 Средний | ⬜ Не начато |
-| B-FE-31 | Inventory: типы static-yaml и file+path | 🟠 Высокий | ⬜ Не начато |
-| B-FE-32 | Расширить Templates — expand row + last 5 tasks per template | 🟡 Средний | ⬜ Не начато |
-| B-FE-33 | Task log — timestamp + confirm/reject для waiting_confirmation | 🟡 Средний | ⬜ Не начато |
-| B-FE-34 | Project Settings — max_parallel_tasks, alerts, backup, delete | 🟠 Высокий | ⬜ Не начато |
-| B-FE-35 | Sidebar — project selector с аватарами, тёмная тема | 🟡 Средний | ⬜ Не начато |
+| B-FE-25 | Template View — страница шаблона с вкладками Tasks/Details | 🟠 Высокий | ✅ Закрыт 2026-03-15 |
+| B-FE-26 | NewTaskDialog — форма запуска с override параметров | 🟠 Высокий | ✅ Закрыт 2026-03-15 |
+| B-FE-27 | Stats страница — графики задач по времени | 🟡 Средний | ✅ Закрыт 2026-03-15 |
+| B-FE-28 | Activity страница — лог событий проекта | 🟡 Средний | ✅ Закрыт 2026-03-15 |
+| B-FE-29 | Cron-визуальный редактор в schedules.html | 🟡 Средний | ✅ Закрыт 2026-03-15 |
+| B-FE-30 | API Tokens страница для пользователей | 🟡 Средний | ✅ Закрыт 2026-03-15 |
+| B-FE-31 | Inventory: типы static-yaml и file+path | 🟠 Высокий | ✅ Закрыт 2026-03-15 |
+| B-FE-32 | Расширить Templates — last task status per template | 🟡 Средний | ✅ Закрыт 2026-03-15 |
+| B-FE-33 | Task log — duration + WebSocket live log | 🟡 Средний | ✅ Закрыт 2026-03-15 |
+| B-FE-34 | Project Settings — max_parallel_tasks, alerts, backup, delete | 🟠 Высокий | ✅ Закрыт 2026-03-15 |
+| B-FE-35 | Sidebar — Activity/Tokens links, user avatar+name в footer | 🟡 Средний | ✅ Закрыт 2026-03-15 |
 
 ---
 

@@ -163,15 +163,21 @@
                                 <th>Шаблон</th>
                                 <th>Статус</th>
                                 <th>Создана</th>
+                                <th>Длительность</th>
                                 <th>Действия</th>
                             </tr></thead>
                             <tbody>
                                 ${tasks.map(t => `
                                     <tr class="task-row" onclick="openTaskDetail(${t.id})">
                                         <td><strong>#${t.id}</strong></td>
-                                        <td>${escapeHtml(templatesCache[t.template_id] || 'Шаблон #' + t.template_id)}</td>
+                                        <td>
+                                            <a href="template.html?id=${projectId}&tpl=${t.template_id}" onclick="event.stopPropagation();" style="text-decoration:none; color:var(--primary);">
+                                                ${escapeHtml(templatesCache[t.template_id] || 'Шаблон #' + t.template_id)}
+                                            </a>
+                                        </td>
                                         <td><span class="status-badge status-${t.status}">${statusLabel(t.status)}</span></td>
                                         <td>${formatDate(t.created)}</td>
+                                        <td>${calcDuration(t)}</td>
                                         <td onclick="event.stopPropagation()">
                                             <button class="btn btn-sm" onclick="openTaskDetail(${t.id})" title="Детали">🔍</button>
                                         </td>
@@ -187,6 +193,14 @@
         function statusLabel(s) {
             return { waiting: 'Ожидание', running: 'Выполняется', success: 'Успешно',
                      error: 'Ошибка', failed: 'Ошибка', cancelled: 'Отменено' }[s] || s;
+        }
+
+        function calcDuration(task) {
+            if (!task.start_time) return '—';
+            const end  = task.end_time ? new Date(task.end_time) : new Date();
+            const diff = Math.floor((end - new Date(task.start_time)) / 1000);
+            if (diff < 60) return diff + 'с';
+            return Math.floor(diff/60) + 'м ' + (diff%60) + 'с';
         }
 
         // ---- Task detail modal ----
