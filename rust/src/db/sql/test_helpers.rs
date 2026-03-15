@@ -83,7 +83,10 @@ pub async fn init_template_table(pool: &sqlx::SqlitePool) -> Result<(), crate::e
             allow_override_branch_in_task INTEGER NOT NULL DEFAULT 0,
             allow_inventory_in_task INTEGER NOT NULL DEFAULT 0,
             allow_parallel_tasks INTEGER NOT NULL DEFAULT 0,
-            suppress_success_alerts INTEGER NOT NULL DEFAULT 0
+            suppress_success_alerts INTEGER NOT NULL DEFAULT 0,
+            task_params TEXT,
+            survey_vars TEXT,
+            vaults TEXT
         )",
     )
     .execute(pool)

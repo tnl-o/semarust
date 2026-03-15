@@ -149,7 +149,8 @@ mod tests {
                 allow_override_branch_in_task INTEGER NOT NULL DEFAULT 0,
                 allow_inventory_in_task INTEGER NOT NULL DEFAULT 0,
                 allow_parallel_tasks INTEGER NOT NULL DEFAULT 0,
-                suppress_success_alerts INTEGER NOT NULL DEFAULT 0
+                suppress_success_alerts INTEGER NOT NULL DEFAULT 0,
+                task_params TEXT
             )"
         )
         .execute(db.get_sqlite_pool().unwrap())

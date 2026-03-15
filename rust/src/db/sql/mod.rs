@@ -307,6 +307,8 @@ impl SqlStore {
                 view_id INTEGER,
                 autorun INTEGER NOT NULL DEFAULT 0,
                 survey_vars TEXT,
+                task_params TEXT,
+                vaults TEXT,
                 deleted INTEGER NOT NULL DEFAULT 0
             )",
         )

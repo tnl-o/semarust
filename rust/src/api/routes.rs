@@ -324,11 +324,10 @@ pub fn api_routes() -> Router<Arc<AppState>> {
         .route("/api/user/tokens", post(user::create_api_token))
         .route("/api/user/tokens/{id}", delete(user::delete_api_token))
 
-        // Все задачи (Global Tasks List) (B-BE-15)
-        .route("/api/tasks", get(tasks::get_all_tasks))
+        // Все задачи (Global Tasks List) (B-BE-15) — registered above via handlers::get_all_tasks
 
         // Шаблоны - дополнительные endpoints (B-BE-17/18)
-        .route("/api/project/{project_id}/templates/{id}/stop_all_tasks", post(handlers::projects::templates::stop_all_template_tasks))
+        // stop_all_tasks для /api/project/ регистрирован выше (line 64)
         .route("/api/project/{project_id}/templates/{id}/description", put(handlers::projects::templates::update_template_description))
         .route("/api/projects/{project_id}/templates/{id}/stop_all_tasks", post(handlers::projects::templates::stop_all_template_tasks))
         .route("/api/projects/{project_id}/templates/{id}/description", put(handlers::projects::templates::update_template_description))
