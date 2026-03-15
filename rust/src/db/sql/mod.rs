@@ -375,6 +375,24 @@ impl SqlStore {
         .await
         .map_err(Error::Database)?;
 
+        // playbook — хранимые YAML плейбуки
+        sqlx::query(
+            "CREATE TABLE IF NOT EXISTS playbook (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                project_id INTEGER NOT NULL REFERENCES project(id) ON DELETE CASCADE,
+                name TEXT NOT NULL DEFAULT '',
+                content TEXT NOT NULL DEFAULT '',
+                description TEXT,
+                playbook_type TEXT NOT NULL DEFAULT 'ansible',
+                repository_id INTEGER,
+                created DATETIME NOT NULL DEFAULT (datetime('now')),
+                updated DATETIME NOT NULL DEFAULT (datetime('now'))
+            )",
+        )
+        .execute(pool)
+        .await
+        .map_err(Error::Database)?;
+
         // event — журнал событий
         sqlx::query(
             "CREATE TABLE IF NOT EXISTS event (
