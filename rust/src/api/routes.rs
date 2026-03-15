@@ -5,7 +5,7 @@ use std::sync::Arc;
 use crate::api::state::AppState;
 use crate::api::handlers;
 use crate::api::websocket::websocket_handler;
-use crate::api::handlers::projects::{schedules, views, integration as project_integration, integration_alias, secret_storages, users as project_users, tasks, notifications, backup_restore, refs, invites};
+use crate::api::handlers::projects::{schedules, views, integration as project_integration, integration_alias, secret_storages, users as project_users, tasks, notifications, backup_restore, refs, invites, roles};
 use crate::api::{events, apps, options, runners, cache, system_info, user, graphql};
 use tower_http::services::{ServeDir, ServeFile};
 
@@ -226,6 +226,14 @@ pub fn api_routes() -> Router<Arc<AppState>> {
         // Роль пользователя в проекте
         .route("/api/projects/{project_id}/role", get(handlers::get_user_role))
         .route("/api/project/{project_id}/role", get(handlers::get_user_role))
+
+        // Кастомные роли (Custom Roles)
+        .route("/api/project/{project_id}/roles/all", get(roles::get_all_roles))
+        .route("/api/project/{project_id}/roles", get(roles::get_roles))
+        .route("/api/project/{project_id}/roles", post(roles::create_role))
+        .route("/api/project/{project_id}/roles/{id}", get(roles::get_role))
+        .route("/api/project/{project_id}/roles/{id}", put(roles::update_role))
+        .route("/api/project/{project_id}/roles/{id}", delete(roles::delete_role))
 
         // Backup/Restore
         .route("/api/project/{project_id}/backup", get(backup_restore::get_backup))
