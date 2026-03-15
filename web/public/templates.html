@@ -344,6 +344,17 @@
             });
         }
 
+        function loadBranchSuggestions(repoId) {
+            const datalist = document.getElementById('branch-suggestions');
+            if (!datalist) return;
+            if (!repoId) { datalist.innerHTML = ''; return; }
+            api.getRepositoryBranches(projectId, repoId)
+                .then(branches => {
+                    datalist.innerHTML = (branches || []).map(b => `<option value="${escapeHtml(b)}">`).join('');
+                })
+                .catch(() => {});
+        }
+
         function deleteTemplate(id) {
             if (!confirm('Вы уверены что хотите удалить этот шаблон?')) return;
 
@@ -729,7 +740,7 @@
 
                                 <div class="form-group">
                                     <label for="repository_id">Репозиторий</label>
-                                    <select id="repository_id" class="form-control">
+                                    <select id="repository_id" class="form-control" onchange="loadBranchSuggestions(this.value)">
                                         <option value="">— не выбрано —</option>
                                         ${repositories.map(repo => `<option value="${repo.id}" ${tpl?.repository_id === repo.id ? 'selected' : ''}>${escapeHtml(repo.name)}</option>`).join('')}
                                     </select>
@@ -737,7 +748,8 @@
 
                                 <div class="form-group">
                                     <label for="git_branch">Ветка Git</label>
-                                    <input type="text" id="git_branch" class="form-control" value="${escapeHtml(tpl?.git_branch || 'main')}" placeholder="main">
+                                    <input type="text" id="git_branch" class="form-control" value="${escapeHtml(tpl?.git_branch || 'main')}" placeholder="main" list="branch-suggestions">
+                                    <datalist id="branch-suggestions"></datalist>
                                 </div>
 
                                 <div class="form-group" style="grid-column:1/-1;">
@@ -875,6 +887,11 @@
                 // Initialize dynamic sections on modal open
                 onAppChange();   // show/hide terraform section
                 onTypeChange();  // show/hide build-template-row + populate build templates for deploy
+
+                // Load branch suggestions if repository is already selected
+                if (tpl?.repository_id) {
+                    loadBranchSuggestions(tpl.repository_id);
+                }
 
                 // Populate build_template_id with saved value when editing
                 if (tpl?.build_template_id && tpl?.type === 'deploy') {
