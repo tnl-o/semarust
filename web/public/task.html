@@ -99,6 +99,7 @@
                     <button class="btn btn-sm" id="modal-confirm-btn" style="display:none; background:#276749; color:#fff;" onclick="confirmCurrentTask()">✓ Подтвердить</button>
                     <button class="btn btn-sm" id="modal-reject-btn" style="display:none; background:#c53030; color:#fff;" onclick="rejectCurrentTask()">✗ Отклонить</button>
                     <button class="btn btn-sm" id="modal-stop-btn" style="display:none; color:#c53030;" onclick="stopCurrentTask()">■ Остановить</button>
+                    <button class="btn btn-sm" id="modal-rerun-btn" style="display:none;" onclick="rerunCurrentTask()" title="Повторить запуск">↺ Повторить</button>
                     <button class="btn btn-sm" onclick="downloadCurrentLog()">📥 Лог</button>
                     <button class="btn btn-sm" onclick="closeTaskDetailModal()">✕</button>
                 </div>
@@ -235,10 +236,16 @@
                 renderTaskMeta(task);
                 const running = task.status === 'running' || task.status === 'waiting' || task.status === 'starting';
                 const confirming = task.status === 'waiting_confirmation';
+                const finished = !running && !confirming;
                 $('#modal-progress').style.display = (running || confirming) ? 'block' : 'none';
                 $('#modal-stop-btn').style.display = running ? 'inline-block' : 'none';
                 $('#modal-confirm-btn').style.display = confirming ? 'inline-block' : 'none';
                 $('#modal-reject-btn').style.display = confirming ? 'inline-block' : 'none';
+                const rerunBtn = $('#modal-rerun-btn');
+                if (rerunBtn) {
+                    rerunBtn.style.display = finished ? 'inline-block' : 'none';
+                    rerunBtn.dataset.templateId = task.template_id;
+                }
 
                 if (running || confirming) {
                     connectDetailWs(currentTaskId);
@@ -373,6 +380,13 @@
             api.rejectTask(projectId, currentTaskId)
                 .then(() => { ui.showAlert('Задача отклонена', 'info'); loadTaskDetail(); })
                 .catch(err => ui.showAlert('Ошибка: ' + err.message, 'danger'));
+        }
+
+        function rerunCurrentTask() {
+            const btn = $('#modal-rerun-btn');
+            const templateId = btn && btn.dataset.templateId;
+            if (!templateId) return;
+            window.location.href = 'run.html?id=' + projectId + '&tpl=' + templateId;
         }
 
         function downloadCurrentLog() {

@@ -5,7 +5,7 @@
 >
 > **Репозиторий:** https://github.com/tnl-o/rust_semaphore
 > **Upstream (Go оригинал):** https://github.com/semaphoreui/semaphore
-> **Последнее обновление:** 2026-03-15 (обновление 19 — раздел 2.6: полный аудит оригинала semaphoreui/semaphore, 40 новых фронтенд задач B-FE-36..75, 25 бэкенд задач B-BE-01..25, детализация по каждой странице)
+> **Последнее обновление:** 2026-03-15 (обновление 20 — реализованы: B-FE-36 history.html, B-FE-39 global_tasks.html, B-FE-40+71 invites в team.html, B-FE-44 accept_invite.html, B-FE-46 Views/Tabs в templates.html, B-FE-57 re-run кнопка в task.html)
 
 ---
 
@@ -672,22 +672,22 @@ JavaScript берёт последнее объявление — поведен
 
 | ID | Страница / Задача | Приоритет | Статус |
 |---|---|---|---|
-| B-FE-36 | `history.html` — история задач проекта (GET /tasks/last, WS-обновление) | 🔴 Критично | ⬜ |
+| B-FE-36 | `history.html` — история задач проекта (GET /tasks/last, WS-обновление) | 🔴 Критично | ✅ Закрыт 2026-03-15 |
 | B-FE-37 | `runners.html` — управление Runners (глобальные + per-project) | 🟠 Высокий | ⬜ |
 | B-FE-38 | `apps.html` — управление Apps (типы исполнителей: ansible/terraform/bash/tofu) | 🟠 Высокий | ⬜ |
-| B-FE-39 | `global_tasks.html` — глобальный список активных задач (GET /api/tasks) | 🟠 Высокий | ⬜ |
-| B-FE-40 | `invites.html` — управление приглашениями в проект (CRUD) | 🟠 Высокий | ⬜ |
+| B-FE-39 | `global_tasks.html` — глобальный список активных задач (GET /api/tasks) | 🟠 Высокий | ✅ Закрыт 2026-03-15 |
+| B-FE-40 | `invites.html` — управление приглашениями в проект (CRUD) | 🟠 Высокий | ✅ Закрыт 2026-03-15 (в team.html) |
 | B-FE-41 | `roles.html` — управление кастомными ролями (permissions bitmask) | 🟡 Средний | ⬜ |
 | B-FE-42 | `secret_storages.html` — Vault/DVLS интеграция (CRUD + sync) | 🟡 Средний | ⬜ |
 | B-FE-43 | `integration_detail.html` — детали интеграции: матчеры + extract values | 🟠 Высокий | ⬜ |
-| B-FE-44 | `accept_invite.html` — страница принятия приглашения (?token=...) | 🟡 Средний | ⬜ |
+| B-FE-44 | `accept_invite.html` — страница принятия приглашения (?token=...) | 🟡 Средний | ✅ Закрыт 2026-03-15 |
 | B-FE-45 | `restore.html` — импорт/восстановление проекта из JSON-бэкапа | 🟡 Средний | ⬜ |
 
 #### Улучшения существующих страниц
 
 | ID | Страница / Задача | Приоритет | Статус |
 |---|---|---|---|
-| B-FE-46 | `templates.html` — Views/Tabs: группировка шаблонов по View, EditViewsDialog | 🔴 Критично | ⬜ |
+| B-FE-46 | `templates.html` — Views/Tabs: группировка шаблонов по View, EditViewsDialog | 🔴 Критично | ✅ Закрыт 2026-03-15 |
 | B-FE-47 | `templates.html` — тип шаблона: build / deploy / task (вкладки в форме) | 🟠 Высокий | ⬜ |
 | B-FE-48 | `templates.html` — поля формы: survey_vars, vaults, runner_tag, allow_parallel_tasks, suppress_success_alerts | 🟠 Высокий | ⬜ |
 | B-FE-49 | `templates.html` — Ansible task_params: limit, tags, skip_tags + allow_override_* | 🟠 Высокий | ⬜ |
@@ -698,7 +698,7 @@ JavaScript берёт последнее объявление — поведен
 | B-FE-54 | `template.html` — таб Permissions (CRUD прав на шаблон) | 🟡 Средний | ⬜ |
 | B-FE-55 | `template.html` — таб Terraform Workspaces (state history, aliases, attach/detach) | 🟡 Средний | ⬜ |
 | B-FE-56 | `template.html` — кнопка Stop All Tasks + refs перед удалением | 🟡 Средний | ⬜ |
-| B-FE-57 | `task.html` — повторный запуск задачи (re-run button) | 🟠 Высокий | ⬜ |
+| B-FE-57 | `task.html` — повторный запуск задачи (re-run button) | 🟠 Высокий | ✅ Закрыт 2026-03-15 |
 | B-FE-58 | `task.html` — полный TaskForm: survey_vars, build_task_id (deploy), git_branch override | 🟠 Высокий | ⬜ |
 | B-FE-59 | `task.html` — детали задачи: branch, debug, dry_run, diff, limit, environment vars | 🟡 Средний | ⬜ |
 | B-FE-60 | `schedules.html` — полный визуальный cron builder: месяцы/дни/часы/минуты (checkboxes) | 🟠 Высокий | ⬜ |
@@ -712,7 +712,7 @@ JavaScript берёт последнее объявление — поведен
 | B-FE-68 | `environments.html` — JSON editor + key/value table режимы для extra variables | 🟡 Средний | ⬜ |
 | B-FE-69 | `webhooks.html` — aliases (list, add, delete, copy URL) | 🟠 Высокий | ⬜ |
 | B-FE-70 | `webhooks.html` — auth_method (token/hmac), auth_header, auth_secret_id | 🟠 Высокий | ⬜ |
-| B-FE-71 | `team.html` — Invites tab (приглашения: list, add, delete) | 🟠 Высокий | ⬜ |
+| B-FE-71 | `team.html` — Invites tab (приглашения: list, add, delete) | 🟠 Высокий | ✅ Закрыт 2026-03-15 |
 | B-FE-72 | `team.html` — Roles tab (кастомные роли, permissions bitmask) | 🟡 Средний | ⬜ |
 | B-FE-73 | `project.html` — Test Alerts button, Clear Cache button, Test Notifications | 🟡 Средний | ⬜ |
 | B-FE-74 | `analytics.html` — filter by user, настоящий период (week/month/year) | 🟡 Средний | ⬜ |

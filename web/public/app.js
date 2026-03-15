@@ -449,9 +449,10 @@ function checkAuth() {
 
 const SIDEBAR_ITEMS = [
     { href: 'index.html',        icon: '◈',  label: 'Dashboard',    noId: true },
+    { href: 'global_tasks.html', icon: '▶',  label: 'Все задачи',   noId: true },
     { href: 'project.html',      icon: '⬡',  label: 'Обзор' },
     { href: 'templates.html',    icon: '▦',  label: 'Шаблоны' },
-    { href: 'task.html',         icon: '▶',  label: 'Задачи' },
+    { href: 'history.html',      icon: '▶',  label: 'История задач' },
     { href: 'activity.html',     icon: '📋', label: 'Активность' },
     { href: 'inventory.html',    icon: '≡',  label: 'Инвентарь' },
     { href: 'environments.html', icon: '⊕',  label: 'Окружения' },

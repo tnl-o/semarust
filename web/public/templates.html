@@ -18,7 +18,14 @@
             <div class="main-body">
                 <div class="page-header">
                     <h1>📋 Шаблоны</h1>
-                    <button class="btn btn-primary" onclick="openTemplateModal()">+ Новый Шаблон</button>
+                    <div style="display:flex; gap:8px;">
+                        <button class="btn btn-sm" onclick="openViewsDialog()" title="Управление группами">⊞ Группы</button>
+                        <button class="btn btn-primary" onclick="openTemplateModal()">+ Новый Шаблон</button>
+                    </div>
+                </div>
+
+                <div id="views-tabs" style="display:none; margin-bottom:16px; border-bottom:2px solid var(--border);">
+                    <div id="tabs-list" style="display:flex; gap:0; overflow-x:auto;"></div>
                 </div>
 
                 <div id="templates-content">
@@ -42,6 +49,9 @@
             window.location.href = 'index.html';
         }
 
+        let allViews = [];
+        let activeViewId = null; // null = "All"
+
         api.getProject(projectId)
             .then(project => {
                 $('#project-title').textContent = project.name + ' → Шаблоны';
@@ -51,77 +61,224 @@
 
         loadTemplates();
 
+        function addViewApiMethods() {
+            // These use the /api/project/:id/views endpoints
+        }
+
+        function loadViews() {
+            return api.get('/project/' + projectId + '/views').catch(() => []);
+        }
+
+        function renderViewTabs(views, templates) {
+            const tabsEl = $('#views-tabs');
+            const tabsList = $('#tabs-list');
+            if (!views || views.length === 0) {
+                tabsEl.style.display = 'none';
+                return;
+            }
+            tabsEl.style.display = 'block';
+            const tabStyle = `style="padding:8px 20px; border:none; background:transparent; cursor:pointer; font-size:14px; border-bottom:3px solid transparent; white-space:nowrap;"`;
+            const activeStyle = `style="padding:8px 20px; border:none; background:transparent; cursor:pointer; font-size:14px; border-bottom:3px solid var(--primary); font-weight:600; color:var(--primary); white-space:nowrap;"`;
+
+            const countAll = templates.length;
+            tabsList.innerHTML = `
+                <button ${activeViewId === null ? activeStyle : tabStyle} onclick="setActiveView(null)">Все (${countAll})</button>
+                ${views.sort((a, b) => (a.position || 0) - (b.position || 0)).map(v => {
+                    const cnt = templates.filter(t => t.view_id === v.id).length;
+                    return `<button ${activeViewId === v.id ? activeStyle : tabStyle} onclick="setActiveView(${v.id})">${escapeHtml(v.title)} (${cnt})</button>`;
+                }).join('')}
+            `;
+        }
+
+        function setActiveView(viewId) {
+            activeViewId = viewId;
+            loadTemplates();
+        }
+
         function loadTemplates() {
             const container = $('#templates-content');
-            
-            api.getTemplates(projectId)
-                .then(templates => {
+
+            Promise.all([
+                api.getTemplates(projectId),
+                loadViews(),
+                api.getTasks(projectId).catch(() => [])
+            ])
+            .then(([templates, views, tasks]) => {
+                allViews = views || [];
+                renderViewTabs(allViews, templates);
+
+                // Filter by active view
+                const visible = activeViewId === null
+                    ? templates
+                    : templates.filter(t => t.view_id === activeViewId);
+
+                if (visible.length === 0) {
                     if (templates.length === 0) {
                         ui.showEmpty(container, '📋', 'Нет шаблонов', 'Создайте первый шаблон для запуска playbook');
                     } else {
-                        // Load last tasks for status column
-                        api.getTasks(projectId).catch(() => []).then(tasks => {
-                            const lastByTpl = {};
-                            (tasks || []).forEach(t => {
-                                if (!lastByTpl[t.template_id] || t.id > lastByTpl[t.template_id].id) {
-                                    lastByTpl[t.template_id] = t;
-                                }
-                            });
+                        ui.showEmpty(container, '📋', 'Нет шаблонов в этой группе', 'Переключите вкладку или создайте шаблон');
+                    }
+                    return;
+                }
 
-                            const statusBadge = (t) => {
-                                if (!t) return '<span style="color:#999">—</span>';
-                                const cls = { waiting:'status-waiting', running:'status-running', success:'status-success',
-                                    error:'status-error', failed:'status-error', cancelled:'status-cancelled' }[t.status] || '';
-                                const lbl = { waiting:'Ожидание', running:'Выполняется', success:'Успешно',
-                                    error:'Ошибка', failed:'Ошибка', cancelled:'Отменено' }[t.status] || t.status;
-                                return `<a href="task.html?id=${projectId}&task=${t.id}" style="text-decoration:none;">
-                                    <span class="status-badge ${cls}" style="font-size:11px;">${lbl}</span>
-                                </a>`;
-                            };
+                const lastByTpl = {};
+                (tasks || []).forEach(t => {
+                    if (!lastByTpl[t.template_id] || t.id > lastByTpl[t.template_id].id) {
+                        lastByTpl[t.template_id] = t;
+                    }
+                });
 
-                            container.innerHTML = `
-                                <table class="table">
-                                    <thead>
-                                        <tr>
-                                            <th>Название</th>
-                                            <th>Playbook</th>
-                                            <th>Последний запуск</th>
-                                            <th>Действия</th>
-                                        </tr>
-                                    </thead>
+                const statusBadge = (t) => {
+                    if (!t) return '<span style="color:#999">—</span>';
+                    const cls = { waiting:'status-waiting', running:'status-running', success:'status-success',
+                        error:'status-error', failed:'status-error', cancelled:'status-cancelled' }[t.status] || '';
+                    const lbl = { waiting:'Ожидание', running:'Выполняется', success:'Успешно',
+                        error:'Ошибка', failed:'Ошибка', cancelled:'Отменено' }[t.status] || t.status;
+                    return `<a href="history.html?id=${projectId}" style="text-decoration:none;">
+                        <span class="status-badge ${cls}" style="font-size:11px;">${lbl}</span>
+                    </a>`;
+                };
+
+                const viewName = (viewId) => {
+                    if (!viewId) return '';
+                    const v = allViews.find(v => v.id === viewId);
+                    return v ? `<span style="font-size:10px; background:rgba(0,80,87,.12); color:var(--primary); padding:1px 6px; border-radius:8px; margin-left:4px;">${escapeHtml(v.title)}</span>` : '';
+                };
+
+                container.innerHTML = `
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Название</th>
+                                <th>Playbook</th>
+                                <th>Последний запуск</th>
+                                <th>Действия</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${visible.map(tpl => `
+                                <tr>
+                                    <td>
+                                        <div style="display:flex; align-items:center; gap:4px;">
+                                            <a href="template.html?id=${projectId}&tpl=${tpl.id}" style="font-weight:600; text-decoration:none; color:var(--primary);">${escapeHtml(tpl.name)}</a>
+                                            ${viewName(tpl.view_id)}
+                                        </div>
+                                        <div style="font-size:11px; color:var(--text-light); margin-top:2px;"><code>${escapeHtml(tpl.playbook || '')}</code></div>
+                                    </td>
+                                    <td style="color:var(--text-light); font-size:13px;">${escapeHtml(tpl.playbook || '')}</td>
+                                    <td>${statusBadge(lastByTpl[tpl.id])}</td>
+                                    <td>
+                                        <button class="btn btn-success btn-sm" onclick="runTemplate(${tpl.id}, '${escapeHtml(tpl.name).replace(/'/g,"\\'")}', ${!!tpl.allow_override_args_in_task})" title="Запустить">▶ Запустить</button>
+                                        <button class="btn btn-sm" onclick="editTemplate(${tpl.id})" title="Редактировать">✏️</button>
+                                        <button class="btn btn-danger btn-sm" onclick="deleteTemplate(${tpl.id})" title="Удалить">🗑️</button>
+                                    </td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                    <style>
+                        .status-badge { display:inline-block; padding:2px 8px; border-radius:10px; font-weight:600; }
+                        .status-waiting  { background:#f0f0f0; color:#666; }
+                        .status-running  { background:#e3f2fd; color:#1976d2; }
+                        .status-success  { background:#c6f6d5; color:#276749; }
+                        .status-error    { background:#fed7d7; color:#c53030; }
+                        .status-cancelled{ background:#e0e0e0; color:#424242; }
+                    </style>
+                `;
+            })
+            .catch(error => {
+                ui.showError($('#templates-content'), error.message);
+            });
+        }
+
+        // ---- Views management dialog ----
+        function openViewsDialog() {
+            const modal = document.createElement('div');
+            modal.className = 'modal-overlay';
+            modal.id = 'views-dialog';
+            document.body.appendChild(modal);
+            renderViewsDialog(modal);
+            modal.addEventListener('click', e => { if (e.target === modal) modal.remove(); });
+        }
+
+        function renderViewsDialog(modal) {
+            loadViews().then(views => {
+                allViews = views || [];
+                modal.innerHTML = `
+                    <div class="modal" style="max-width:520px;">
+                        <div class="modal-header">
+                            <h2>⊞ Группы шаблонов</h2>
+                        </div>
+                        <div style="margin-bottom:16px;">
+                            <p style="color:var(--text-light); font-size:13px; margin-bottom:12px;">Группы позволяют организовать шаблоны по вкладкам.</p>
+                            ${views.length === 0
+                                ? '<p style="color:var(--text-light); font-style:italic;">Нет групп — шаблоны не разделены</p>'
+                                : `<table class="table" style="margin-bottom:0;">
+                                    <thead><tr><th>Название</th><th>Позиция</th><th></th></tr></thead>
                                     <tbody>
-                                        ${templates.map(tpl => `
+                                        ${views.sort((a,b) => (a.position||0)-(b.position||0)).map(v => `
                                             <tr>
+                                                <td><strong>${escapeHtml(v.title)}</strong></td>
+                                                <td style="color:var(--text-light);">${v.position}</td>
                                                 <td>
-                                                    <a href="template.html?id=${projectId}&tpl=${tpl.id}" style="font-weight:600; text-decoration:none; color:var(--primary);">${escapeHtml(tpl.name)}</a>
-                                                    <div style="font-size:11px; color:var(--text-light); margin-top:2px;"><code>${escapeHtml(tpl.playbook)}</code></div>
-                                                </td>
-                                                <td style="color:var(--text-light); font-size:13px;">${escapeHtml(tpl.playbook)}</td>
-                                                <td>${statusBadge(lastByTpl[tpl.id])}</td>
-                                                <td>
-                                                    <button class="btn btn-success btn-sm" onclick="runTemplate(${tpl.id}, '${escapeHtml(tpl.name).replace(/'/g,"\\'")}', ${!!tpl.allow_override_args_in_task})" title="Запустить">▶ Запустить</button>
-                                                    <button class="btn btn-sm" onclick="editTemplate(${tpl.id})" title="Редактировать">✏️</button>
-                                                    <button class="btn btn-danger btn-sm" onclick="deleteTemplate(${tpl.id})" title="Удалить">🗑️</button>
+                                                    <button class="btn btn-sm" onclick="editView(${v.id}, '${escapeHtml(v.title).replace(/'/g,"\\'")}')" title="Переименовать">✏️</button>
+                                                    <button class="btn btn-sm btn-danger" onclick="deleteView(${v.id})" title="Удалить">🗑️</button>
                                                 </td>
                                             </tr>
                                         `).join('')}
                                     </tbody>
-                                </table>
-                                <style>
-                                    .status-badge { display:inline-block; padding:2px 8px; border-radius:10px; font-weight:600; }
-                                    .status-waiting  { background:#f0f0f0; color:#666; }
-                                    .status-running  { background:#e3f2fd; color:#1976d2; }
-                                    .status-success  { background:#c6f6d5; color:#276749; }
-                                    .status-error    { background:#fed7d7; color:#c53030; }
-                                    .status-cancelled{ background:#e0e0e0; color:#424242; }
-                                </style>
-                            `;
-                        });
-                    }
+                                </table>`}
+                        </div>
+                        <div style="display:flex; gap:8px; align-items:center; border-top:1px solid var(--border); padding-top:12px;">
+                            <input type="text" id="new-view-name" class="form-control" placeholder="Название новой группы" style="flex:1;">
+                            <button class="btn btn-primary" onclick="addView()">+ Добавить</button>
+                        </div>
+                        <div class="modal-footer">
+                            <button class="btn" onclick="document.getElementById('views-dialog').remove()">Закрыть</button>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        function addView() {
+            const name = document.getElementById('new-view-name').value.trim();
+            if (!name) { ui.showAlert('Введите название группы', 'warning'); return; }
+            const pos = allViews.length > 0 ? Math.max(...allViews.map(v => v.position || 0)) + 1 : 0;
+            api.post('/project/' + projectId + '/views', { title: name, position: pos })
+                .then(() => {
+                    ui.showAlert('Группа создана', 'success');
+                    const modal = document.getElementById('views-dialog');
+                    if (modal) renderViewsDialog(modal);
+                    loadTemplates();
                 })
-                .catch(error => {
-                    ui.showError(container, error.message);
-                });
+                .catch(err => ui.showAlert('Ошибка: ' + err.message, 'danger'));
+        }
+
+        function editView(id, currentTitle) {
+            const newTitle = prompt('Новое название группы:', currentTitle);
+            if (!newTitle || newTitle === currentTitle) return;
+            api.put('/project/' + projectId + '/views/' + id, { title: newTitle, position: allViews.find(v=>v.id===id)?.position || 0 })
+                .then(() => {
+                    ui.showAlert('Группа обновлена', 'success');
+                    const modal = document.getElementById('views-dialog');
+                    if (modal) renderViewsDialog(modal);
+                    loadTemplates();
+                })
+                .catch(err => ui.showAlert('Ошибка: ' + err.message, 'danger'));
+        }
+
+        function deleteView(id) {
+            if (!confirm('Удалить группу? Шаблоны останутся, но потеряют привязку к группе.')) return;
+            api.delete('/project/' + projectId + '/views/' + id)
+                .then(() => {
+                    ui.showAlert('Группа удалена', 'success');
+                    if (activeViewId === id) activeViewId = null;
+                    const modal = document.getElementById('views-dialog');
+                    if (modal) renderViewsDialog(modal);
+                    loadTemplates();
+                })
+                .catch(err => ui.showAlert('Ошибка: ' + err.message, 'danger'));
         }
 
         function editTemplate(id) {
@@ -130,10 +287,11 @@
                 api.getPlaybooks(projectId).catch(() => []),
                 api.getInventories(projectId).catch(() => []),
                 api.getEnvironments(projectId).catch(() => []),
-                api.getRepositories(projectId).catch(() => [])
+                api.getRepositories(projectId).catch(() => []),
+                loadViews()
             ])
-            .then(([template, playbooks, inventories, environments, repositories]) => {
-                openTemplateModal(template, { playbooks, inventories, environments, repositories });
+            .then(([template, playbooks, inventories, environments, repositories, views]) => {
+                openTemplateModal(template, { playbooks, inventories, environments, repositories, views });
             })
             .catch(error => {
                 ui.showAlert('Ошибка: ' + error.message, 'danger');
@@ -349,17 +507,17 @@
 
         function openTemplateModal(template = null, refs = {}) {
             const isEdit = !!template;
-            
-            // Если данные для справочников не переданы, загружаем их
+
             if (!refs.playbooks) {
                 Promise.all([
                     api.getPlaybooks(projectId).catch(() => []),
                     api.getInventories(projectId).catch(() => []),
                     api.getEnvironments(projectId).catch(() => []),
-                    api.getRepositories(projectId).catch(() => [])
+                    api.getRepositories(projectId).catch(() => []),
+                    loadViews()
                 ])
-                .then(([playbooks, inventories, environments, repositories]) => {
-                    renderModal(template, { playbooks, inventories, environments, repositories });
+                .then(([playbooks, inventories, environments, repositories, views]) => {
+                    renderModal(template, { playbooks, inventories, environments, repositories, views });
                 })
                 .catch(console.error);
             } else {
@@ -367,7 +525,7 @@
             }
 
             function renderModal(tpl, data) {
-                const { playbooks, inventories, environments, repositories } = data;
+                const { playbooks, inventories, environments, repositories, views } = data;
                 
                 const modal = document.createElement('div');
                 modal.className = 'modal-overlay';
@@ -426,6 +584,13 @@
                                 <small style="color: var(--text-light);">Дополнительные аргументы для ansible-playbook</small>
                             </div>
                             <div class="form-group">
+                                <label for="view_id">Группа (View)</label>
+                                <select id="view_id" class="form-control">
+                                    <option value="">Без группы</option>
+                                    ${(views||[]).sort((a,b)=>(a.position||0)-(b.position||0)).map(v => `<option value="${v.id}" ${tpl?.view_id === v.id ? 'selected' : ''}>${escapeHtml(v.title)}</option>`).join('')}
+                                </select>
+                            </div>
+                            <div class="form-group">
                                 <label>
                                     <input type="checkbox" id="allow_override_args_in_task" ${tpl?.allow_override_args_in_task ? 'checked' : ''}>
                                     Разрешить переопределение аргументов при запуске
@@ -457,6 +622,7 @@
         }
 
         function saveTemplate(id) {
+            const viewIdVal = $('#view_id') && $('#view_id').value ? parseInt($('#view_id').value) : null;
             const data = {
                 name: $('#name').value.trim(),
                 playbook: $('#playbook').value.trim(),
@@ -467,6 +633,7 @@
                 git_branch: $('#git_branch').value.trim() || 'main',
                 arguments: $('#arguments').value.trim() || null,
                 allow_override_args_in_task: $('#allow_override_args_in_task').checked,
+                view_id: viewIdVal,
                 type: 'ansible',
                 app: 'ansible'
             };
