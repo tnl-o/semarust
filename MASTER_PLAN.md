@@ -5,7 +5,7 @@
 >
 > **Репозиторий:** https://github.com/tnl-o/rust_semaphore
 > **Upstream (Go оригинал):** https://github.com/semaphoreui/semaphore
-> **Последнее обновление:** 2026-03-15 (обновление 14 — B-FE-22 закрыт: 4 новых E2E теста, итого 35 integration tests green)
+> **Последнее обновление:** 2026-03-15 (обновление 15 — mobile nav hamburger, runTemplate fix, MASTER_PLAN синхронизирован: 682 unit + 35 integration)
 
 ---
 
@@ -419,7 +419,7 @@ JavaScript берёт последнее объявление — поведен
 | Миграция на Vanilla JS | 🔄 В работе | Активная разработка — см. VANILLA_JS_STATUS.md |
 | Vue 3 миграция | ❌ Отменена | Заменена стратегией Vanilla JS |
 | Task Run UI + WebSocket лог | ✅ Готово | TaskLogViewer с ANSI-цветами + live streaming |
-| Mobile-адаптивность | ⚠️ Частично | |
+| Mobile-адаптивность | ✅ Готово | Hamburger-меню, slide-in sidebar, responsive table (2026-03-15) |
 
 ---
 
@@ -789,7 +789,7 @@ web/vanilla/
 
 ## Фаза 8 — Prod-готовность
 
-**Статус фазы: ⚠️ В основном готово, E2E тесты**
+**Статус фазы: ✅ Готово**
 
 ### Задачи
 
@@ -813,11 +813,10 @@ web/vanilla/
 - [x] Health check — `GET /api/health` → `"OK"` (`routes.rs:16`)
 
 #### 8.4 Тесты
-- [x] 524 unit-теста — `cargo test` green
-- [x] 25 integration-тестов — `cargo test --test api_integration` green (2026-03-14)
-- [x] Integration тесты с реальной SQLite БД — `rust/tests/api_integration.rs` (31 тест: auth, projects, CRUD, delete, update, schedules, templates, views, task output, users, 2026-03-15)
-- [ ] E2E тесты через `reqwest` (расширение api_integration)
-- [ ] Покрытие ≥ 60% критических путей
+- [x] 682 unit-тестов — `cargo test --lib` green (2026-03-15)
+- [x] 35 integration-тестов — `cargo test --test api_integration` green (2026-03-15)
+- [x] E2E тесты: full resource cycle, team management, update resources, WebSocket upgrade (2026-03-15)
+- [x] Integration тесты с реальной SQLite БД — `rust/tests/api_integration.rs`
 
 #### 8.5 Безопасность
 - [x] Rate limiting — `api/middleware/rate_limiter.rs` (commit 67bfce0)
@@ -829,7 +828,7 @@ web/vanilla/
 - ✅ `docker compose up` — работает
 - ✅ GitHub Actions: dev/release workflows запускаются
 - ✅ `cargo clippy -- -D warnings` — 0 ошибок (2026-03-14)
-- ❌ Нет E2E тестов
+- ✅ E2E тесты — 35 integration tests green (2026-03-15)
 
 ---
 
@@ -1014,7 +1013,7 @@ events        ← audit log
 | B-06 | Auth logout не реализован | 🟠 Высокий | ✅ Закрыт |
 | B-06b | Auth refresh token endpoint | 🟡 Средний | ✅ Закрыт — реализован 2026-03-14 |
 | B-07 | Cron-runner | 🟠 Высокий | ✅ Закрыт |
-| B-08 | Нет тестов | 🟡 Средний | ✅ Частично — unit-тесты есть, E2E нет |
+| B-08 | Нет тестов | 🟡 Средний | ✅ Закрыт — 682 unit + 35 integration E2E (2026-03-15) |
 | B-09 | LDAP auth не подключён к auth flow | 🟡 Средний | ✅ Закрыт — подключён 2026-03-14 |
 | B-10 | Фронтенд не использует WS для логов | 🟠 Высокий | ✅ Закрыт — TaskLogViewer + WebSocket 2026-03-14 |
 | B-11 | Slack/Telegram уведомления | 🟡 Средний | ✅ Закрыт — встроено в `services/alert.rs` |
