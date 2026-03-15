@@ -5,7 +5,7 @@
 >
 > **Репозиторий:** https://github.com/tnl-o/rust_semaphore
 > **Upstream (Go оригинал):** https://github.com/semaphoreui/semaphore
-> **Последнее обновление:** 2026-03-15 (обновление 13 — все CRUD формы B-FE-11..B-FE-19 реализованы, team.html создан B-FE-20)
+> **Последнее обновление:** 2026-03-15 (обновление 14 — B-FE-22 закрыт: 4 новых E2E теста, итого 35 integration tests green)
 
 ---
 
@@ -308,9 +308,13 @@ JavaScript берёт последнее объявление — поведен
 
 ---
 
-#### 🟡 B-FE-22 — E2E тесты
+#### ✅ B-FE-22 — E2E тесты — Закрыт 2026-03-15
 
-Расширить `rust/tests/api_integration.rs`: полный цикл (проект → ключ → репозиторий → шаблон bash echo → запуск → проверка лога). WebSocket-тест: подключение → строки → `{"type":"done"}`.
+4 новых теста в `rust/tests/api_integration.rs` (итого 35 green):
+- `test_e2e_full_resource_cycle` — project → key → inventory → env → template → task → output
+- `test_project_team_management` — add/update role/remove проектных участников
+- `test_update_resources` — PUT key/inventory/environment/template
+- `test_websocket_endpoint_accepts_upgrade` — проверка маршрута /api/ws (не 404/405)
 
 ---
 
@@ -339,7 +343,7 @@ JavaScript берёт последнее объявление — поведен
 | B-FE-19 | playbooks.html — CRUD + sync/run форма | 🟡 Средний | ✅ Закрыт 2026-03-15 |
 | B-FE-20 | Страница управления командой проекта (roles) | 🟡 Средний | ✅ Закрыт 2026-03-15 |
 | B-FE-21 | Дизайн: привести к upstream semaphoreui/semaphore | 🟠 Высокий | ✅ Закрыт 2026-03-15 |
-| B-FE-22 | E2E тесты с реальным ansible-playbook | 🟡 Средний | ⬜ Не реализовано |
+| B-FE-22 | E2E тесты с реальным ansible-playbook | 🟡 Средний | ✅ Закрыт 2026-03-15 |
 
 ---
 
