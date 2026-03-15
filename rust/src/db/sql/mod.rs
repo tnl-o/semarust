@@ -298,6 +298,10 @@ impl SqlStore {
                 arguments TEXT,
                 vault_key_id INTEGER,
                 allow_override_args_vars INTEGER NOT NULL DEFAULT 0,
+                allow_override_branch_in_task INTEGER NOT NULL DEFAULT 0,
+                allow_inventory_in_task INTEGER NOT NULL DEFAULT 0,
+                allow_parallel_tasks INTEGER NOT NULL DEFAULT 0,
+                suppress_success_alerts INTEGER NOT NULL DEFAULT 0,
                 start_version TEXT,
                 build_template_id INTEGER,
                 view_id INTEGER,
@@ -442,6 +446,37 @@ impl SqlStore {
             .map_err(Error::Database)?;
             tracing::info!("Миграция: добавлена колонка created в project__user");
         }
+
+        // Миграции для таблицы template
+        for (col, definition) in [
+            ("view_id", "INTEGER"),
+            ("build_template_id", "INTEGER"),
+            ("autorun", "INTEGER NOT NULL DEFAULT 0"),
+            ("survey_vars", "TEXT"),
+            ("allow_override_args_vars", "INTEGER NOT NULL DEFAULT 0"),
+            ("allow_override_branch_in_task", "INTEGER NOT NULL DEFAULT 0"),
+            ("allow_inventory_in_task", "INTEGER NOT NULL DEFAULT 0"),
+            ("allow_parallel_tasks", "INTEGER NOT NULL DEFAULT 0"),
+            ("suppress_success_alerts", "INTEGER NOT NULL DEFAULT 0"),
+            ("deleted", "INTEGER NOT NULL DEFAULT 0"),
+        ] {
+            let exists: i32 = sqlx::query_scalar(
+                &format!("SELECT COUNT(*) FROM pragma_table_info('template') WHERE name='{col}'"),
+            )
+            .fetch_optional(pool)
+            .await
+            .map_err(Error::Database)?
+            .unwrap_or(0);
+
+            if exists == 0 {
+                sqlx::query(&format!("ALTER TABLE template ADD COLUMN {col} {definition}"))
+                    .execute(pool)
+                    .await
+                    .map_err(Error::Database)?;
+                tracing::info!("Миграция: добавлена колонка {col} в template");
+            }
+        }
+
         Ok(())
     }
 

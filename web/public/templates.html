@@ -170,6 +170,7 @@
                                     <td>
                                         <button class="btn btn-success btn-sm" onclick="runTemplate(${tpl.id}, '${escapeHtml(tpl.name).replace(/'/g,"\\'")}', ${!!tpl.allow_override_args_in_task})" title="Запустить">▶ Запустить</button>
                                         <button class="btn btn-sm" onclick="editTemplate(${tpl.id})" title="Редактировать">✏️</button>
+                                        <button class="btn btn-sm" onclick="copyTemplate(${tpl.id})" title="Копировать">⧉</button>
                                         <button class="btn btn-danger btn-sm" onclick="deleteTemplate(${tpl.id})" title="Удалить">🗑️</button>
                                     </td>
                                 </tr>
@@ -319,46 +320,73 @@
             const existing = document.getElementById('new-task-dialog');
             if (existing) existing.remove();
 
-            const modal = document.createElement('div');
-            modal.id = 'new-task-dialog';
-            modal.className = 'modal-overlay';
-            modal.innerHTML = `
-                <div class="modal" style="max-width:520px;">
-                    <div class="modal-header">
-                        <h2>▶ ${escapeHtml(tplName)}</h2>
-                    </div>
-                    <form id="new-task-form">
-                        <div class="form-group">
-                            <label>Сообщение <span style="color:var(--text-light); font-size:12px;">(необязательно)</span></label>
-                            <input type="text" id="task-message" class="form-control" placeholder="Описание запуска, коммент...">
-                        </div>
-                        <div class="form-group">
-                            <label>Git ветка <span style="color:var(--text-light); font-size:12px;">(оставьте пустым для дефолтной)</span></label>
-                            <input type="text" id="task-branch" class="form-control" placeholder="main">
-                        </div>
-                        ${allowArgs ? `
-                        <div class="form-group">
-                            <label>CLI аргументы <span style="color:var(--text-light); font-size:12px;">(переопределить)</span></label>
-                            <input type="text" id="task-args" class="form-control" placeholder="--limit=host1 --tags=deploy">
-                        </div>` : ''}
-                        <div class="modal-footer">
-                            <button type="button" class="btn" onclick="document.getElementById('new-task-dialog').remove()">Отмена</button>
-                            <button type="submit" class="btn btn-primary">▶ Запустить</button>
-                        </div>
-                    </form>
-                </div>
-            `;
-            document.body.appendChild(modal);
-            modal.addEventListener('click', e => { if (e.target === modal) modal.remove(); });
+            // Загружаем шаблон и справочники для динамической формы
+            Promise.all([
+                api.getTemplate(projectId, templateId),
+                api.getInventories(projectId).catch(() => []),
+                api.getEnvironments(projectId).catch(() => [])
+            ]).then(([tpl, inventories, environments]) => {
+                const modal = document.createElement('div');
+                modal.id = 'new-task-dialog';
+                modal.className = 'modal-overlay';
 
-            document.getElementById('new-task-form').addEventListener('submit', e => {
-                e.preventDefault();
-                const message = document.getElementById('task-message').value.trim() || null;
-                const branch = document.getElementById('task-branch').value.trim() || null;
-                const args = allowArgs ? (document.getElementById('task-args')?.value.trim() || null) : null;
-                modal.remove();
-                launchTask(templateId, tplName, { message, git_branch: branch, arguments: args });
-            });
+                const showBranch = tpl.allow_override_branch_in_task;
+                const showInventory = tpl.allow_inventory_in_task;
+                const showArgs = !!tpl.allow_override_args_in_task || allowArgs;
+
+                modal.innerHTML = `
+                    <div class="modal" style="max-width:620px;">
+                        <div class="modal-header">
+                            <h2>▶ ${escapeHtml(tplName)}</h2>
+                        </div>
+                        <form id="new-task-form">
+                            <div class="form-group">
+                                <label>Сообщение <span style="color:var(--text-light); font-size:12px;">(необязательно)</span></label>
+                                <input type="text" id="task-message" class="form-control" placeholder="Описание запуска, коммент...">
+                            </div>
+                            ${showBranch ? `
+                            <div class="form-group">
+                                <label>Git ветка <span style="color:var(--text-light); font-size:12px;">(оставьте пустым для ветки по умолчанию)</span></label>
+                                <input type="text" id="task-branch" class="form-control" value="${escapeHtml(tpl.git_branch || '')}" placeholder="main">
+                            </div>` : ''}
+                            ${showInventory ? `
+                            <div class="form-group">
+                                <label>Инвентарь</label>
+                                <select id="task-inventory" class="form-control">
+                                    <option value="">По умолчанию (${tpl.inventory_id || 'не задан'})</option>
+                                    ${inventories.map(inv => `<option value="${inv.id}" ${tpl.inventory_id === inv.id ? 'selected' : ''}>${escapeHtml(inv.name)}</option>`).join('')}
+                                </select>
+                            </div>` : ''}
+                            ${showArgs ? `
+                            <div class="form-group">
+                                <label>CLI аргументы <span style="color:var(--text-light); font-size:12px;">(переопределить)</span></label>
+                                <input type="text" id="task-args" class="form-control" value="${escapeHtml(tpl.arguments || '')}" placeholder="--limit=host1 --tags=deploy">
+                            </div>` : ''}
+                            <div class="modal-footer">
+                                <button type="button" class="btn" onclick="document.getElementById('new-task-dialog').remove()">Отмена</button>
+                                <button type="submit" class="btn btn-primary">▶ Запустить</button>
+                            </div>
+                        </form>
+                    </div>
+                `;
+                document.body.appendChild(modal);
+                modal.addEventListener('click', e => { if (e.target === modal) modal.remove(); });
+
+                document.getElementById('new-task-form').addEventListener('submit', e => {
+                    e.preventDefault();
+                    const message = document.getElementById('task-message').value.trim() || null;
+                    const branch = showBranch ? (document.getElementById('task-branch').value.trim() || null) : null;
+                    const args = showArgs ? (document.getElementById('task-args').value.trim() || null) : null;
+                    const invSelect = showInventory ? document.getElementById('task-inventory') : null;
+                    const inventory_id = invSelect && invSelect.value ? parseInt(invSelect.value) : null;
+                    modal.remove();
+                    const params = { message };
+                    if (branch) params.git_branch = branch;
+                    if (args) params.arguments = args;
+                    if (inventory_id) params.inventory_id = inventory_id;
+                    launchTask(templateId, tplName, params);
+                });
+            }).catch(err => ui.showAlert('Ошибка загрузки шаблона: ' + err.message, 'danger'));
         }
 
         function launchTask(templateId, tplName, params) {
@@ -531,72 +559,136 @@
                 modal.className = 'modal-overlay';
                 modal.id = 'template-modal';
                 modal.innerHTML = `
-                    <div class="modal" style="max-width: 700px;">
+                    <div class="modal" style="max-width:760px;">
                         <div class="modal-header">
                             <h2>${isEdit ? '✏️ Редактирование' : '➕ Новый'} Шаблон</h2>
                         </div>
-                        <form id="template-form">
-                            <div class="form-group">
-                                <label for="name">Название *</label>
-                                <input type="text" id="name" class="form-control" required value="${escapeHtml(tpl?.name || '')}" placeholder="Deploy to Production">
+                        <form id="template-form" style="max-height:80vh; overflow-y:auto; padding-right:4px;">
+
+                            <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+                                <div class="form-group" style="grid-column:1/-1;">
+                                    <label for="name">Название *</label>
+                                    <input type="text" id="name" class="form-control" required value="${escapeHtml(tpl?.name || '')}" placeholder="Deploy to Production">
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="tpl-app">Тип приложения</label>
+                                    <select id="tpl-app" class="form-control" onchange="onAppChange()">
+                                        <option value="ansible" ${(tpl?.app||'ansible')==='ansible'?'selected':''}>Ansible</option>
+                                        <option value="terraform" ${tpl?.app==='terraform'?'selected':''}>Terraform</option>
+                                        <option value="tofu" ${tpl?.app==='tofu'?'selected':''}>OpenTofu</option>
+                                        <option value="bash" ${tpl?.app==='bash'?'selected':''}>Bash</option>
+                                        <option value="python" ${tpl?.app==='python'?'selected':''}>Python</option>
+                                    </select>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="tpl-type">Назначение</label>
+                                    <select id="tpl-type" class="form-control">
+                                        <option value="task" ${(!tpl?.type||tpl?.type==='task'||tpl?.type==='default'||tpl?.type==='ansible')?'selected':''}>Task</option>
+                                        <option value="build" ${tpl?.type==='build'?'selected':''}>Build</option>
+                                        <option value="deploy" ${tpl?.type==='deploy'?'selected':''}>Deploy</option>
+                                    </select>
+                                </div>
+
+                                <div class="form-group" style="grid-column:1/-1;">
+                                    <label for="playbook">Playbook / Скрипт *</label>
+                                    <div style="display:flex; gap:8px;">
+                                        <select id="playbook-select" class="form-control" onchange="syncPlaybookInput()" style="flex:1;">
+                                            <option value="">— выбрать из списка —</option>
+                                            ${playbooks.map(pb => `<option value="${pb.name}" ${tpl?.playbook === pb.name ? 'selected' : ''}>${escapeHtml(pb.name)}</option>`).join('')}
+                                        </select>
+                                        <input type="text" id="playbook" class="form-control" value="${escapeHtml(tpl?.playbook || '')}" placeholder="site.yml" style="flex:1;" required>
+                                    </div>
+                                    <small style="color:var(--text-light);">Выберите из списка или введите путь вручную</small>
+                                </div>
+
+                                <div class="form-group" style="grid-column:1/-1;">
+                                    <label for="description">Описание</label>
+                                    <textarea id="description" class="form-control" rows="2" placeholder="Описание шаблона">${escapeHtml(tpl?.description || '')}</textarea>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="inventory_id">Инвентарь</label>
+                                    <select id="inventory_id" class="form-control">
+                                        <option value="">— не задан —</option>
+                                        ${inventories.map(inv => `<option value="${inv.id}" ${tpl?.inventory_id === inv.id ? 'selected' : ''}>${escapeHtml(inv.name)}</option>`).join('')}
+                                    </select>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="environment_id">Окружение</label>
+                                    <select id="environment_id" class="form-control">
+                                        <option value="">— не выбрано —</option>
+                                        ${environments.map(env => `<option value="${env.id}" ${tpl?.environment_id === env.id ? 'selected' : ''}>${escapeHtml(env.name)}</option>`).join('')}
+                                    </select>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="repository_id">Репозиторий</label>
+                                    <select id="repository_id" class="form-control">
+                                        <option value="">— не выбрано —</option>
+                                        ${repositories.map(repo => `<option value="${repo.id}" ${tpl?.repository_id === repo.id ? 'selected' : ''}>${escapeHtml(repo.name)}</option>`).join('')}
+                                    </select>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="git_branch">Ветка Git</label>
+                                    <input type="text" id="git_branch" class="form-control" value="${escapeHtml(tpl?.git_branch || 'main')}" placeholder="main">
+                                </div>
+
+                                <div class="form-group" style="grid-column:1/-1;">
+                                    <label for="arguments">CLI аргументы</label>
+                                    <input type="text" id="arguments" class="form-control" value="${escapeHtml(tpl?.arguments || '')}" placeholder="--verbose --limit=host1 --tags=deploy">
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="view_id">Группа (View)</label>
+                                    <select id="view_id" class="form-control">
+                                        <option value="">Без группы</option>
+                                        ${(views||[]).sort((a,b)=>(a.position||0)-(b.position||0)).map(v => `<option value="${v.id}" ${tpl?.view_id === v.id ? 'selected' : ''}>${escapeHtml(v.title)}</option>`).join('')}
+                                    </select>
+                                </div>
+
+                                <div id="build-template-row" class="form-group" style="${tpl?.type!=='deploy'?'display:none;':''}">
+                                    <label for="build_template_id">Шаблон сборки (deploy)</label>
+                                    <select id="build_template_id" class="form-control">
+                                        <option value="">— не задан —</option>
+                                    </select>
+                                </div>
                             </div>
-                            <div class="form-group">
-                                <label for="playbook">Playbook *</label>
-                                <select id="playbook" class="form-control" required>
-                                    <option value="">Выберите playbook</option>
-                                    ${playbooks.map(pb => `<option value="${pb.name}" ${tpl?.playbook === pb.name ? 'selected' : ''}>${escapeHtml(pb.name)}</option>`).join('')}
-                                </select>
-                                <small style="color: var(--text-light);">Выберите playbook из списка или введите новый</small>
+
+                            <div style="border-top:1px solid var(--border); margin:16px 0 12px; padding-top:12px;">
+                                <strong style="font-size:13px; color:var(--text-light); text-transform:uppercase; letter-spacing:.5px;">Разрешения при запуске</strong>
                             </div>
-                            <div class="form-group">
-                                <label for="description">Описание</label>
-                                <textarea id="description" class="form-control" rows="2" placeholder="Описание шаблона">${escapeHtml(tpl?.description || '')}</textarea>
-                            </div>
-                            <div class="form-group">
-                                <label for="inventory_id">Инвентарь *</label>
-                                <select id="inventory_id" class="form-control" required>
-                                    <option value="">Выберите инвентарь</option>
-                                    ${inventories.map(inv => `<option value="${inv.id}" ${tpl?.inventory_id === inv.id ? 'selected' : ''}>${escapeHtml(inv.name)}</option>`).join('')}
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <label for="environment_id">Окружение</label>
-                                <select id="environment_id" class="form-control">
-                                    <option value="">Не выбрано</option>
-                                    ${environments.map(env => `<option value="${env.id}" ${tpl?.environment_id === env.id ? 'selected' : ''}>${escapeHtml(env.name)}</option>`).join('')}
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <label for="repository_id">Репозиторий</label>
-                                <select id="repository_id" class="form-control">
-                                    <option value="">Не выбрано</option>
-                                    ${repositories.map(repo => `<option value="${repo.id}" ${tpl?.repository_id === repo.id ? 'selected' : ''}>${escapeHtml(repo.name)}</option>`).join('')}
-                                </select>
-                                <small style="color: var(--text-light);">Репозиторий для загрузки playbook</small>
-                            </div>
-                            <div class="form-group">
-                                <label for="git_branch">Ветка Git</label>
-                                <input type="text" id="git_branch" class="form-control" value="${escapeHtml(tpl?.git_branch || 'main')}" placeholder="main">
-                            </div>
-                            <div class="form-group">
-                                <label for="arguments">Аргументы командной строки</label>
-                                <input type="text" id="arguments" class="form-control" value="${escapeHtml(tpl?.arguments || '')}" placeholder="--verbose --limit=host1">
-                                <small style="color: var(--text-light);">Дополнительные аргументы для ansible-playbook</small>
-                            </div>
-                            <div class="form-group">
-                                <label for="view_id">Группа (View)</label>
-                                <select id="view_id" class="form-control">
-                                    <option value="">Без группы</option>
-                                    ${(views||[]).sort((a,b)=>(a.position||0)-(b.position||0)).map(v => `<option value="${v.id}" ${tpl?.view_id === v.id ? 'selected' : ''}>${escapeHtml(v.title)}</option>`).join('')}
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <label>
+                            <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+                                <label style="display:flex; align-items:center; gap:8px; font-size:13px; cursor:pointer;">
                                     <input type="checkbox" id="allow_override_args_in_task" ${tpl?.allow_override_args_in_task ? 'checked' : ''}>
-                                    Разрешить переопределение аргументов при запуске
+                                    Переопределять CLI аргументы
+                                </label>
+                                <label style="display:flex; align-items:center; gap:8px; font-size:13px; cursor:pointer;">
+                                    <input type="checkbox" id="allow_override_branch_in_task" ${tpl?.allow_override_branch_in_task ? 'checked' : ''}>
+                                    Переопределять ветку Git
+                                </label>
+                                <label style="display:flex; align-items:center; gap:8px; font-size:13px; cursor:pointer;">
+                                    <input type="checkbox" id="allow_inventory_in_task" ${tpl?.allow_inventory_in_task ? 'checked' : ''}>
+                                    Менять инвентарь при запуске
+                                </label>
+                                <label style="display:flex; align-items:center; gap:8px; font-size:13px; cursor:pointer;">
+                                    <input type="checkbox" id="allow_parallel_tasks" ${tpl?.allow_parallel_tasks ? 'checked' : ''}>
+                                    Разрешить параллельные запуски
+                                </label>
+                                <label style="display:flex; align-items:center; gap:8px; font-size:13px; cursor:pointer;">
+                                    <input type="checkbox" id="suppress_success_alerts" ${tpl?.suppress_success_alerts ? 'checked' : ''}>
+                                    Не отправлять уведомления при успехе
+                                </label>
+                                <label style="display:flex; align-items:center; gap:8px; font-size:13px; cursor:pointer;">
+                                    <input type="checkbox" id="autorun" ${tpl?.autorun ? 'checked' : ''}>
+                                    Авто-запуск при успешной сборке
                                 </label>
                             </div>
-                            <div class="modal-footer" style="margin-top: 20px;">
+
+                            <div class="modal-footer" style="margin-top:20px;">
                                 <button type="button" class="btn" onclick="closeTemplateModal()">Отмена</button>
                                 <button type="submit" class="btn btn-primary">${isEdit ? 'Сохранить' : 'Создать'}</button>
                             </div>
@@ -621,21 +713,49 @@
             if (modal) modal.remove();
         }
 
+        function syncPlaybookInput() {
+            const sel = document.getElementById('playbook-select');
+            if (sel && sel.value) {
+                const pb = document.getElementById('playbook');
+                if (pb) pb.value = sel.value;
+            }
+        }
+
+        function onAppChange() {
+            const app = document.getElementById('tpl-app');
+            if (!app) return;
+            const playbook = document.getElementById('playbook');
+            if (playbook && !playbook.value) {
+                if (app.value === 'terraform' || app.value === 'tofu') playbook.placeholder = 'main.tf (путь к директории)';
+                else if (app.value === 'bash') playbook.placeholder = 'script.sh';
+                else playbook.placeholder = 'site.yml';
+            }
+        }
+
         function saveTemplate(id) {
-            const viewIdVal = $('#view_id') && $('#view_id').value ? parseInt($('#view_id').value) : null;
+            const viewIdVal = document.getElementById('view_id') && document.getElementById('view_id').value
+                ? parseInt(document.getElementById('view_id').value) : null;
+            const buildTplId = document.getElementById('build_template_id') && document.getElementById('build_template_id').value
+                ? parseInt(document.getElementById('build_template_id').value) : null;
             const data = {
-                name: $('#name').value.trim(),
-                playbook: $('#playbook').value.trim(),
-                description: $('#description').value.trim() || null,
-                inventory_id: $('#inventory_id').value ? parseInt($('#inventory_id').value) : null,
-                environment_id: $('#environment_id').value ? parseInt($('#environment_id').value) : null,
-                repository_id: $('#repository_id').value ? parseInt($('#repository_id').value) : null,
-                git_branch: $('#git_branch').value.trim() || 'main',
-                arguments: $('#arguments').value.trim() || null,
-                allow_override_args_in_task: $('#allow_override_args_in_task').checked,
+                name: document.getElementById('name').value.trim(),
+                playbook: document.getElementById('playbook').value.trim(),
+                description: document.getElementById('description').value.trim() || '',
+                inventory_id: document.getElementById('inventory_id').value ? parseInt(document.getElementById('inventory_id').value) : null,
+                environment_id: document.getElementById('environment_id').value ? parseInt(document.getElementById('environment_id').value) : null,
+                repository_id: document.getElementById('repository_id').value ? parseInt(document.getElementById('repository_id').value) : null,
+                git_branch: document.getElementById('git_branch').value.trim() || 'main',
+                arguments: document.getElementById('arguments').value.trim() || null,
+                app: document.getElementById('tpl-app').value,
+                type: document.getElementById('tpl-type').value,
                 view_id: viewIdVal,
-                type: 'ansible',
-                app: 'ansible'
+                build_template_id: buildTplId,
+                allow_override_args_in_task: document.getElementById('allow_override_args_in_task').checked,
+                allow_override_branch_in_task: document.getElementById('allow_override_branch_in_task').checked,
+                allow_inventory_in_task: document.getElementById('allow_inventory_in_task').checked,
+                allow_parallel_tasks: document.getElementById('allow_parallel_tasks').checked,
+                suppress_success_alerts: document.getElementById('suppress_success_alerts').checked,
+                autorun: document.getElementById('autorun').checked,
             };
 
             if (!data.name) {
@@ -643,11 +763,7 @@
                 return;
             }
             if (!data.playbook) {
-                ui.showAlert('Выберите playbook', 'warning');
-                return;
-            }
-            if (!data.inventory_id) {
-                ui.showAlert('Выберите инвентарь', 'warning');
+                ui.showAlert('Введите путь к playbook / скрипту', 'warning');
                 return;
             }
 
@@ -674,9 +790,23 @@
                 });
         }
 
+        function copyTemplate(id) {
+            api.getTemplate(projectId, id).then(tpl => {
+                const copy = Object.assign({}, tpl);
+                delete copy.id;
+                delete copy.created;
+                copy.name = tpl.name + ' (копия)';
+                return api.createTemplate(projectId, copy);
+            }).then(() => {
+                ui.showAlert('Шаблон скопирован', 'success');
+                loadTemplates();
+            }).catch(err => ui.showAlert('Ошибка: ' + err.message, 'danger'));
+        }
+
         window.editTemplate = editTemplate;
         window.deleteTemplate = deleteTemplate;
         window.runTemplate = runTemplate;
+        window.copyTemplate = copyTemplate;
     </script>
 </body>
 </html>

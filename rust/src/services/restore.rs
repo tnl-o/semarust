@@ -363,6 +363,14 @@ impl RestoreEntryAsync for BackupTemplate {
             created: chrono::Utc::now(),
             arguments: self.arguments.clone(),
             vault_key_id: None,
+            view_id: None,
+            build_template_id: None,
+            autorun: false,
+            allow_override_args_in_task: false,
+            allow_override_branch_in_task: false,
+            allow_inventory_in_task: false,
+            allow_parallel_tasks: false,
+            suppress_success_alerts: false,
         };
 
         let new_tpl = store.create_template(tpl).await?;
