@@ -32,6 +32,7 @@ pub fn api_routes() -> Router<Arc<AppState>> {
 
         // Пользователи
         .route("/api/users", get(handlers::get_users))
+        .route("/api/users", post(handlers::create_user))
         .route("/api/users/{id}", get(handlers::get_user))
         .route("/api/users/{id}", put(handlers::update_user))
         .route("/api/users/{id}", delete(handlers::delete_user))

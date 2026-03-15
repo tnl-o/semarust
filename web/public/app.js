@@ -267,6 +267,10 @@ const api = {
         return this.delete('/project/' + projectId + '/repositories/' + id);
     },
 
+    getRepositoryBranches(projectId, id) {
+        return this.get('/project/' + projectId + '/repositories/' + id + '/branches');
+    },
+
     // Keys
     getKeys(projectId) {
         return this.get('/project/' + projectId + '/keys');
