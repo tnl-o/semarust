@@ -267,7 +267,8 @@
                         return;
                     }
 
-                    logContainer.innerHTML = output.map(line => {
+                    logContainer.innerHTML = output.map(item => {
+                        const line = typeof item === 'string' ? item : (item.output || '');
                         const className = getLogClass(line);
                         return `<div class="log-line ${className}">${escapeHtml(line)}</div>`;
                     }).join('');
@@ -292,7 +293,8 @@
         function downloadLog() {
             api.request('/project/' + projectId + '/tasks/' + taskId + '/output')
                 .then(output => {
-                    const blob = new Blob([output.join('\n')], { type: 'text/plain' });
+                    const lines = output.map(item => typeof item === 'string' ? item : (item.output || ''));
+                    const blob = new Blob([lines.join('\n')], { type: 'text/plain' });
                     const url = URL.createObjectURL(blob);
                     const a = document.createElement('a');
                     a.href = url;
