@@ -203,6 +203,11 @@ pub fn api_routes() -> Router<Arc<AppState>> {
         .route("/api/project/{project_id}/secret_storages/{id}", get(secret_storages::get_secret_storage))
         .route("/api/project/{project_id}/secret_storages/{id}", put(secret_storages::update_secret_storage))
         .route("/api/project/{project_id}/secret_storages/{id}", delete(secret_storages::delete_secret_storage))
+        // Secret Storages — дополнительные endpoints (B-BE-06/07)
+        .route("/api/project/{project_id}/secret_storages/{id}/sync", post(secret_storages::sync_secret_storage))
+        .route("/api/project/{project_id}/secret_storages/{id}/refs", get(secret_storages::get_secret_storage_refs))
+        .route("/api/projects/{project_id}/secret_storages/{id}/sync", post(secret_storages::sync_secret_storage))
+        .route("/api/projects/{project_id}/secret_storages/{id}/refs", get(secret_storages::get_secret_storage_refs))
 
         // Пользователи проекта (Project Users)
         .route("/api/projects/{project_id}/users", get(project_users::get_users))
