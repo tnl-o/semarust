@@ -328,22 +328,34 @@
                             <tr>
                                 <th>Название</th>
                                 <th>Идентификатор</th>
-                                <th>Права (bitmask)</th>
+                                <th>Права</th>
                                 <th style="width:140px;">Действия</th>
                             </tr>
                         </thead>
                         <tbody>
-                            ${projectRoles.map(r => `
+                            ${projectRoles.map(r => {
+                                const perms = r.permissions || 0;
+                                const permLabels = [];
+                                if (perms & 1) permLabels.push('▶ Запуск');
+                                if (perms & 2) permLabels.push('✏️ Ресурсы');
+                                if (perms & 4) permLabels.push('⚙️ Проект');
+                                if (perms & 8) permLabels.push('👥 Users');
+                                if (perms & 16) permLabels.push('🔑 Роли');
+                                if (perms & 32) permLabels.push('📋 Audit');
+                                if (perms & 64) permLabels.push('🔗 Интеграции');
+                                if (perms & 128) permLabels.push('🛡️ Секреты');
+                                return `
                                 <tr>
                                     <td><strong>${escapeHtml(r.name || '')}</strong></td>
                                     <td><code>${escapeHtml(r.slug || '')}</code></td>
-                                    <td><span class="badge">${typeof r.permissions === 'number' ? r.permissions : '—'}</span></td>
+                                    <td>${permLabels.join(', ') || '—'}</td>
                                     <td>
                                         <button class="btn btn-sm" onclick="openRoleModal(${r.id})">✏️</button>
                                         <button class="btn btn-danger btn-sm" onclick="deleteRole(${r.id})">🗑️</button>
                                     </td>
                                 </tr>
-                            `).join('')}
+                                `;
+                            }).join('')}
                         </tbody>
                     </table>
                 </div>
@@ -375,26 +387,42 @@
                             <p class="form-hint">Используется во внутренних правилах доступа.</p>
                         </div>
                         <div class="form-group">
-                            <label>Права (permissions)</label>
-                            <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:13px;">
+                            <label>Права (permissions bitmask)</label>
+                            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:13px;">
                                 <label style="display:flex;align-items:center;gap:6px;cursor:pointer;">
-                                    <input type="checkbox" id="perm-run" ${role?.permissions_run_tasks ? 'checked' : ''}>
-                                    Запускать задачи
+                                    <input type="checkbox" id="perm-run_tasks" ${role?.permissions & 1 ? 'checked' : ''}>
+                                    ▶ Запуск задач
                                 </label>
                                 <label style="display:flex;align-items:center;gap:6px;cursor:pointer;">
-                                    <input type="checkbox" id="perm-manage-project" ${role?.permissions_manage_project ? 'checked' : ''}>
-                                    Управлять проектом
+                                    <input type="checkbox" id="perm-update_resources" ${role?.permissions & 2 ? 'checked' : ''}>
+                                    ✏️ Обновление ресурсов
                                 </label>
                                 <label style="display:flex;align-items:center;gap:6px;cursor:pointer;">
-                                    <input type="checkbox" id="perm-manage-resources" ${role?.permissions_manage_resources ? 'checked' : ''}>
-                                    Управлять ресурсами
+                                    <input type="checkbox" id="perm-manage_project" ${role?.permissions & 4 ? 'checked' : ''}>
+                                    ⚙️ Управление проектом
                                 </label>
                                 <label style="display:flex;align-items:center;gap:6px;cursor:pointer;">
-                                    <input type="checkbox" id="perm-manage-users" ${role?.permissions_manage_users ? 'checked' : ''}>
-                                    Управлять пользователями
+                                    <input type="checkbox" id="perm-manage_users" ${role?.permissions & 8 ? 'checked' : ''}>
+                                    👥 Управление пользователями
+                                </label>
+                                <label style="display:flex;align-items:center;gap:6px;cursor:pointer;">
+                                    <input type="checkbox" id="perm-manage_roles" ${role?.permissions & 16 ? 'checked' : ''}>
+                                    🔑 Управление ролями
+                                </label>
+                                <label style="display:flex;align-items:center;gap:6px;cursor:pointer;">
+                                    <input type="checkbox" id="perm-view_audit_log" ${role?.permissions & 32 ? 'checked' : ''}>
+                                    📋 Просмотр audit log
+                                </label>
+                                <label style="display:flex;align-items:center;gap:6px;cursor:pointer;">
+                                    <input type="checkbox" id="perm-manage_integrations" ${role?.permissions & 64 ? 'checked' : ''}>
+                                    🔗 Управление интеграциями
+                                </label>
+                                <label style="display:flex;align-items:center;gap:6px;cursor:pointer;">
+                                    <input type="checkbox" id="perm-manage_secret_storages" ${role?.permissions & 128 ? 'checked' : ''}>
+                                    🛡️ Управление хранилищами секретов
                                 </label>
                             </div>
-                            <p class="form-hint">Физически сохраняются как битовая маска, но здесь представлены как флажки.</p>
+                            <p class="form-hint">8 бит прав: run_tasks, update_resources, manage_project, manage_users, manage_roles, view_audit_log, manage_integrations, manage_secret_storages</p>
                         </div>
                         <div class="modal-footer">
                             <button type="button" class="btn" onclick="closeRoleModal()">Отмена</button>
@@ -422,10 +450,14 @@
 
         function computePermissionsFromCheckboxes() {
             let mask = 0;
-            if (document.getElementById('perm-run')?.checked) mask |= 1;
-            if (document.getElementById('perm-manage-project')?.checked) mask |= 2;
-            if (document.getElementById('perm-manage-resources')?.checked) mask |= 4;
-            if (document.getElementById('perm-manage-users')?.checked) mask |= 8;
+            if (document.getElementById('perm-run_tasks')?.checked) mask |= 1;
+            if (document.getElementById('perm-update_resources')?.checked) mask |= 2;
+            if (document.getElementById('perm-manage_project')?.checked) mask |= 4;
+            if (document.getElementById('perm-manage_users')?.checked) mask |= 8;
+            if (document.getElementById('perm-manage_roles')?.checked) mask |= 16;
+            if (document.getElementById('perm-view_audit_log')?.checked) mask |= 32;
+            if (document.getElementById('perm-manage_integrations')?.checked) mask |= 64;
+            if (document.getElementById('perm-manage_secret_storages')?.checked) mask |= 128;
             return mask;
         }
 
