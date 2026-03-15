@@ -115,6 +115,7 @@ impl RestoreEntryAsync for BackupEnvironment {
             name: self.name.clone(),
             json: self.json.clone(),
             secret_storage_id: None,
+            secret_storage_key_prefix: None,
             secrets: None,
             created: None,
         };
