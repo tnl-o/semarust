@@ -64,6 +64,7 @@ pub fn api_routes() -> Router<Arc<AppState>> {
         .route("/api/project/{project_id}/templates/{id}/stop_all_tasks", post(handlers::stop_all_template_tasks))
 
         // Задачи
+        .route("/api/tasks", get(handlers::get_all_tasks))
         .route("/api/projects/{project_id}/tasks", get(handlers::get_tasks))
         .route("/api/projects/{project_id}/tasks", post(handlers::create_task))
         .route("/api/projects/{project_id}/tasks/{id}", get(handlers::get_task))
