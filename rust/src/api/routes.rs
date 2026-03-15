@@ -5,7 +5,7 @@ use std::sync::Arc;
 use crate::api::state::AppState;
 use crate::api::handlers;
 use crate::api::websocket::websocket_handler;
-use crate::api::handlers::projects::{schedules, views, integration as project_integration, integration_alias, secret_storages, users as project_users, tasks, notifications, backup_restore, refs, invites};
+use crate::api::handlers::projects::{schedules, views, integration as project_integration, integration_alias, secret_storages, users as project_users, tasks, notifications, backup_restore, refs, invites, roles as project_roles};
 use crate::api::{events, apps, options, runners, cache, system_info, user, graphql};
 use tower_http::services::{ServeDir, ServeFile};
 
@@ -265,7 +265,10 @@ pub fn api_routes() -> Router<Arc<AppState>> {
         // Приложения (Apps)
         .route("/api/apps", get(apps::get_apps))
         .route("/api/apps/{id}", get(apps::get_app))
+        .route("/api/apps/{id}", put(apps::update_app))
         .route("/api/apps/{id}", delete(apps::delete_app))
+        // Apps - дополнительные endpoints (B-BE-04/05)
+        .route("/api/apps/{id}/active", post(apps::toggle_app_active))
 
         // Опции (Options) - admin only
         .route("/api/options", get(options::get_options))
@@ -279,9 +282,18 @@ pub fn api_routes() -> Router<Arc<AppState>> {
         .route("/api/runners", post(runners::add_global_runner))
         .route("/api/runners/{id}", put(runners::update_runner))
         .route("/api/runners/{id}", delete(runners::delete_runner))
+        // Раннеры - дополнительные endpoints (B-BE-01/02/03)
+        .route("/api/runners/{id}/active", post(runners::toggle_runner_active))
+        .route("/api/runners/{id}/cache", delete(runners::clear_runner_cache))
+        .route("/api/project/{project_id}/runner_tags", get(runners::get_project_runner_tags))
+        .route("/api/internal/runners", post(runners::register_runner))
+        .route("/api/internal/runners/{id}", post(runners::runner_heartbeat))
 
         // Кэш (Cache) - admin only
         .route("/api/cache", delete(cache::clear_cache))
+
+        // Кэш проекта (B-BE-24)
+        .route("/api/project/{id}/cache", delete(cache::clear_project_cache))
 
         // Системная информация (System Info)
         .route("/api/info", get(system_info::get_system_info))
@@ -301,6 +313,34 @@ pub fn api_routes() -> Router<Arc<AppState>> {
         .route("/api/user/tokens", get(user::get_api_tokens))
         .route("/api/user/tokens", post(user::create_api_token))
         .route("/api/user/tokens/{id}", delete(user::delete_api_token))
+
+        // Все задачи (Global Tasks List) (B-BE-15)
+        .route("/api/tasks", get(tasks::get_all_tasks))
+
+        // Шаблоны - дополнительные endpoints (B-BE-17/18)
+        .route("/api/project/{project_id}/templates/{id}/stop_all_tasks", post(handlers::projects::templates::stop_all_template_tasks))
+        .route("/api/project/{project_id}/templates/{id}/description", put(handlers::projects::templates::update_template_description))
+        .route("/api/projects/{project_id}/templates/{id}/stop_all_tasks", post(handlers::projects::templates::stop_all_template_tasks))
+        .route("/api/projects/{project_id}/templates/{id}/description", put(handlers::projects::templates::update_template_description))
+
+        // Кастомные роли проекта (B-BE-09/10/11)
+        .route("/api/project/{project_id}/roles", get(project_roles::get_project_roles))
+        .route("/api/project/{project_id}/roles", post(project_roles::add_project_role))
+        .route("/api/project/{project_id}/roles/all", get(project_roles::get_all_roles))
+        .route("/api/project/{project_id}/roles/{role_id}", put(project_roles::update_project_role))
+        .route("/api/project/{project_id}/roles/{role_id}", delete(project_roles::delete_project_role))
+
+        // Integration Matchers CRUD (B-BE-20)
+        .route("/api/project/{project_id}/integrations/{integration_id}/matchers", get(project_integration::get_integration_matchers))
+        .route("/api/project/{project_id}/integrations/{integration_id}/matchers", post(project_integration::add_integration_matcher))
+        .route("/api/project/{project_id}/integrations/{integration_id}/matchers/{matcher_id}", put(project_integration::update_integration_matcher))
+        .route("/api/project/{project_id}/integrations/{integration_id}/matchers/{matcher_id}", delete(project_integration::delete_integration_matcher))
+
+        // Integration Extract Values CRUD (B-BE-21)
+        .route("/api/project/{project_id}/integrations/{integration_id}/extractvalues", get(project_integration::get_integration_extract_values))
+        .route("/api/project/{project_id}/integrations/{integration_id}/extractvalues", post(project_integration::add_integration_extract_value))
+        .route("/api/project/{project_id}/integrations/{integration_id}/extractvalues/{value_id}", put(project_integration::update_integration_extract_value))
+        .route("/api/project/{project_id}/integrations/{integration_id}/extractvalues/{value_id}", delete(project_integration::delete_integration_extract_value))
 }
 
 /// Создаёт маршруты для статических файлов

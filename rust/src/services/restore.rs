@@ -115,6 +115,7 @@ impl RestoreEntryAsync for BackupEnvironment {
             name: self.name.clone(),
             json: self.json.clone(),
             secret_storage_id: None,
+            secret_storage_key_prefix: None,
             secrets: None,
             created: None,
         };
@@ -235,6 +236,9 @@ impl RestoreEntryAsync for BackupAccessKey {
             access_key_access_key: None,
             access_key_secret_key: None,
             secret_storage_id: None,
+            source_storage_type: None,
+            source_storage_id: None,
+            source_key: None,
             environment_id: None,
             created: None,
         };

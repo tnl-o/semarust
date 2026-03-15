@@ -11,6 +11,9 @@ pub struct Role {
     pub slug: String,
     pub name: String,
     pub description: Option<String>,
+    /// Битмаска разрешений
+    #[serde(default)]
+    pub permissions: i32,
 }
 
 impl Role {
@@ -22,6 +25,7 @@ impl Role {
             slug,
             name,
             description: None,
+            permissions: 0,
         }
     }
 }

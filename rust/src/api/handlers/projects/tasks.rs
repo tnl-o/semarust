@@ -338,6 +338,16 @@ async fn execute_task_background(state: Arc<AppState>, task: Task) {
     }
 }
 
+/// Возвращает все активные задачи по всем проектам
+///
+/// GET /api/tasks
+pub async fn get_all_tasks(
+    State(_state): State<Arc<AppState>>,
+) -> std::result::Result<Json<Vec<TaskWithTpl>>, (StatusCode, Json<ErrorResponse>)> {
+    // Stub: в реальной реализации нужен запрос без фильтра по project_id
+    Ok(Json(vec![]))
+}
+
 /// Payload для создания задачи
 #[derive(Debug, Deserialize)]
 pub struct CreateTaskPayload {

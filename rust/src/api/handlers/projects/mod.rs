@@ -19,6 +19,7 @@ pub mod backup_restore;
 pub mod refs;
 pub mod invites;
 pub mod notifications;
+pub mod roles;
 
 pub use keys::*;
 pub use schedules::*;

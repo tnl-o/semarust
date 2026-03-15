@@ -221,6 +221,18 @@ pub struct AccessKey {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub secret_storage_id: Option<i32>,
 
+    /// Тип источника хранилища (vault, db и т.д.)
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub source_storage_type: Option<String>,
+
+    /// ID источника хранилища
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub source_storage_id: Option<i32>,
+
+    /// Ключ в источнике хранилища
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub source_key: Option<String>,
+
     /// Владелец ключа
     #[serde(skip_serializing_if = "Option::is_none")]
     pub owner: Option<AccessKeyOwner>,
@@ -250,6 +262,9 @@ impl AccessKey {
             access_key_access_key: None,
             access_key_secret_key: None,
             secret_storage_id: None,
+            source_storage_type: None,
+            source_storage_id: None,
+            source_key: None,
             owner: None,
             environment_id: None,
             created: None,
@@ -271,6 +286,9 @@ impl AccessKey {
             access_key_access_key: None,
             access_key_secret_key: None,
             secret_storage_id: None,
+            source_storage_type: None,
+            source_storage_id: None,
+            source_key: None,
             owner: None,
             environment_id: None,
             created: None,
@@ -292,6 +310,9 @@ impl AccessKey {
             access_key_access_key: None,
             access_key_secret_key: None,
             secret_storage_id: None,
+            source_storage_type: None,
+            source_storage_id: None,
+            source_key: None,
             owner: None,
             environment_id: None,
             created: None,

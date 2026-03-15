@@ -117,6 +117,26 @@ pub async fn get_task(
     Ok(Json(task))
 }
 
+/// Получить последние задачи проекта
+///
+/// GET /api/project/:project_id/tasks/last
+pub async fn get_last_tasks(
+    State(state): State<Arc<AppState>>,
+    Path(project_id): Path<i32>,
+) -> Result<Json<Vec<TaskWithTpl>>, (StatusCode, Json<ErrorResponse>)> {
+    let tasks: Result<Vec<TaskWithTpl>, Error> = state.store
+        .get_tasks(project_id, None::<i32>)
+        .await;
+
+    let tasks = tasks.map_err(|e| (
+        StatusCode::INTERNAL_SERVER_ERROR,
+        Json(ErrorResponse::new(e.to_string()))
+    ))?;
+
+    let limited: Vec<TaskWithTpl> = tasks.into_iter().take(20).collect();
+    Ok(Json(limited))
+}
+
 /// Удалить задачу
 ///
 /// DELETE /api/projects/:project_id/tasks/:task_id
