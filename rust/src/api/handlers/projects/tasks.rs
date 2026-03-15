@@ -338,6 +338,44 @@ async fn execute_task_background(state: Arc<AppState>, task: Task) {
     }
 }
 
+/// Возвращает raw-вывод задачи (текст без форматирования)
+///
+/// GET /api/project/{project_id}/tasks/{id}/raw_output
+pub async fn get_task_raw_output(
+    State(state): State<Arc<AppState>>,
+    Path((project_id, task_id)): Path<(i32, i32)>,
+) -> std::result::Result<String, (StatusCode, Json<ErrorResponse>)> {
+    let outputs = state.store.get_task_outputs(task_id)
+        .await
+        .map_err(|e| (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(ErrorResponse::new(e.to_string()))
+        ))?;
+
+    // Объединяем все строки вывода в plain text
+    let raw = outputs.iter()
+        .map(|o| o.output.as_str())
+        .collect::<Vec<_>>()
+        .join("\n");
+
+    // Убираем ANSI-коды для raw формата
+    let clean = crate::utils::ansi::clear_from_ansi_codes(&raw);
+    let _ = project_id; // suppress unused warning
+    Ok(clean)
+}
+
+/// Возвращает стадии (этапы) задачи
+///
+/// GET /api/project/{project_id}/tasks/{id}/stages
+pub async fn get_task_stages(
+    State(_state): State<Arc<AppState>>,
+    Path((_project_id, _task_id)): Path<(i32, i32)>,
+) -> std::result::Result<Json<serde_json::Value>, (StatusCode, Json<ErrorResponse>)> {
+    // Stages — это более высокоуровневое представление стадий выполнения
+    // В базовой реализации возвращаем пустой список
+    Ok(Json(serde_json::json!([])))
+}
+
 /// Возвращает все активные задачи по всем проектам
 ///
 /// GET /api/tasks

@@ -5,7 +5,7 @@ use std::sync::Arc;
 use crate::api::state::AppState;
 use crate::api::handlers;
 use crate::api::websocket::websocket_handler;
-use crate::api::handlers::projects::{schedules, views, integration as project_integration, integration_alias, secret_storages, users as project_users, tasks, notifications, backup_restore, refs, invites, roles};
+use crate::api::handlers::projects::{schedules, views, integration as project_integration, integration_alias, secret_storages, users as project_users, tasks, templates, repository, notifications, backup_restore, refs, invites, roles};
 use crate::api::{events, apps, options, runners, cache, system_info, user, graphql};
 use tower_http::services::{ServeDir, ServeFile};
 
@@ -348,6 +348,35 @@ pub fn api_routes() -> Router<Arc<AppState>> {
         .route("/api/project/{project_id}/integrations/{integration_id}/extractvalues", post(project_integration::add_integration_extract_value))
         .route("/api/project/{project_id}/integrations/{integration_id}/extractvalues/{value_id}", put(project_integration::update_integration_extract_value))
         .route("/api/project/{project_id}/integrations/{integration_id}/extractvalues/{value_id}", delete(project_integration::delete_integration_extract_value))
+        // Aliases for Go-compat: /values = extractvalues
+        .route("/api/project/{project_id}/integrations/{integration_id}/values", get(project_integration::get_integration_extract_values))
+        .route("/api/project/{project_id}/integrations/{integration_id}/values", post(project_integration::add_integration_extract_value))
+        .route("/api/project/{project_id}/integrations/{integration_id}/values/{value_id}", put(project_integration::update_integration_extract_value))
+        .route("/api/project/{project_id}/integrations/{integration_id}/values/{value_id}", delete(project_integration::delete_integration_extract_value))
+
+        // Расписание — toggle active
+        .route("/api/project/{project_id}/schedules/{id}/active", put(schedules::toggle_schedule_active))
+        .route("/api/projects/{project_id}/schedules/{id}/active", put(schedules::toggle_schedule_active))
+
+        // Templates — дополнительные endpoints
+        .route("/api/project/{project_id}/templates/{id}/schedules", get(templates::get_template_schedules))
+        .route("/api/project/{project_id}/templates/{id}/tasks", get(templates::get_template_tasks))
+        .route("/api/project/{project_id}/templates/{id}/tasks/last", get(templates::get_template_last_task))
+        .route("/api/project/{project_id}/templates/{id}/stats", get(templates::get_template_stats))
+        .route("/api/projects/{project_id}/templates/{id}/schedules", get(templates::get_template_schedules))
+        .route("/api/projects/{project_id}/templates/{id}/tasks", get(templates::get_template_tasks))
+        .route("/api/projects/{project_id}/templates/{id}/tasks/last", get(templates::get_template_last_task))
+        .route("/api/projects/{project_id}/templates/{id}/stats", get(templates::get_template_stats))
+
+        // Repository — branches (refs covered by refs.rs)
+        .route("/api/project/{project_id}/repositories/{id}/branches", get(repository::get_repository_branches))
+        .route("/api/projects/{project_id}/repositories/{id}/branches", get(repository::get_repository_branches))
+
+        // Tasks — raw output + stages
+        .route("/api/project/{project_id}/tasks/{id}/raw_output", get(tasks::get_task_raw_output))
+        .route("/api/project/{project_id}/tasks/{id}/stages", get(tasks::get_task_stages))
+        .route("/api/projects/{project_id}/tasks/{id}/raw_output", get(tasks::get_task_raw_output))
+        .route("/api/projects/{project_id}/tasks/{id}/stages", get(tasks::get_task_stages))
 }
 
 /// Создаёт маршруты для статических файлов

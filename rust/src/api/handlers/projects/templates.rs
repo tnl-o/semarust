@@ -181,6 +181,92 @@ pub async fn stop_all_template_tasks(
     Ok(StatusCode::OK)
 }
 
+/// Получает расписания шаблона
+///
+/// GET /api/project/{project_id}/templates/{id}/schedules
+pub async fn get_template_schedules(
+    State(state): State<Arc<AppState>>,
+    Path((project_id, template_id)): Path<(i32, i32)>,
+) -> std::result::Result<Json<serde_json::Value>, (StatusCode, Json<ErrorResponse>)> {
+    use crate::db::store::ScheduleManager;
+
+    let schedules = state.store.get_schedules(project_id)
+        .await
+        .map_err(|e| (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(ErrorResponse::new(e.to_string()))
+        ))?;
+
+    // Фильтруем расписания по template_id
+    let template_schedules: Vec<_> = schedules.into_iter()
+        .filter(|s| s.template_id == template_id)
+        .collect();
+
+    Ok(Json(serde_json::to_value(template_schedules).unwrap_or_default()))
+}
+
+/// Получает задачи шаблона
+///
+/// GET /api/project/{project_id}/templates/{id}/tasks
+pub async fn get_template_tasks(
+    State(state): State<Arc<AppState>>,
+    Path((project_id, template_id)): Path<(i32, i32)>,
+) -> std::result::Result<Json<serde_json::Value>, (StatusCode, Json<ErrorResponse>)> {
+    let tasks = state.store.get_tasks(project_id, Some(template_id))
+        .await
+        .map_err(|e| (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(ErrorResponse::new(e.to_string()))
+        ))?;
+
+    Ok(Json(serde_json::to_value(tasks).unwrap_or_default()))
+}
+
+/// Получает последнюю задачу шаблона
+///
+/// GET /api/project/{project_id}/templates/{id}/tasks/last
+pub async fn get_template_last_task(
+    State(state): State<Arc<AppState>>,
+    Path((project_id, template_id)): Path<(i32, i32)>,
+) -> std::result::Result<Json<serde_json::Value>, (StatusCode, Json<ErrorResponse>)> {
+    let tasks = state.store.get_tasks(project_id, Some(template_id))
+        .await
+        .map_err(|e| (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(ErrorResponse::new(e.to_string()))
+        ))?;
+
+    let last = tasks.into_iter().next();
+    Ok(Json(serde_json::to_value(last).unwrap_or(serde_json::Value::Null)))
+}
+
+/// Возвращает статистику шаблона
+///
+/// GET /api/project/{project_id}/templates/{id}/stats
+pub async fn get_template_stats(
+    State(state): State<Arc<AppState>>,
+    Path((project_id, template_id)): Path<(i32, i32)>,
+) -> std::result::Result<Json<serde_json::Value>, (StatusCode, Json<ErrorResponse>)> {
+    let tasks = state.store.get_tasks(project_id, Some(template_id))
+        .await
+        .map_err(|e| (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(ErrorResponse::new(e.to_string()))
+        ))?;
+
+    let total = tasks.len();
+    let success = tasks.iter().filter(|t| format!("{:?}", t.task.status) == "Success").count();
+    let failed = tasks.iter().filter(|t| format!("{:?}", t.task.status) == "Error").count();
+
+    Ok(Json(serde_json::json!({
+        "template_id": template_id,
+        "project_id": project_id,
+        "total_tasks": total,
+        "success_count": success,
+        "failed_count": failed,
+    })))
+}
+
 // ============================================================================
 // Tests
 // ============================================================================
