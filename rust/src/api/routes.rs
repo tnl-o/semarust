@@ -51,6 +51,12 @@ pub fn api_routes() -> Router<Arc<AppState>> {
         .route("/api/project/{id}", put(handlers::update_project))
         .route("/api/project/{id}", delete(handlers::delete_project))
 
+        // Leave project + Project stats
+        .route("/api/project/{project_id}/me", delete(handlers::projects::project::leave_project))
+        .route("/api/projects/{project_id}/me", delete(handlers::projects::project::leave_project))
+        .route("/api/project/{project_id}/stats", get(handlers::projects::project::get_project_stats))
+        .route("/api/projects/{project_id}/stats", get(handlers::projects::project::get_project_stats))
+
         // Шаблоны
         .route("/api/projects/{project_id}/templates", get(handlers::get_templates))
         .route("/api/projects/{project_id}/templates", post(handlers::create_template))
