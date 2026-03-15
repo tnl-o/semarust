@@ -57,20 +57,6 @@ impl RolePermissions {
         mask
     }
 
-    /// Разрешения по умолчанию (только запуск задач)
-    pub fn default() -> Self {
-        Self {
-            run_tasks: true,
-            update_resources: false,
-            manage_project: false,
-            manage_users: false,
-            manage_roles: false,
-            view_audit_log: false,
-            manage_integrations: false,
-            manage_secret_storages: false,
-        }
-    }
-
     /// Полные права (admin)
     pub fn admin() -> Self {
         Self {
@@ -88,7 +74,16 @@ impl RolePermissions {
 
 impl Default for RolePermissions {
     fn default() -> Self {
-        Self::default()
+        Self {
+            run_tasks: true,
+            update_resources: false,
+            manage_project: false,
+            manage_users: false,
+            manage_roles: false,
+            view_audit_log: false,
+            manage_integrations: false,
+            manage_secret_storages: false,
+        }
     }
 }
 
