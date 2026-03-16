@@ -38,6 +38,12 @@ ADD COLUMN IF NOT EXISTS alert_chat VARCHAR(255);
 ALTER TABLE inventory 
 ADD COLUMN IF NOT EXISTS runner_tag VARCHAR(255);
 
+-- Добавляем missing колонки в таблицу repository
+ALTER TABLE repository 
+ADD COLUMN IF NOT EXISTS git_type VARCHAR(50) DEFAULT 'git';
+ALTER TABLE repository 
+ADD COLUMN IF NOT EXISTS git_path VARCHAR(255);
+
 -- Обновляем запись о миграции
 INSERT INTO migration (version, name) 
 VALUES (4, 'Add secret storage columns')
