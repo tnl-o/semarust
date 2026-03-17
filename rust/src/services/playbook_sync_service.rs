@@ -60,7 +60,7 @@ impl PlaybookSyncService {
         // 5. Читаем playbook файл
         // Путь к файлу берем из названия playbook или используем название как путь
         let playbook_file_path = determine_playbook_path(temp_dir.path(), &playbook.name);
-        
+
         let content = std::fs::read_to_string(&playbook_file_path).map_err(|e| {
             Error::NotFound(format!(
                 "Файл playbook не найден по пути {:?}: {}",
@@ -204,19 +204,7 @@ where
 }
 
 /// Определяет путь к файлу playbook
-///
-/// # Arguments
-/// * `repo_path` - Путь к корню репозитория
-/// * `playbook_name` - Название playbook
-///
-/// # Returns
-/// * `PathBuf` - Полный путь к файлу
 fn determine_playbook_path(repo_path: &Path, playbook_name: &str) -> PathBuf {
-    // Пробуем несколько вариантов:
-    // 1. playbook_name как полный путь (например, "playbooks/deploy.yml")
-    // 2. playbook_name с расширением .yml
-    // 3. playbook_name с расширением .yaml
-    
     let possible_paths = vec![
         repo_path.join(playbook_name),
         repo_path.join(format!("{}.yml", playbook_name)),
@@ -225,14 +213,12 @@ fn determine_playbook_path(repo_path: &Path, playbook_name: &str) -> PathBuf {
         repo_path.join("playbooks").join(format!("{}.yml", playbook_name)),
     ];
 
-    // Возвращаем первый существующий путь
     for path in &possible_paths {
         if path.exists() {
             return path.clone();
         }
     }
 
-    // Если ни один путь не найден, возвращаем первый вариант
     possible_paths[0].clone()
 }
 
@@ -244,23 +230,18 @@ mod tests {
     fn test_determine_playbook_path() {
         let temp_dir = TempDir::new().unwrap();
 
-        // Создаем тестовые файлы
         std::fs::write(temp_dir.path().join("deploy.yml"), "---").unwrap();
-        
-        // Создаем директорию playbooks и файл в ней
+
         let playbooks_dir = temp_dir.path().join("playbooks");
         std::fs::create_dir_all(&playbooks_dir).unwrap();
         std::fs::write(playbooks_dir.join("site.yaml"), "---").unwrap();
 
-        // Тест 1: Прямой путь
         let path = determine_playbook_path(temp_dir.path(), "deploy.yml");
         assert!(path.exists());
 
-        // Тест 2: Путь без расширения
         let path = determine_playbook_path(temp_dir.path(), "deploy");
         assert!(path.exists());
-        
-        // Тест 3: Путь в поддиректории
+
         let path = determine_playbook_path(temp_dir.path(), "playbooks/site.yaml");
         assert!(path.exists());
     }
