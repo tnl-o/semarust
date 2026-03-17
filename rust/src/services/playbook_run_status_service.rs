@@ -5,7 +5,7 @@
 
 use crate::db::store::*;
 use crate::error::Result;
-use crate::models::playbook_run_history::PlaybookRunStatus;
+use crate::models::playbook_run_history::{PlaybookRunStatus, PlaybookRunUpdate};
 use crate::services::task_logger::TaskStatus;
 use chrono::Utc;
 use tracing::info;
@@ -83,7 +83,21 @@ impl PlaybookRunStatusService {
     where
         S: PlaybookRunManager,
     {
-        // TODO: Реализовать обновление статистики
+        let update = PlaybookRunUpdate {
+            status: None,
+            start_time: None,
+            end_time: None,
+            duration_seconds: None,
+            hosts_total: Some(hosts_total),
+            hosts_changed: Some(hosts_changed),
+            hosts_unreachable: Some(hosts_unreachable),
+            hosts_failed: Some(hosts_failed),
+            output: None,
+            error_message: None,
+        };
+
+        store.update_playbook_run(run_id, project_id, update).await?;
+
         info!(
             "Playbook run {} statistics updated: total={}, changed={}, unreachable={}, failed={}",
             run_id, hosts_total, hosts_changed, hosts_unreachable, hosts_failed
