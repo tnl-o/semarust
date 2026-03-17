@@ -323,6 +323,10 @@ impl TaskManager for StoreWrapper {
     async fn update_task_status(&self, project_id: i32, task_id: i32, status: TaskStatus) -> Result<()> {
         self.inner.as_ref().as_ref().update_task_status(project_id, task_id, status).await
     }
+
+    async fn get_global_tasks(&self, status_filter: Option<Vec<String>>, limit: Option<i32>) -> Result<Vec<TaskWithTpl>> {
+        self.inner.as_ref().as_ref().get_global_tasks(status_filter, limit).await
+    }
 }
 
 #[async_trait]

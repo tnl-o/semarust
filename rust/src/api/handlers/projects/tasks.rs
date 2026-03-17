@@ -381,10 +381,16 @@ pub async fn get_task_stages(
 ///
 /// GET /api/tasks
 pub async fn get_all_tasks(
-    State(_state): State<Arc<AppState>>,
+    State(state): State<Arc<AppState>>,
 ) -> std::result::Result<Json<Vec<TaskWithTpl>>, (StatusCode, Json<ErrorResponse>)> {
-    // Stub: в реальной реализации нужен запрос без фильтра по project_id
-    Ok(Json(vec![]))
+    let tasks = state.store.get_global_tasks(None, Some(200))
+        .await
+        .map_err(|e| (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(ErrorResponse::new(e.to_string()))
+        ))?;
+
+    Ok(Json(tasks))
 }
 
 /// Payload для создания задачи
