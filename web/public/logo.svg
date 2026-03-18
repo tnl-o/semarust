@@ -1,1 +1,102 @@
-<svg id="Layer_1" data-name="Layer 1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 87.5 100"><defs><style>.cls-1{fill:#1697f6;}.cls-2{fill:#7bc6ff;}.cls-3{fill:#1867c0;}.cls-4{fill:#aeddff;}</style></defs><title>Semaphore</title><polyline class="cls-1" points="43.75 0 23.31 0 43.75 48.32"/><polygon class="cls-2" points="43.75 62.5 43.75 100 0 14.58 22.92 14.58 43.75 62.5"/><polyline class="cls-3" points="43.75 0 64.19 0 43.75 48.32"/><polygon class="cls-4" points="64.58 14.58 87.5 14.58 43.75 100 43.75 62.5 64.58 14.58"/></svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  <defs>
+    <!-- Metallic gear gradient: light upper-left to dark lower-right -->
+    <linearGradient id="metallic" x1="10%" y1="0%" x2="90%" y2="100%">
+      <stop offset="0%"   stop-color="#f4f4f4"/>
+      <stop offset="28%"  stop-color="#d8d8d8"/>
+      <stop offset="58%"  stop-color="#a8a8a8"/>
+      <stop offset="100%" stop-color="#565656"/>
+    </linearGradient>
+    <!-- Pole gradient: silver highlight in center -->
+    <linearGradient id="poleGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%"   stop-color="#b4b4b4"/>
+      <stop offset="42%"  stop-color="#f0f0f0"/>
+      <stop offset="100%" stop-color="#9a9a9a"/>
+    </linearGradient>
+    <!-- Ball radial gradient -->
+    <radialGradient id="ballGrad" cx="33%" cy="28%" r="65%">
+      <stop offset="0%"   stop-color="#f8f8f8"/>
+      <stop offset="100%" stop-color="#888888"/>
+    </radialGradient>
+    <!-- Gear drop shadow -->
+    <filter id="gearShadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="3" dy="5" stdDeviation="4" flood-color="#00000030"/>
+    </filter>
+    <!-- Flag drop shadow -->
+    <filter id="flagShadow" x="-10%" y="-25%" width="135%" height="160%">
+      <feDropShadow dx="2" dy="3" stdDeviation="3" flood-color="#00000045"/>
+    </filter>
+  </defs>
+
+  <!-- ═══ FLAG (drawn first — behind gear ring and star) ═══ -->
+  <!--
+      The flag waves from the top of the pole toward upper-right.
+      Top edge curves up, bottom edge sags slightly, right side tapers.
+  -->
+  <path fill="#cc1010" filter="url(#flagShadow)"
+    d="M99,52
+       C 118,43  147,29  169,36
+       C 160,51  167,67  159,73
+       C 138,67  116,62   99,67
+       Z"/>
+
+  <!-- ═══ STAR (5-pointed, centered lower in the gear hole) ═══ -->
+  <!--
+      Center (100, 118), outer R=22, inner r=9.
+      Points at: top, lower-right, upper-right, upper-left, lower-left
+  -->
+  <polygon fill="#cc1010"
+    points="100,96
+            105.3,110.7  120.9,111.2
+            108.6,120.8  112.9,135.8
+            100,127
+             87.1,135.8   91.4,120.8
+             79.1,111.2   94.7,110.7"/>
+
+  <!-- ═══ GEAR RING (evenodd = inner circle becomes transparent hole) ═══ -->
+  <!--
+      12 teeth.  Outer tip r=75, inner rim r=62, hole r=48.
+      Each tooth spans 12° at the tip; gaps span 18° on the inner rim.
+      Tooth centers at -90°, -60°, -30°, 0°, 30°, 60°, 90°, 120°, 150°, 180°, 210°, 240°.
+  -->
+  <path fill-rule="evenodd" fill="url(#metallic)" filter="url(#gearShadow)" d="
+    M93.52,38.34
+    L92.16,25.41   A75,75 0 0,1 107.84,25.41  L106.48,38.34
+    A62,62 0 0,1 125.22,43.36
+    L130.50,31.49  A75,75 0 0,1 144.09,39.33  L136.44,49.84
+    A62,62 0 0,1 150.16,63.56
+    L160.68,55.92  A75,75 0 0,1 168.51,69.50  L156.64,74.78
+    A62,62 0 0,1 161.66,93.52
+    L174.59,92.16  A75,75 0 0,1 174.59,107.84 L161.66,106.48
+    A62,62 0 0,1 156.64,125.22
+    L168.51,130.50 A75,75 0 0,1 160.68,144.09 L150.16,136.44
+    A62,62 0 0,1 136.44,150.16
+    L144.09,160.68 A75,75 0 0,1 130.50,168.51 L125.22,156.64
+    A62,62 0 0,1 106.48,161.66
+    L107.84,174.59 A75,75 0 0,1  92.16,174.59 L93.52,161.66
+    A62,62 0 0,1  74.78,156.64
+    L69.50,168.51  A75,75 0 0,1  55.92,160.68 L63.56,150.16
+    A62,62 0 0,1  49.84,136.44
+    L39.33,144.09  A75,75 0 0,1  31.49,130.50 L43.36,125.22
+    A62,62 0 0,1  38.34,106.48
+    L25.41,107.84  A75,75 0 0,1  25.41,92.16  L38.34,93.52
+    A62,62 0 0,1  43.36,74.78
+    L31.49,69.50   A75,75 0 0,1  39.33,55.92  L49.84,63.56
+    A62,62 0 0,1  63.56,49.84
+    L55.92,39.33   A75,75 0 0,1  69.50,31.49  L74.78,43.36
+    A62,62 0 0,1  93.52,38.34
+    Z
+    M100,52 A48,48 0 0,1 148,100 A48,48 0 0,1 100,148
+            A48,48 0 0,1  52,100 A48,48 0 0,1 100,52 Z"/>
+
+  <!-- Inner rim soft highlight (gives the ring its 3-D depth) -->
+  <circle cx="100" cy="100" r="49.5" fill="none"
+          stroke="#ffffff" stroke-width="2" stroke-opacity="0.30"/>
+
+  <!-- ═══ FLAG POLE ═══ -->
+  <rect x="97.5" y="46" width="3.5" height="114" rx="1.75"
+        fill="url(#poleGrad)"/>
+
+  <!-- Pole finial ball -->
+  <circle cx="99.25" cy="44" r="5.5" fill="url(#ballGrad)"/>
+</svg>
