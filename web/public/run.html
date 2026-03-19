@@ -249,7 +249,7 @@
                 $('#run-title').textContent = 'Выбор шаблона для запуска';
                 const content = $('#run-content');
                 if (!templates || templates.length === 0) {
-                    ui.showEmpty(content, '📋', 'Нет шаблонов', 'Создайте шаблон чтобы запустить задачу');
+                    ui.showEmpty(content, '<i class="fa-solid fa-clipboard"></i>', 'Нет шаблонов', 'Создайте шаблон чтобы запустить задачу');
                     return;
                 }
                 content.innerHTML = `

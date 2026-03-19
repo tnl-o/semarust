@@ -36,8 +36,8 @@
                         </div>
                         <div style="display:flex; gap:8px;">
                             <a id="back-link" href="webhooks.html" class="btn btn-sm">← Webhooks</a>
-                            <button class="btn btn-sm" onclick="editIntegration()">✏️ Изменить</button>
-                            <button class="btn btn-danger btn-sm" onclick="deleteIntegration()">🗑️ Удалить</button>
+                            <button class="btn btn-sm" onclick="editIntegration()"><i class="fa-solid fa-pen"></i> Изменить</button>
+                            <button class="btn btn-danger btn-sm" onclick="deleteIntegration()"><i class="fa-solid fa-trash"></i> Удалить</button>
                         </div>
                     </div>
 
@@ -142,7 +142,7 @@
                                         <td style="font-family:monospace; font-size:12px;">${escapeHtml(m.key || '—')}</td>
                                         <td style="font-family:monospace; font-size:12px;">${escapeHtml(m.matcher_value || '—')}</td>
                                         <td>
-                                            <button class="btn btn-sm btn-danger" onclick="deleteMatcher(${m.id})" title="Удалить">🗑️</button>
+                                            <button class="btn btn-sm btn-danger" onclick="deleteMatcher(${m.id})" title="Удалить"><i class="fa-solid fa-trash"></i></button>
                                         </td>
                                     </tr>
                                 `).join('')}
@@ -152,7 +152,7 @@
                 })
                 .catch(() => {
                     container.innerHTML += `<div style="padding:12px; background:#fff3cd; border-radius:6px; font-size:13px;">
-                        ⚠️ Ошибка загрузки матчеров.
+                        <i class="fa-solid fa-triangle-exclamation"></i> Ошибка загрузки матчеров.
                     </div>`;
                     renderMatcherAddHint(container);
                 });
@@ -271,7 +271,7 @@
                                         <td style="font-family:monospace; font-size:12px;">${escapeHtml(v.key || '—')}</td>
                                         <td style="font-family:monospace; font-size:12px;">${escapeHtml(v.variable || '—')}</td>
                                         <td>
-                                            <button class="btn btn-sm btn-danger" onclick="deleteValue(${v.id})" title="Удалить">🗑️</button>
+                                            <button class="btn btn-sm btn-danger" onclick="deleteValue(${v.id})" title="Удалить"><i class="fa-solid fa-trash"></i></button>
                                         </td>
                                     </tr>
                                 `).join('')}
@@ -281,7 +281,7 @@
                 })
                 .catch(() => {
                     container.innerHTML += `<div style="padding:12px; background:#fff3cd; border-radius:6px; font-size:13px;">
-                        ⚠️ Ошибка загрузки extract values.
+                        <i class="fa-solid fa-triangle-exclamation"></i> Ошибка загрузки extract values.
                     </div>`;
                 });
         }
@@ -383,10 +383,10 @@
                                         <td>
                                             <div style="display:flex; align-items:center; gap:8px;">
                                                 <code style="font-size:11px; color:var(--text-light);">${base}${escapeHtml(a.alias)}</code>
-                                                <span class="copy-url" onclick="copyAlias('${escapeHtml(a.alias)}')">📋 Копировать</span>
+                                                <span class="copy-url" onclick="copyAlias('${escapeHtml(a.alias)}')"><i class="fa-solid fa-clipboard"></i> Копировать</span>
                                             </div>
                                         </td>
-                                        <td><button class="btn btn-sm btn-danger" onclick="deleteAlias(${a.id})">🗑️</button></td>
+                                        <td><button class="btn btn-sm btn-danger" onclick="deleteAlias(${a.id})"><i class="fa-solid fa-trash"></i></button></td>
                                     </tr>
                                 `).join('')}
                             </tbody>
@@ -433,7 +433,7 @@
                 modal.id = 'edit-integration-modal';
                 modal.innerHTML = `
                     <div class="modal" style="max-width:480px;">
-                        <div class="modal-header"><h2>✏️ Редактировать интеграцию</h2></div>
+                        <div class="modal-header"><h2><i class="fa-solid fa-pen"></i> Редактировать интеграцию</h2></div>
                         <form id="edit-integration-form">
                             <div class="form-group">
                                 <label>Название</label>

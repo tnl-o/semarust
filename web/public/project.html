@@ -65,9 +65,9 @@
                 await api.updateProject(projectId, { name });
                 document.getElementById('project-title').textContent = name;
                 document.title = name + ' - Velum';
-                if (msg) { msg.style.color = 'var(--success, green)'; msg.textContent = '✅ Сохранено'; }
+                if (msg) { msg.style.color = 'var(--success, green)'; msg.textContent = 'Сохранено'; }
             } catch (e) {
-                if (msg) { msg.style.color = '#e74c3c'; msg.textContent = '❌ ' + e.message; }
+                if (msg) { msg.style.color = '#e74c3c'; msg.textContent = e.message; }
             }
         }
 
@@ -88,18 +88,18 @@
                 $('#project-title').textContent = name;
                 document.title = name + ' - Velum';
                 msg.style.color = '#276749';
-                msg.textContent = '✅ Настройки сохранены';
+                msg.textContent = 'Настройки сохранены';
                 setTimeout(() => { msg.textContent = ''; }, 3000);
             } catch (err) {
                 msg.style.color = '#c53030';
-                msg.textContent = '❌ ' + err.message;
+                msg.textContent = err.message;
             }
         }
 
         async function backupProject() {
             const btn = document.getElementById('btn-backup');
             try {
-                if (btn) { btn.disabled = true; btn.textContent = '⏳ Подготовка...'; }
+                if (btn) { btn.disabled = true; btn.textContent = 'Подготовка...'; }
                 // Используем бэкенд endpoint для полного бэкапа
                 const backup = await api.request(`/project/${projectId}/backup`, { method: 'GET' });
                 const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
@@ -154,7 +154,7 @@
             if (!btn) return;
             const original = btn.textContent;
             btn.disabled = true;
-            btn.textContent = '⏳ Отправка...';
+            btn.textContent = 'Отправка...';
             try {
                 await api.request('POST', `${API_BASE}/project/${projectId}/notifications/test`, {});
                 ui.showAlert('Тестовое уведомление отправлено (проверьте канал алертов проекта)', 'success');
@@ -172,7 +172,7 @@
             if (!confirm('Очистить кэш приложения? Это может перезагрузить часть данных.')) return;
             const original = btn.textContent;
             btn.disabled = true;
-            btn.textContent = '⏳ Очистка...';
+            btn.textContent = 'Очистка...';
             try {
                 await api.request('DELETE', `${API_BASE}/cache`, null);
                 ui.showAlert('Кэш приложения очищен', 'success');

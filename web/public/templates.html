@@ -18,7 +18,7 @@
 
             <div class="main-body">
                 <div class="page-header">
-                    <h1>📋 Шаблоны</h1>
+                    <h1><i class="fa-solid fa-clipboard"></i> Шаблоны</h1>
                     <div style="display:flex; gap:8px;">
                         <button class="btn btn-sm" onclick="openViewsDialog()" title="Управление группами">⊞ Группы</button>
                         <button class="btn btn-primary" onclick="openTemplateModal()">+ Новый Шаблон</button>
@@ -115,9 +115,9 @@
 
                 if (visible.length === 0) {
                     if (templates.length === 0) {
-                        ui.showEmpty(container, '📋', 'Нет шаблонов', 'Создайте первый шаблон для запуска playbook');
+                        ui.showEmpty(container, '<i class="fa-solid fa-clipboard"></i>', 'Нет шаблонов', 'Создайте первый шаблон для запуска playbook');
                     } else {
-                        ui.showEmpty(container, '📋', 'Нет шаблонов в этой группе', 'Переключите вкладку или создайте шаблон');
+                        ui.showEmpty(container, '<i class="fa-solid fa-clipboard"></i>', 'Нет шаблонов в этой группе', 'Переключите вкладку или создайте шаблон');
                     }
                     return;
                 }
@@ -184,9 +184,9 @@
                                     <td>${statusBadge(lastByTpl[tpl.id])}</td>
                                     <td>
                                         <button class="btn btn-success btn-sm" onclick="runTemplate(${tpl.id}, '${escapeHtml(tpl.name).replace(/'/g,"\\'")}', ${!!tpl.allow_override_args_in_task})" title="Запустить">▶ Запустить</button>
-                                        <button class="btn btn-sm" onclick="editTemplate(${tpl.id})" title="Редактировать">✏️</button>
+                                        <button class="btn btn-sm" onclick="editTemplate(${tpl.id})" title="Редактировать"><i class="fa-solid fa-pen"></i></button>
                                         <button class="btn btn-sm" onclick="copyTemplate(${tpl.id})" title="Копировать">⧉</button>
-                                        <button class="btn btn-danger btn-sm" onclick="deleteTemplate(${tpl.id})" title="Удалить">🗑️</button>
+                                        <button class="btn btn-danger btn-sm" onclick="deleteTemplate(${tpl.id})" title="Удалить"><i class="fa-solid fa-trash"></i></button>
                                     </td>
                                 </tr>
                                 ${hasTasks ? `
@@ -267,8 +267,8 @@
                                                 <td><strong>${escapeHtml(v.title)}</strong></td>
                                                 <td style="color:var(--text-light);">${v.position}</td>
                                                 <td>
-                                                    <button class="btn btn-sm" onclick="editView(${v.id}, '${escapeHtml(v.title).replace(/'/g,"\\'")}')" title="Переименовать">✏️</button>
-                                                    <button class="btn btn-sm btn-danger" onclick="deleteView(${v.id})" title="Удалить">🗑️</button>
+                                                    <button class="btn btn-sm" onclick="editView(${v.id}, '${escapeHtml(v.title).replace(/'/g,"\\'")}')" title="Переименовать"><i class="fa-solid fa-pen"></i></button>
+                                                    <button class="btn btn-sm btn-danger" onclick="deleteView(${v.id})" title="Удалить"><i class="fa-solid fa-trash"></i></button>
                                                 </td>
                                             </tr>
                                         `).join('')}
@@ -676,7 +676,7 @@
                 modal.innerHTML = `
                     <div class="modal" style="max-width:760px;">
                         <div class="modal-header">
-                            <h2>${isEdit ? '✏️ Редактирование' : '➕ Новый'} Шаблон</h2>
+                            <h2>${isEdit ? '<i class="fa-solid fa-pen"></i> Редактирование' : '<i class="fa-solid fa-plus"></i> Новый'} Шаблон</h2>
                         </div>
                         <form id="template-form" style="max-height:80vh; overflow-y:auto; padding-right:4px;">
 

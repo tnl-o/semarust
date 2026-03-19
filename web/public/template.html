@@ -278,7 +278,7 @@
                                         <td class="duration-cell">${formatRelativeTime(t.created)}</td>
                                         <td class="duration-cell">${calcDuration(t.start, t.end)}</td>
                                         <td onclick="event.stopPropagation()">
-                                            <a href="task.html?id=${projectId}&task=${t.id}" class="btn btn-sm" title="Открыть задачу">👁</a>
+                                            <a href="task.html?id=${projectId}&task=${t.id}" class="btn btn-sm" title="Открыть задачу"><i class="fa-solid fa-eye"></i></a>
                                         </td>
                                     </tr>
                                 `).join('')}
@@ -424,10 +424,10 @@
             content.innerHTML = `
                 <div class="toolbar">
                     <button class="btn btn-primary" onclick="openRunDialog()">▶ Запустить</button>
-                    <button class="btn btn-danger btn-sm" onclick="stopAllTasks()">⏹ Остановить все задачи</button>
-                    <button class="btn btn-sm" onclick="openEditDialog()">✏️ Редактировать</button>
+                    <button class="btn btn-danger btn-sm" onclick="stopAllTasks()"><i class="fa-solid fa-stop"></i> Остановить все задачи</button>
+                    <button class="btn btn-sm" onclick="openEditDialog()"><i class="fa-solid fa-pen"></i> Редактировать</button>
                     <button class="btn btn-sm" style="color:#c53030;" onclick="stopAllTasks()" title="Остановить все выполняющиеся задачи">■ Стоп всё</button>
-                    <button class="btn btn-danger btn-sm" onclick="deleteTplWithRefsCheck()">🗑️ Удалить</button>
+                    <button class="btn btn-danger btn-sm" onclick="deleteTplWithRefsCheck()"><i class="fa-solid fa-trash"></i> Удалить</button>
                     <div style="flex:1"></div>
                     <a href="templates.html?id=${projectId}" class="btn btn-sm">← Шаблоны</a>
                 </div>
@@ -488,7 +488,7 @@
                                     <td><span class="status-badge status-${t.status}">${statusLabel(t.status)}</span></td>
                                     <td>${formatDate(t.created)}</td>
                                     <td>${calcDuration(t)}</td>
-                                    <td><button class="btn btn-sm" onclick="event.stopPropagation(); openTaskDetail(${t.id})">🔍</button></td>
+                                    <td><button class="btn btn-sm" onclick="event.stopPropagation(); openTaskDetail(${t.id})"><i class="fa-solid fa-magnifying-glass"></i></button></td>
                                 </tr>
                             `).join('')}
                         </tbody>
@@ -555,7 +555,7 @@
                 <div class="card">
                     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
                         <div>
-                            <h3 style="margin:0;">🔐 Права доступа к шаблону</h3>
+                            <h3 style="margin:0;"><i class="fa-solid fa-lock"></i> Права доступа к шаблону</h3>
                             <p style="margin:4px 0 0; color:var(--text-light); font-size:13px;">
                                 Детальные права для отдельных ролей (независимо от прав проекта)
                             </p>
@@ -586,7 +586,7 @@
                     if (!perms || !Array.isArray(perms) || perms.length === 0) {
                         content.innerHTML = `
                             <div class="text-center" style="padding:40px;">
-                                <div style="font-size:40px; margin-bottom:12px;">🔐</div>
+                                <div style="font-size:40px; margin-bottom:12px;"><i class="fa-solid fa-lock"></i></div>
                                 <h3>Нет прав доступа</h3>
                                 <p style="color:var(--text-light); margin-bottom:16px;">
                                     Для этого шаблона ещё не настроены детальные права.
@@ -613,8 +613,8 @@
                                         <td><strong>${escapeHtml(p.role_name || p.role || '—')}</strong></td>
                                         <td>${formatPermission(p.permission || p.type || '—')}</td>
                                         <td>
-                                            <button class="btn btn-sm" onclick="editPermission(${p.id}, '${escapeHtml(p.role || '')}', '${escapeHtml(p.permission || '')}')" title="Редактировать">✏️</button>
-                                            <button class="btn btn-danger btn-sm" onclick="deletePermission(${p.id}, '${escapeHtml(p.role || '')}')" title="Удалить">🗑️</button>
+                                            <button class="btn btn-sm" onclick="editPermission(${p.id}, '${escapeHtml(p.role || '')}', '${escapeHtml(p.permission || '')}')" title="Редактировать"><i class="fa-solid fa-pen"></i></button>
+                                            <button class="btn btn-danger btn-sm" onclick="deletePermission(${p.id}, '${escapeHtml(p.role || '')}')" title="Удалить"><i class="fa-solid fa-trash"></i></button>
                                         </td>
                                     </tr>
                                 `).join('')}
@@ -627,7 +627,7 @@
                     // API ещё не реализовано — показываем заглушку
                     content.innerHTML = `
                         <div class="card" style="border-left:4px solid #f0ad4e;">
-                            <h4 style="margin-top:0;">⚠️ API прав шаблона в разработке</h4>
+                            <h4 style="margin-top:0;"><i class="fa-solid fa-triangle-exclamation"></i> API прав шаблона в разработке</h4>
                             <p style="color:var(--text-light); margin-bottom:0;">
                                 Backend endpoints для управления правами шаблонов будут реализованы в ближайшее время.
                                 После этого вкладка начнёт работать автоматически.
@@ -640,10 +640,10 @@
         function formatPermission(perm) {
             const labels = {
                 'run': '▶ Запуск задач',
-                'view': '👁 Просмотр',
-                'edit': '✏️ Редактирование',
-                'delete': '🗑️ Удаление',
-                'manage': '⚙️ Управление'
+                'view': '<i class="fa-solid fa-eye"></i> Просмотр',
+                'edit': '<i class="fa-solid fa-pen"></i> Редактирование',
+                'delete': '<i class="fa-solid fa-trash"></i> Удаление',
+                'manage': '<i class="fa-solid fa-gear"></i> Управление'
             };
             return labels[perm] || perm;
         }
@@ -655,7 +655,7 @@
             modal.innerHTML = `
                 <div class="modal" style="max-width:450px;">
                     <div class="modal-header">
-                        <h3>${isEdit ? '✏️ Редактировать' : '🔐 Добавить'} право</h3>
+                        <h3>${isEdit ? '<i class="fa-solid fa-pen"></i> Редактировать' : '<i class="fa-solid fa-lock"></i> Добавить'} право</h3>
                         <button class="modal-close" onclick="this.closest('.modal-overlay').remove()">&times;</button>
                     </div>
                     <div class="modal-body">
@@ -675,11 +675,11 @@
                                 <label for="perm-permission">Разрешение *</label>
                                 <select id="perm-permission" class="form-control" required>
                                     <option value="">— выберите разрешение —</option>
-                                    <option value="run" ${permission === 'run' ? 'selected' : ''}>▶ Запуск задач</option>
-                                    <option value="view" ${permission === 'view' ? 'selected' : ''}>👁 Просмотр шаблона</option>
-                                    <option value="edit" ${permission === 'edit' ? 'selected' : ''}>✏️ Редактирование</option>
-                                    <option value="delete" ${permission === 'delete' ? 'selected' : ''}>🗑️ Удаление</option>
-                                    <option value="manage" ${permission === 'manage' ? 'selected' : ''}>⚙️ Полное управление</option>
+                                    <option value="run" ${permission === 'run' ? 'selected' : ''}>Запуск задач</option>
+                                    <option value="view" ${permission === 'view' ? 'selected' : ''}>Просмотр шаблона</option>
+                                    <option value="edit" ${permission === 'edit' ? 'selected' : ''}>Редактирование</option>
+                                    <option value="delete" ${permission === 'delete' ? 'selected' : ''}>Удаление</option>
+                                    <option value="manage" ${permission === 'manage' ? 'selected' : ''}>Полное управление</option>
                                 </select>
                                 <small style="color:var(--text-light);">
                                     <strong>run</strong> — запуск задач из шаблона<br>
@@ -747,7 +747,7 @@
 
         function flag(label, val) {
             const color = val ? '#276749' : '#999';
-            const icon  = val ? '✓' : '✗';
+            const icon  = val ? '<i class="fa-solid fa-check"></i>' : '<i class="fa-solid fa-xmark"></i>';
             return `<span style="color:${color}; font-size:13px;">${icon} ${label}</span>`;
         }
 
@@ -780,7 +780,7 @@
                         <h2 id="td-title">Задача #${taskId}</h2>
                         <div style="display:flex; gap:8px;">
                             <span id="td-status" class="status-badge"></span>
-                            <button class="btn btn-sm" onclick="downloadTaskLog(${taskId})">📥</button>
+                            <button class="btn btn-sm" onclick="downloadTaskLog(${taskId})"><i class="fa-solid fa-download"></i></button>
                             <button class="btn btn-sm" onclick="closeTaskDetail()">✕</button>
                         </div>
                     </div>
@@ -1046,7 +1046,7 @@
             if (!isTerraform) {
                 container.innerHTML = `
                     <div class="card text-center" style="max-width:500px; margin:40px auto;">
-                        <div style="font-size:48px; margin-bottom:16px;">🌍</div>
+                        <div style="font-size:48px; margin-bottom:16px;"><i class="fa-solid fa-earth-europe"></i></div>
                         <h3>Workspaces не доступны</h3>
                         <p style="color:var(--text-light);">
                             Workspaces доступны только для шаблонов Terraform и OpenTofu.
@@ -1061,7 +1061,7 @@
                 <div class="card">
                     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
                         <div>
-                            <h3 style="margin:0;">🌍 Terraform Workspaces</h3>
+                            <h3 style="margin:0;"><i class="fa-solid fa-earth-europe"></i> Terraform Workspaces</h3>
                             <p style="margin:4px 0 0; color:var(--text-light); font-size:13px;">
                                 Управление workspace'ами для изоляции окружений (dev, staging, production)
                             </p>
@@ -1093,7 +1093,7 @@
                     if (!aliases || aliases.length === 0) {
                         content.innerHTML = `
                             <div class="text-center" style="padding:40px;">
-                                <div style="font-size:40px; margin-bottom:12px;">🌍</div>
+                                <div style="font-size:40px; margin-bottom:12px;"><i class="fa-solid fa-earth-europe"></i></div>
                                 <h3>Нет workspace'ов</h3>
                                 <p style="color:var(--text-light); margin-bottom:16px;">
                                     Создайте первый workspace для управления состояниями Terraform/OpenTofu
@@ -1121,8 +1121,8 @@
                                         <td>${escapeHtml(a.name || '—')}</td>
                                         <td>${a.created ? formatDate(a.created) : '—'}</td>
                                         <td>
-                                            <button class="btn btn-sm" onclick="copyWorkspaceAlias('${escapeHtml(a.alias || '')}')" title="Копировать alias">📋</button>
-                                            <button class="btn btn-danger btn-sm" onclick="deleteWorkspace(${a.id}, '${escapeHtml(a.alias || '')}')" title="Удалить">🗑️</button>
+                                            <button class="btn btn-sm" onclick="copyWorkspaceAlias('${escapeHtml(a.alias || '')}')" title="Копировать alias"><i class="fa-solid fa-clipboard"></i></button>
+                                            <button class="btn btn-danger btn-sm" onclick="deleteWorkspace(${a.id}, '${escapeHtml(a.alias || '')}')" title="Удалить"><i class="fa-solid fa-trash"></i></button>
                                         </td>
                                     </tr>
                                 `).join('')}
@@ -1135,7 +1135,7 @@
                     // API ещё не реализовано — показываем заглушку
                     content.innerHTML = `
                         <div class="card" style="border-left:4px solid #f0ad4e;">
-                            <h4 style="margin-top:0;">⚠️ API workspace'ов в разработке</h4>
+                            <h4 style="margin-top:0;"><i class="fa-solid fa-triangle-exclamation"></i> API workspace'ов в разработке</h4>
                             <p style="color:var(--text-light); margin-bottom:0;">
                                 Backend endpoint <code>GET /project/:id/inventories/:id/terraform-aliases</code> 
                                 будет реализован в ближайшее время. После этого вкладка начнёт работать автоматически.
@@ -1151,7 +1151,7 @@
             modal.innerHTML = `
                 <div class="modal" style="max-width:450px;">
                     <div class="modal-header">
-                        <h3>🌍 Новый Workspace</h3>
+                        <h3><i class="fa-solid fa-earth-europe"></i> Новый Workspace</h3>
                         <button class="modal-close" onclick="this.closest('.modal-overlay').remove()">&times;</button>
                     </div>
                     <div class="modal-body">

@@ -16,7 +16,7 @@
             </div>
             <div class="main-body">
                 <div class="page-header">
-                    <h1>🔑 API Токены</h1>
+                    <h1><i class="fa-solid fa-key"></i> API Токены</h1>
                     <button class="btn btn-primary" onclick="createToken()">+ Новый токен</button>
                 </div>
 
@@ -44,7 +44,7 @@
             api.request('/user/tokens')
                 .then(tokens => {
                     if (!tokens || tokens.length === 0) {
-                        ui.showEmpty(container, '🔑', 'Нет токенов', 'Создайте первый API токен');
+                        ui.showEmpty(container, '<i class="fa-solid fa-key"></i>', 'Нет токенов', 'Создайте первый API токен');
                         return;
                     }
                     container.innerHTML = `
@@ -62,17 +62,17 @@
                                             <span id="tok-${tok.id}" style="font-family:monospace; letter-spacing:1px;">
                                                 ${'•'.repeat(Math.min((tok.id||'').length || 24, 24))}
                                             </span>
-                                            <button class="btn btn-sm" onclick="toggleToken('${escapeHtml(tok.id)}', this)" title="Показать/скрыть">👁</button>
-                                            <button class="btn btn-sm" onclick="copyToken('${escapeHtml(tok.id)}')" title="Копировать">📋</button>
+                                            <button class="btn btn-sm" onclick="toggleToken('${escapeHtml(tok.id)}', this)" title="Показать/скрыть"><i class="fa-solid fa-eye"></i></button>
+                                            <button class="btn btn-sm" onclick="copyToken('${escapeHtml(tok.id)}')" title="Копировать"><i class="fa-solid fa-clipboard"></i></button>
                                         </td>
                                         <td style="color:var(--text-light); font-size:13px;">${formatDate(tok.created)}</td>
                                         <td>
                                             ${tok.expired
-                                                ? '<span style="color:#c53030; font-weight:600;">✗ Истёк</span>'
-                                                : '<span style="color:#276749; font-weight:600;">✓ Активен</span>'}
+                                                ? '<span style="color:#c53030; font-weight:600;"><i class="fa-solid fa-xmark"></i> Истёк</span>'
+                                                : '<span style="color:#276749; font-weight:600;"><i class="fa-solid fa-check"></i> Активен</span>'}
                                         </td>
                                         <td>
-                                            <button class="btn btn-danger btn-sm" onclick="deleteToken('${escapeHtml(tok.id)}')">🗑️ Удалить</button>
+                                            <button class="btn btn-danger btn-sm" onclick="deleteToken('${escapeHtml(tok.id)}')"><i class="fa-solid fa-trash"></i> Удалить</button>
                                         </td>
                                     </tr>
                                 `).join('')}

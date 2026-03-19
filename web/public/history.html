@@ -209,13 +209,13 @@
                                 <td class="duration-cell">${dur}</td>
                                 <td onclick="event.stopPropagation()">
                                     <div style="display:flex; gap:4px;">
-                                        <a href="task.html?id=${projectId}&task=${t.id}" class="btn btn-sm" title="Просмотр">👁</a>
+                                        <a href="task.html?id=${projectId}&task=${t.id}" class="btn btn-sm" title="Просмотр"><i class="fa-solid fa-eye"></i></a>
                                         ${t.status === 'running' || t.status === 'waiting'
                                             ? `<button class="btn btn-sm btn-danger" onclick="stopTask(${t.id})" title="Остановить">■</button>`
                                             : `<button class="btn btn-sm" onclick="rerunTask(${t.template_id})" title="Повторить">↺</button>`}
                                         ${t.status === 'waiting_confirmation'
-                                            ? `<button class="btn btn-sm btn-primary" onclick="confirmTask(${t.id})" title="Подтвердить">✓</button>
-                                               <button class="btn btn-sm btn-danger" onclick="rejectTask(${t.id})" title="Отклонить">✗</button>`
+                                            ? `<button class="btn btn-sm btn-primary" onclick="confirmTask(${t.id})" title="Подтвердить"><i class="fa-solid fa-check"></i></button>
+                                               <button class="btn btn-sm btn-danger" onclick="rejectTask(${t.id})" title="Отклонить"><i class="fa-solid fa-xmark"></i></button>`
                                             : ''}
                                     </div>
                                 </td>

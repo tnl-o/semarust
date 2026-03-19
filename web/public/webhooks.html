@@ -251,8 +251,8 @@
                                         <button class="btn btn-sm btn-secondary" onclick="copyUrl('${escapeHtml(url)}')" title="Копировать URL" style="padding:2px 6px;font-size:11px;">⧉</button>
                                     </td>
                                     <td>
-                                        <button class="btn btn-sm btn-secondary" onclick="editIntegration(${i.id})" title="Редактировать">✎</button>
-                                        <a href="integration_detail.html?id=${projectId}&integration=${i.id}" class="btn btn-sm btn-primary" title="Матчеры/Алиасы">⚙</a>
+                                        <button class="btn btn-sm btn-secondary" onclick="editIntegration(${i.id})" title="Редактировать"><i class="fa-solid fa-pen"></i></button>
+                                        <a href="integration_detail.html?id=${projectId}&integration=${i.id}" class="btn btn-sm btn-primary" title="Матчеры/Алиасы"><i class="fa-solid fa-gear"></i></a>
                                         <button class="btn btn-sm btn-danger" onclick="deleteIntegration(${i.id})" title="Удалить"><i class="fa-solid fa-trash"></i></button>
                                     </td>
                                 </tr>`;
@@ -268,7 +268,7 @@
             if (aliases.length === 0) {
                 el.innerHTML = `
                     <div class="card text-center">
-                        <div style="font-size:40px;margin-bottom:12px;">🔀</div>
+                        <div style="font-size:40px;margin-bottom:12px;"><i class="fa-solid fa-shuffle"></i></div>
                         <h3>Нет алиасов</h3>
                         <p style="color:var(--text-light)">Создайте уникальные URL-псевдонимы для интеграций</p>
                     </div>`;

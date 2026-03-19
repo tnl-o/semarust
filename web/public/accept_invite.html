@@ -18,7 +18,7 @@
 <body>
     <div class="invite-wrap">
         <div class="invite-card" id="invite-card">
-            <div class="invite-icon">✉️</div>
+            <div class="invite-icon"><i class="fa-solid fa-envelope"></i></div>
             <h1>Приглашение в проект</h1>
             <p id="invite-desc">Проверка приглашения...</p>
             <div id="invite-action"></div>
@@ -55,7 +55,7 @@
             document.getElementById('invite-desc').textContent = 'Вы получили приглашение в проект Velum.';
             document.getElementById('invite-action').innerHTML = `
                 <button class="btn btn-primary" style="width:100%; margin-bottom:10px;" onclick="acceptInvite()">
-                    ✓ Принять приглашение
+                    <i class="fa-solid fa-check"></i> Принять приглашение
                 </button>
                 <a href="index.html" class="btn" style="width:100%;">Отмена</a>
             `;
@@ -78,7 +78,7 @@
                 if (!ok) throw new Error(data.error || data.message || 'Ошибка');
                 const projectId = data.project_id;
                 document.getElementById('invite-card').innerHTML = `
-                    <div class="invite-icon">✅</div>
+                    <div class="invite-icon"><i class="fa-solid fa-circle-check" style="color:#276749;"></i></div>
                     <h1>Вы добавлены в проект!</h1>
                     <p>Вы успешно присоединились к проекту.</p>
                     <a href="project.html?id=${projectId}" class="btn btn-primary" style="width:100%;">Открыть проект</a>
@@ -91,7 +91,7 @@
 
         function showError(msg) {
             document.getElementById('invite-card').innerHTML = `
-                <div class="invite-icon">❌</div>
+                <div class="invite-icon"><i class="fa-solid fa-circle-xmark" style="color:#c53030;"></i></div>
                 <h1>Ошибка</h1>
                 <p style="color:#c53030;">${msg}</p>
                 <a href="index.html" class="btn btn-primary" style="width:100%;">На главную</a>
