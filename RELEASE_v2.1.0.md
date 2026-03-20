@@ -45,6 +45,25 @@ GET /api/project/{id}/playbooks/{id}/runs/stats
 
 ## 📦 Установка
 
+### DEB пакет (Debian/Ubuntu)
+
+```bash
+# Скачать
+wget https://github.com/tnl-o/semarust/releases/download/v2.1.0/velum-2.1.0.deb
+
+# Установить
+sudo dpkg -i velum-2.1.0.deb
+sudo apt install -f
+
+# Создать admin
+sudo velum user add --username admin --email admin@example.com \
+  --password admin123 --admin
+
+# Запустить
+sudo systemctl start velum
+sudo systemctl enable velum
+```
+
 ### Docker (рекомендуется)
 
 ```bash
