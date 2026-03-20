@@ -95,7 +95,7 @@
                                 style="font-family:monospace; font-size:12px; resize:vertical;"
                                 placeholder='{"DB_HOST": "localhost", "APP_ENV": "production"}'
                                 oninput="onJsonInput()"></textarea>
-                            <div id="json-error" class="json-error">⚠ Неверный JSON</div>
+                            <div id="json-error" class="json-error"><i class="fa-solid fa-triangle-exclamation"></i> Неверный JSON</div>
                         </div>
 
                         <!-- Table mode -->
@@ -175,7 +175,7 @@
             if (!environments.length) {
                 el.innerHTML = `
                     <div class="card text-center">
-                        <div style="font-size:48px;margin-bottom:15px">⚙️</div>
+                        <div style="font-size:48px;margin-bottom:15px"><i class="fa-solid fa-gear"></i></div>
                         <h3>Нет окружений</h3>
                         <p style="color:var(--text-light)">Создайте окружение с переменными для запуска задач</p>
                         <button class="btn btn-primary mt-3" onclick="openModal()">Создать окружение</button>
@@ -203,8 +203,8 @@
                                     <td><span class="badge badge-secondary">${varCount} переменных</span></td>
                                     <td><span class="badge badge-info">${secretCount} секретов</span></td>
                                     <td>
-                                        <button class="btn btn-sm btn-secondary" onclick="editEnvironment(${env.id})" title="Редактировать">✎</button>
-                                        <button class="btn btn-sm btn-danger" onclick="deleteEnvironment(${env.id})" title="Удалить">🗑</button>
+                                        <button class="btn btn-sm btn-secondary" onclick="editEnvironment(${env.id})" title="Редактировать"><i class="fa-solid fa-pen"></i></button>
+                                        <button class="btn btn-sm btn-danger" onclick="deleteEnvironment(${env.id})" title="Удалить"><i class="fa-solid fa-trash"></i></button>
                                     </td>
                                 </tr>`;
                             }).join('')}

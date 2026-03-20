@@ -18,7 +18,7 @@
 
             <div class="main-body">
                 <div class="page-header">
-                    <h1>👥 Команда проекта</h1>
+                    <h1><i class="fa-solid fa-users"></i> Команда проекта</h1>
                     <div id="page-action-btn" style="display:flex; gap:8px;">
                         <button class="btn btn-primary" onclick="openMemberModal()">+ Добавить участника</button>
                         <button class="btn" style="border-color:var(--danger); color:var(--danger);" onclick="leaveProject()" title="Покинуть проект">← Покинуть</button>
@@ -72,7 +72,7 @@
             api.get('/project/' + projectId + '/users')
                 .then(members => {
                     if (members.length === 0) {
-                        ui.showEmpty(container, '👥', 'Нет участников', 'Добавьте первого участника в проект');
+                        ui.showEmpty(container, '<i class="fa-solid fa-users"></i>', 'Нет участников', 'Добавьте первого участника в проект');
                     } else {
                         container.innerHTML = `
                             <table class="table">
@@ -91,8 +91,8 @@
                                             <td>${escapeHtml(m.name || '—')}</td>
                                             <td>${getRoleBadge(m.role)}</td>
                                             <td>
-                                                <button class="btn btn-sm" onclick="editMember(${m.id}, '${escapeHtml(m.username)}', '${escapeHtml(m.role)}')" title="Изменить роль">✏️</button>
-                                                <button class="btn btn-danger btn-sm" onclick="removeMember(${m.id}, '${escapeHtml(m.username)}')" title="Удалить из проекта">🗑️</button>
+                                                <button class="btn btn-sm" onclick="editMember(${m.id}, '${escapeHtml(m.username)}', '${escapeHtml(m.role)}')" title="Изменить роль"><i class="fa-solid fa-pen"></i></button>
+                                                <button class="btn btn-danger btn-sm" onclick="removeMember(${m.id}, '${escapeHtml(m.username)}')" title="Удалить из проекта"><i class="fa-solid fa-trash"></i></button>
                                             </td>
                                         </tr>
                                     `).join('')}
@@ -108,11 +108,11 @@
 
         function getRoleBadge(role) {
             const map = {
-                'owner':       ['badge-success', '👑 Owner'],
-                'manager':     ['badge-primary', '🔧 Manager'],
+                'owner':       ['badge-success', '<i class="fa-solid fa-crown"></i> Owner'],
+                'manager':     ['badge-primary', '<i class="fa-solid fa-wrench"></i> Manager'],
                 'task_runner': ['badge-warning', '▶ Task Runner'],
-                'guest':       ['badge-secondary', '👁 Guest'],
-                'none':        ['badge-danger',  '✗ None'],
+                'guest':       ['badge-secondary', '<i class="fa-solid fa-eye"></i> Guest'],
+                'none':        ['badge-danger',  'None'],
             };
             const [cls, label] = map[role] || ['badge-secondary', role];
             return `<span class="badge ${cls}">${label}</span>`;
@@ -170,17 +170,17 @@
             modal.innerHTML = `
                 <div class="modal" style="max-width: 500px;">
                     <div class="modal-header">
-                        <h2>${isEdit ? '✏️ Изменить роль' : '➕ Добавить участника'}</h2>
+                        <h2>${isEdit ? '<i class="fa-solid fa-pen"></i> Изменить роль' : '<i class="fa-solid fa-plus"></i> Добавить участника'}</h2>
                     </div>
                     <form id="member-form">
                         ${userSelectHtml}
                         <div class="form-group">
                             <label for="role">Роль *</label>
                             <select id="role" class="form-control" required>
-                                <option value="owner"       ${member?.role === 'owner'       ? 'selected' : ''}>👑 Owner — полный контроль над проектом</option>
-                                <option value="manager"     ${member?.role === 'manager'     ? 'selected' : ''}>🔧 Manager — управление шаблонами и ресурсами</option>
-                                <option value="task_runner" ${member?.role === 'task_runner' ? 'selected' : ''}>▶ Task Runner — только запуск задач</option>
-                                <option value="guest"       ${member?.role === 'guest'       ? 'selected' : ''}>👁 Guest — только просмотр</option>
+                                <option value="owner"       ${member?.role === 'owner'       ? 'selected' : ''}>Owner — полный контроль над проектом</option>
+                                <option value="manager"     ${member?.role === 'manager'     ? 'selected' : ''}>Manager — управление шаблонами и ресурсами</option>
+                                <option value="task_runner" ${member?.role === 'task_runner' ? 'selected' : ''}>Task Runner — только запуск задач</option>
+                                <option value="guest"       ${member?.role === 'guest'       ? 'selected' : ''}>Guest — только просмотр</option>
                             </select>
                         </div>
                         <div class="modal-footer" style="margin-top: 20px;">
@@ -327,7 +327,7 @@
             if (!projectRoles.length) {
                 container.innerHTML = `
                     <div class="card text-center" style="max-width:620px;margin:0 auto;">
-                        <div style="font-size:40px;margin-bottom:10px;">🔑</div>
+                        <div style="font-size:40px;margin-bottom:10px;"><i class="fa-solid fa-key"></i></div>
                         <h3>Нет ролей</h3>
                         <p style="color:var(--text-light);">Создайте первую роль с нужным набором прав.</p>
                         <button class="btn btn-primary mt-2" onclick="openRoleModal()">+ Новая роль</button>
@@ -352,21 +352,21 @@
                                 const perms = r.permissions || 0;
                                 const permLabels = [];
                                 if (perms & 1) permLabels.push('▶ Запуск');
-                                if (perms & 2) permLabels.push('✏️ Ресурсы');
-                                if (perms & 4) permLabels.push('⚙️ Проект');
-                                if (perms & 8) permLabels.push('👥 Users');
-                                if (perms & 16) permLabels.push('🔑 Роли');
-                                if (perms & 32) permLabels.push('📋 Audit');
-                                if (perms & 64) permLabels.push('🔗 Интеграции');
-                                if (perms & 128) permLabels.push('🛡️ Секреты');
+                                if (perms & 2) permLabels.push('<i class="fa-solid fa-pen"></i> Ресурсы');
+                                if (perms & 4) permLabels.push('<i class="fa-solid fa-gear"></i> Проект');
+                                if (perms & 8) permLabels.push('<i class="fa-solid fa-users"></i> Users');
+                                if (perms & 16) permLabels.push('<i class="fa-solid fa-key"></i> Роли');
+                                if (perms & 32) permLabels.push('<i class="fa-solid fa-clipboard"></i> Audit');
+                                if (perms & 64) permLabels.push('<i class="fa-solid fa-link"></i> Интеграции');
+                                if (perms & 128) permLabels.push('<i class="fa-solid fa-shield"></i> Секреты');
                                 return `
                                 <tr>
                                     <td><strong>${escapeHtml(r.name || '')}</strong></td>
                                     <td><code>${escapeHtml(r.slug || '')}</code></td>
                                     <td>${permLabels.join(', ') || '—'}</td>
                                     <td>
-                                        <button class="btn btn-sm" onclick="openRoleModal(${r.id})">✏️</button>
-                                        <button class="btn btn-danger btn-sm" onclick="deleteRole(${r.id})">🗑️</button>
+                                        <button class="btn btn-sm" onclick="openRoleModal(${r.id})"><i class="fa-solid fa-pen"></i></button>
+                                        <button class="btn btn-danger btn-sm" onclick="deleteRole(${r.id})"><i class="fa-solid fa-trash"></i></button>
                                     </td>
                                 </tr>
                                 `;
@@ -387,7 +387,7 @@
             overlay.innerHTML = `
                 <div class="modal" style="max-width:520px;">
                     <div class="modal-header">
-                        <h2>${isEdit ? '✏️ Редактирование роли' : '➕ Новая роль'}</h2>
+                        <h2>${isEdit ? '<i class="fa-solid fa-pen"></i> Редактирование роли' : '<i class="fa-solid fa-plus"></i> Новая роль'}</h2>
                     </div>
                     <form id="role-form">
                         <div class="form-group">
@@ -410,31 +410,31 @@
                                 </label>
                                 <label style="display:flex;align-items:center;gap:6px;cursor:pointer;">
                                     <input type="checkbox" id="perm-update_resources" ${role?.permissions & 2 ? 'checked' : ''}>
-                                    ✏️ Обновление ресурсов
+                                    <i class="fa-solid fa-pen"></i> Обновление ресурсов
                                 </label>
                                 <label style="display:flex;align-items:center;gap:6px;cursor:pointer;">
                                     <input type="checkbox" id="perm-manage_project" ${role?.permissions & 4 ? 'checked' : ''}>
-                                    ⚙️ Управление проектом
+                                    <i class="fa-solid fa-gear"></i> Управление проектом
                                 </label>
                                 <label style="display:flex;align-items:center;gap:6px;cursor:pointer;">
                                     <input type="checkbox" id="perm-manage_users" ${role?.permissions & 8 ? 'checked' : ''}>
-                                    👥 Управление пользователями
+                                    <i class="fa-solid fa-users"></i> Управление пользователями
                                 </label>
                                 <label style="display:flex;align-items:center;gap:6px;cursor:pointer;">
                                     <input type="checkbox" id="perm-manage_roles" ${role?.permissions & 16 ? 'checked' : ''}>
-                                    🔑 Управление ролями
+                                    <i class="fa-solid fa-key"></i> Управление ролями
                                 </label>
                                 <label style="display:flex;align-items:center;gap:6px;cursor:pointer;">
                                     <input type="checkbox" id="perm-view_audit_log" ${role?.permissions & 32 ? 'checked' : ''}>
-                                    📋 Просмотр audit log
+                                    <i class="fa-solid fa-clipboard"></i> Просмотр audit log
                                 </label>
                                 <label style="display:flex;align-items:center;gap:6px;cursor:pointer;">
                                     <input type="checkbox" id="perm-manage_integrations" ${role?.permissions & 64 ? 'checked' : ''}>
-                                    🔗 Управление интеграциями
+                                    <i class="fa-solid fa-link"></i> Управление интеграциями
                                 </label>
                                 <label style="display:flex;align-items:center;gap:6px;cursor:pointer;">
                                     <input type="checkbox" id="perm-manage_secret_storages" ${role?.permissions & 128 ? 'checked' : ''}>
-                                    🛡️ Управление хранилищами секретов
+                                    <i class="fa-solid fa-shield"></i> Управление хранилищами секретов
                                 </label>
                             </div>
                             <p class="form-hint">8 бит прав: run_tasks, update_resources, manage_project, manage_users, manage_roles, view_audit_log, manage_integrations, manage_secret_storages</p>
@@ -525,7 +525,7 @@
             api.get('/project/' + projectId + '/invites')
                 .then(invites => {
                     if (!invites || invites.length === 0) {
-                        ui.showEmpty(container, '✉️', 'Нет приглашений', 'Создайте приглашение чтобы добавить пользователя в проект');
+                        ui.showEmpty(container, '<i class="fa-solid fa-envelope fa-2x"></i>', 'Нет приглашений', 'Создайте приглашение чтобы добавить пользователя в проект');
                         return;
                     }
                     const baseUrl = window.location.origin;
@@ -548,12 +548,12 @@
                                         <td>
                                             <div style="display:flex; align-items:center; gap:6px;">
                                                 <code style="font-size:11px; background:#f5f5f5; padding:2px 6px; border-radius:4px; overflow:hidden; text-overflow:ellipsis; max-width:200px; display:inline-block;">${baseUrl}/accept_invite.html?token=${escapeHtml(inv.token)}</code>
-                                                <button class="btn btn-sm" onclick="copyInviteLink('${escapeHtml(inv.token)}')" title="Копировать ссылку">📋</button>
+                                                <button class="btn btn-sm" onclick="copyInviteLink('${escapeHtml(inv.token)}')" title="Копировать ссылку"><i class="fa-solid fa-list"></i></button>
                                             </div>
                                         </td>
                                         <td style="font-size:12px; color:var(--text-light);">${formatDate(inv.created)}</td>
                                         <td>
-                                            <button class="btn btn-danger btn-sm" onclick="deleteInvite(${inv.id})" title="Удалить">🗑️</button>
+                                            <button class="btn btn-danger btn-sm" onclick="deleteInvite(${inv.id})" title="Удалить"><i class="fa-solid fa-trash"></i></button>
                                         </td>
                                     </tr>
                                 `).join('')}
@@ -586,7 +586,7 @@
             api.getUsers().then(users => {
                 modal.innerHTML = `
                     <div class="modal" style="max-width:480px;">
-                        <div class="modal-header"><h2>✉️ Создать приглашение</h2></div>
+                        <div class="modal-header"><h2><i class="fa-solid fa-envelope"></i> Создать приглашение</h2></div>
                         <form id="invite-form">
                             <div class="form-group">
                                 <label for="invite-user">Пользователь *</label>
@@ -598,10 +598,10 @@
                             <div class="form-group">
                                 <label for="invite-role">Роль *</label>
                                 <select id="invite-role" class="form-control" required>
-                                    <option value="owner">👑 Owner</option>
-                                    <option value="manager" selected>🔧 Manager</option>
-                                    <option value="task_runner">▶ Task Runner</option>
-                                    <option value="guest">👁 Guest</option>
+                                    <option value="owner">Owner</option>
+                                    <option value="manager" selected>Manager</option>
+                                    <option value="task_runner">Task Runner</option>
+                                    <option value="guest">Guest</option>
                                 </select>
                             </div>
                             <div class="modal-footer">

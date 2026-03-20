@@ -84,7 +84,7 @@
             if (!roles.length) {
                 rolesContent.innerHTML = `
                     <div class="card text-center" style="max-width:620px;margin:0 auto;">
-                        <div style="font-size:40px;margin-bottom:10px;">🔑</div>
+                        <div style="font-size:40px;margin-bottom:10px;"><i class="fa-solid fa-key"></i></div>
                         <h3>Нет ролей</h3>
                         <p style="color:var(--text-light);">Создайте первую роль с нужным набором прав.</p>
                         <button class="btn btn-primary mt-2" onclick="openRoleModal()">+ Новая роль</button>
@@ -111,8 +111,8 @@
                                     <td><code>${escapeHtml(r.slug || '')}</code></td>
                                     <td>${renderPermissionsBadges(r.permissions)}</td>
                                     <td>
-                                        <button class="btn btn-sm" onclick="openRoleModal(${r.id})">✏️</button>
-                                        <button class="btn btn-danger btn-sm" onclick="deleteRole(${r.id})">🗑️</button>
+                                        <button class="btn btn-sm" onclick="openRoleModal(${r.id})"><i class="fa-solid fa-pen"></i></button>
+                                        <button class="btn btn-danger btn-sm" onclick="deleteRole(${r.id})"><i class="fa-solid fa-trash"></i></button>
                                     </td>
                                 </tr>
                             `).join('')}
@@ -132,7 +132,7 @@
             overlay.innerHTML = `
                 <div class="modal" style="max-width:520px;">
                     <div class="modal-header">
-                        <h2>${isEdit ? '✏️ Редактирование роли' : '➕ Новая роль'}</h2>
+                        <h2>${isEdit ? '<i class="fa-solid fa-pen"></i> Редактирование роли' : '<i class="fa-solid fa-plus"></i> Новая роль'}</h2>
                     </div>
                     <form id="role-form">
                         <div class="form-group">

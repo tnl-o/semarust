@@ -192,17 +192,17 @@
                         <div style="opacity:.85; font-size:14px;">Задач за период</div>
                     </div>
                     <div class="card text-center" style="background:linear-gradient(135deg,#276749,#38a169); color:#fff; padding:20px;">
-                        <div style="font-size:28px; margin-bottom:6px;">✓</div>
+                        <div style="font-size:28px; margin-bottom:6px;"><i class="fa-solid fa-check"></i></div>
                         <div style="font-size:32px; font-weight:700;">${successRate}${total > 0 ? '%' : ''}</div>
                         <div style="opacity:.85; font-size:14px;">Успешных</div>
                     </div>
                     <div class="card text-center" style="background:linear-gradient(135deg,#c53030,#e53e3e); color:#fff; padding:20px;">
-                        <div style="font-size:28px; margin-bottom:6px;">✗</div>
+                        <div style="font-size:28px; margin-bottom:6px;"><i class="fa-solid fa-xmark"></i></div>
                         <div style="font-size:32px; font-weight:700;">${failed}</div>
                         <div style="opacity:.85; font-size:14px;">Ошибок</div>
                     </div>
                     <div class="card text-center" style="background:linear-gradient(135deg,#744210,#dd6b20); color:#fff; padding:20px;">
-                        <div style="font-size:28px; margin-bottom:6px;">⏱</div>
+                        <div style="font-size:28px; margin-bottom:6px;"><i class="fa-regular fa-clock"></i></div>
                         <div style="font-size:32px; font-weight:700;">${avgDurationStr}</div>
                         <div style="opacity:.85; font-size:14px;">Ср. время</div>
                     </div>
@@ -227,13 +227,13 @@
                 <!-- Resource stats -->
                 <div class="grid" style="grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap:20px;">
                     <div class="card">
-                        <h3 style="margin-bottom:12px;">📁 Ресурсы проекта</h3>
+                        <h3 style="margin-bottom:12px;"><i class="fa-solid fa-folder"></i> Ресурсы проекта</h3>
                         ${[
-                            ['📋 Шаблоны',    templates.length],
-                            ['📦 Инвентари',  inventories.length],
-                            ['⚙️ Окружения',  environments.length],
-                            ['🗂️ Репозитории', repositories.length],
-                            ['🔐 Ключи',       keys.length],
+                            ['<i class="fa-solid fa-clipboard"></i> Шаблоны',    templates.length],
+                            ['<i class="fa-solid fa-boxes-stacked"></i> Инвентари',  inventories.length],
+                            ['<i class="fa-solid fa-gear"></i> Окружения',  environments.length],
+                            ['<i class="fa-solid fa-folder-open"></i> Репозитории', repositories.length],
+                            ['<i class="fa-solid fa-lock"></i> Ключи',       keys.length],
                         ].map(([label, val]) => `
                             <div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid var(--border);">
                                 <span>${label}</span>
@@ -241,13 +241,13 @@
                             </div>`).join('')}
                     </div>
                     <div class="card">
-                        <h3 style="margin-bottom:12px;">📊 Задачи по статусам</h3>
+                        <h3 style="margin-bottom:12px;"><i class="fa-solid fa-chart-bar"></i> Задачи по статусам</h3>
                         ${[
-                            ['✓ Успешные',    successful, '#276749'],
-                            ['✗ Ошибки',      failed,    '#c53030'],
-                            ['■ Остановлены', stopped,   '#dd6b20'],
-                            ['▶ Выполняются', running,   '#1976d2'],
-                            ['⏳ Ожидают',    waiting,   '#666'],
+                            ['Успешные',    successful, '#276749'],
+                            ['Ошибки',      failed,    '#c53030'],
+                            ['Остановлены', stopped,   '#dd6b20'],
+                            ['Выполняются', running,   '#1976d2'],
+                            ['Ожидают',     waiting,   '#666'],
                         ].map(([label, val, color]) => `
                             <div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid var(--border);">
                                 <span style="color:${color};">${label}</span>

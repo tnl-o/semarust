@@ -90,12 +90,12 @@
         let apps = [];
 
         const APP_ICONS = {
-            ansible: { icon: '⚙', color: '#ee0000', label: 'Ansible' },
+            ansible: { icon: '<i class="fa-solid fa-gear"></i>', color: '#ee0000', label: 'Ansible' },
             terraform: { icon: '⬡', color: '#7b42bc', label: 'Terraform' },
             tofu: { icon: '⬡', color: '#1c5ef5', label: 'OpenTofu' },
             terragrunt: { icon: '⬡', color: '#448844', label: 'Terragrunt' },
             bash: { icon: '$', color: '#333', label: 'Bash' },
-            python: { icon: '🐍', color: '#3776ab', label: 'Python' },
+            python: { icon: 'Py', color: '#3776ab', label: 'Python' },
             powershell: { icon: '>', color: '#0078d4', label: 'PowerShell' },
             pulumi: { icon: '◆', color: '#8a3391', label: 'Pulumi' },
         };
@@ -138,8 +138,8 @@
                             ${argsStr ? `<div style="font-size:11px; color:var(--text-light); margin-top:2px;">args: <code>${escapeHtml(argsStr)}</code></div>` : ''}
                         </div>
                         <div style="display:flex; gap:6px; align-items:center;">
-                            <span class="badge badge-success" style="font-size:11px;">✓ Доступен</span>
-                            <button class="btn btn-sm btn-secondary" onclick="editApp('${escapeHtml(app.id)}')" title="Редактировать путь">✎</button>
+                            <span class="badge badge-success" style="font-size:11px;">Доступен</span>
+                            <button class="btn btn-sm btn-secondary" onclick="editApp('${escapeHtml(app.id)}')" title="Редактировать путь"><i class="fa-solid fa-pen"></i></button>
                         </div>
                     </div>`;
             }).join('');

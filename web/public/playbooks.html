@@ -18,7 +18,7 @@
 
             <div class="main-body">
                 <div class="page-header">
-                    <h1>📜 Playbooks</h1>
+                    <h1><i class="fa-solid fa-book"></i> Playbooks</h1>
                     <button class="btn btn-primary" onclick="openPlaybookModal()">+ Новый Playbook</button>
                 </div>
 
@@ -31,7 +31,7 @@
 
                 <div id="runs-section" style="display:none; margin-top:24px;">
                     <div class="page-header" style="margin-bottom:12px;">
-                        <h2 style="font-size:18px; margin:0;">📋 История запусков: <span id="runs-playbook-name" style="color:var(--primary);"></span></h2>
+                        <h2 style="font-size:18px; margin:0;"><i class="fa-solid fa-clock-rotate-left"></i> История запусков: <span id="runs-playbook-name" style="color:var(--primary);"></span></h2>
                         <button class="btn btn-sm" onclick="closeRunsSection()">✕ Закрыть</button>
                     </div>
                     <div id="runs-content">
@@ -70,7 +70,7 @@
             api.getPlaybooks(projectId)
                 .then(playbooks => {
                     if (playbooks.length === 0) {
-                        ui.showEmpty(container, '📜', 'Нет playbook\'ов', 'Создайте первый playbook чтобы начать работу');
+                        ui.showEmpty(container, '<i class="fa-solid fa-book fa-2x"></i>', 'Нет playbook\'ов', 'Создайте первый playbook чтобы начать работу');
                     } else {
                         container.innerHTML = `
                             <table class="table">
@@ -90,14 +90,14 @@
                                             <td><strong>${escapeHtml(pb.name)}</strong></td>
                                             <td><span class="badge badge-${pb.playbook_type || 'ansible'}">${pb.playbook_type || 'ansible'}</span></td>
                                             <td style="max-width: 300px; overflow: hidden; text-overflow: ellipsis;">${escapeHtml(pb.description || '—')}</td>
-                                            <td>${pb.repository_id ? '📁 ID: ' + pb.repository_id : '—'}</td>
+                                            <td>${pb.repository_id ? '<i class="fa-solid fa-folder"></i> ID: ' + pb.repository_id : '—'}</td>
                                             <td>${formatDate(pb.updated)}</td>
                                             <td>
                                                 <a href="run.html?id=${projectId}&playbook=${pb.id}" class="btn btn-success btn-sm" title="Запустить">▶</a>
-                                                <button class="btn btn-sm" onclick="showRunHistory(${pb.id}, ${JSON.stringify(escapeHtml(pb.name))})" title="История запусков">📋</button>
-                                                <button class="btn btn-sm" onclick="editPlaybook(${pb.id})" title="Редактировать">✏️</button>
-                                                <button class="btn btn-sm" onclick="syncPlaybook(${pb.id})" title="Синхронизировать из Git">🔄</button>
-                                                <button class="btn btn-danger btn-sm" onclick="deletePlaybook(${pb.id})" title="Удалить">🗑️</button>
+                                                <button class="btn btn-sm" onclick="showRunHistory(${pb.id}, ${JSON.stringify(escapeHtml(pb.name))})" title="История запусков"><i class="fa-solid fa-list"></i></button>
+                                                <button class="btn btn-sm" onclick="editPlaybook(${pb.id})" title="Редактировать"><i class="fa-solid fa-pen"></i></button>
+                                                <button class="btn btn-sm" onclick="syncPlaybook(${pb.id})" title="Синхронизировать из Git"><i class="fa-solid fa-arrows-rotate"></i></button>
+                                                <button class="btn btn-danger btn-sm" onclick="deletePlaybook(${pb.id})" title="Удалить"><i class="fa-solid fa-trash"></i></button>
                                             </td>
                                         </tr>
                                     `).join('')}
@@ -159,7 +159,7 @@
             modal.innerHTML = `
                 <div class="modal" style="max-width: 700px;">
                     <div class="modal-header">
-                        <h2>${isEdit ? '✏️ Редактирование' : '➕ Новый'} Playbook</h2>
+                        <h2>${isEdit ? '<i class="fa-solid fa-pen"></i> Редактирование' : '<i class="fa-solid fa-plus"></i> Новый'} Playbook</h2>
                     </div>
                     <form id="playbook-form">
                         <div class="form-group">
@@ -295,7 +295,7 @@
                 .then(runs => {
                     if (!runs || runs.length === 0) {
                         container.innerHTML = `<div class="card" style="text-align:center;padding:24px;">
-                            <div style="font-size:32px;margin-bottom:8px;">📋</div>
+                            <div style="font-size:32px;margin-bottom:8px;"><i class="fa-solid fa-list"></i></div>
                             <p style="color:var(--text-light);">Нет истории запусков для этого playbook</p>
                         </div>`;
                         return;
@@ -303,12 +303,12 @@
 
                     const statusBadge = (s) => {
                         const m = {
-                            success:  ['badge-success', '✅ Успешно'],
-                            error:    ['badge-danger',  '❌ Ошибка'],
-                            failed:   ['badge-danger',  '❌ Ошибка'],
-                            running:  ['badge-info',    '🔄 Выполняется'],
-                            waiting:  ['badge-secondary','⏳ Ожидание'],
-                            stopped:  ['badge-warning', '⏹ Остановлено'],
+                            success:  ['badge-success', '<i class="fa-solid fa-check"></i> Успешно'],
+                            error:    ['badge-danger',  '<i class="fa-solid fa-xmark"></i> Ошибка'],
+                            failed:   ['badge-danger',  '<i class="fa-solid fa-xmark"></i> Ошибка'],
+                            running:  ['badge-info',    '<i class="fa-solid fa-arrows-rotate"></i> Выполняется'],
+                            waiting:  ['badge-secondary','Ожидание'],
+                            stopped:  ['badge-warning', '<i class="fa-solid fa-stop"></i> Остановлено'],
                         };
                         const [cls, label] = m[s] || ['badge-secondary', s];
                         return `<span class="badge ${cls}">${label}</span>`;
@@ -334,8 +334,8 @@
                                     <td>${r.created ? formatDate(r.created) : '—'}</td>
                                     <td>${r.finished ? formatDate(r.finished) : '—'}</td>
                                     <td>
-                                        ${r.task_id ? `<a href="task.html?id=${projectId}&task=${r.task_id}" class="btn btn-sm">📄 Задача</a>` : '—'}
-                                        <button class="btn btn-danger btn-sm" onclick="deleteRun(${r.id})">🗑️</button>
+                                        ${r.task_id ? `<a href="task.html?id=${projectId}&task=${r.task_id}" class="btn btn-sm"><i class="fa-solid fa-file-lines"></i> Задача</a>` : '—'}
+                                        <button class="btn btn-danger btn-sm" onclick="deleteRun(${r.id})"><i class="fa-solid fa-trash"></i></button>
                                     </td>
                                 </tr>`).join('')}
                             </tbody>

@@ -82,7 +82,7 @@
                     <code id="token-value" style="flex:1; background:#f5f5f5; padding:8px 12px; border-radius:4px; font-size:13px; word-break:break-all;"></code>
                     <button class="btn btn-secondary btn-sm" onclick="copyToken()">⧉ Копировать</button>
                 </div>
-                <p style="color:#c53030; font-size:12px; margin-top:10px;">⚠ Сохраните токен сейчас — он больше не будет показан!</p>
+                <p style="color:#c53030; font-size:12px; margin-top:10px;"><i class="fa-solid fa-triangle-exclamation"></i> Сохраните токен сейчас — он больше не будет показан!</p>
             </div>
         </div>
     </div>
@@ -113,7 +113,7 @@
             if (!runners.length) {
                 el.innerHTML = `
                     <div class="card text-center">
-                        <div style="font-size:48px;margin-bottom:15px">⚡</div>
+                        <div style="font-size:48px;margin-bottom:15px"><i class="fa-solid fa-bolt" style="color:var(--primary-dark);"></i></div>
                         <h3>Нет Runners</h3>
                         <p style="color:var(--text-light)">Добавьте runner для выполнения задач</p>
                         <button class="btn btn-primary mt-3" onclick="openModal()">Добавить Runner</button>
@@ -153,9 +153,9 @@
                                     <td>${lastStr}</td>
                                     <td>${r.project_id ? 'Проект #' + r.project_id : '<span style="color:var(--text-light)">Глобальный</span>'}</td>
                                     <td>
-                                        <button class="btn btn-sm btn-secondary" onclick="editRunner(${r.id})" title="Редактировать">✎</button>
-                                        <button class="btn btn-sm btn-${r.active ? 'warning' : 'success'}" onclick="toggleRunner(${r.id}, ${!r.active})" title="${r.active ? 'Выключить' : 'Включить'}">${r.active ? '⏸' : '▶'}</button>
-                                        <button class="btn btn-sm btn-danger" onclick="deleteRunner(${r.id})" title="Удалить">🗑</button>
+                                        <button class="btn btn-sm btn-secondary" onclick="editRunner(${r.id})" title="Редактировать"><i class="fa-solid fa-pen"></i></button>
+                                        <button class="btn btn-sm btn-${r.active ? 'warning' : 'success'}" onclick="toggleRunner(${r.id}, ${!r.active})" title="${r.active ? 'Выключить' : 'Включить'}">${r.active ? '<i class="fa-solid fa-pause"></i>' : '<i class="fa-solid fa-play"></i>'}</button>
+                                        <button class="btn btn-sm btn-danger" onclick="deleteRunner(${r.id})" title="Удалить"><i class="fa-solid fa-trash"></i></button>
                                     </td>
                                 </tr>`;
                             }).join('')}
