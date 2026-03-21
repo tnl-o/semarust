@@ -537,6 +537,30 @@
                             </div>` : ''}
                             <div style="border-top:1px solid var(--border); margin:12px 0 8px; padding-top:12px;">
                                 <strong style="font-size:13px; color:var(--text-light);">Режим запуска</strong>
+                                ${(tpl.app === 'terraform' || tpl.app === 'tofu') ? `
+                                <div style="margin-top:10px;">
+                                    <div style="display:flex; gap:8px;">
+                                        <label style="display:flex; align-items:center; gap:6px; font-size:13px; cursor:pointer; flex:1; padding:8px 12px; border:2px solid var(--border); border-radius:6px; background:var(--surface);" id="mode-apply-label">
+                                            <input type="radio" name="tf-mode" id="tf-mode-apply" value="apply" checked onchange="updateTfModeUI()">
+                                            <div>
+                                                <div style="font-weight:600;">▶ Apply</div>
+                                                <div style="font-size:11px; color:var(--text-light);">Применить изменения</div>
+                                            </div>
+                                        </label>
+                                        <label style="display:flex; align-items:center; gap:6px; font-size:13px; cursor:pointer; flex:1; padding:8px 12px; border:2px solid var(--border); border-radius:6px; background:var(--surface);" id="mode-plan-label">
+                                            <input type="radio" name="tf-mode" id="tf-mode-plan" value="plan" onchange="updateTfModeUI()">
+                                            <div>
+                                                <div style="font-weight:600;">🔍 Plan Preview</div>
+                                                <div style="font-size:11px; color:var(--text-light);">Только план — без изменений</div>
+                                            </div>
+                                        </label>
+                                    </div>
+                                    <div id="tf-plan-banner" style="display:none; margin-top:8px; padding:8px 12px; background:#e8f5e9; border-radius:6px; border:1px solid #a5d6a7; font-size:12px;">
+                                        <i class="fa-solid fa-circle-info" style="color:#388e3c;"></i>
+                                        Terraform Plan — безопасный предпросмотр изменений. Задача выполнит <code>terraform plan</code> и покажет что изменится (зелёный = добавить, красный = удалить, жёлтый = изменить).
+                                    </div>
+                                </div>
+                                ` : `
                                 <div style="display:flex; gap:20px; margin-top:8px; flex-wrap:wrap;">
                                     <label style="display:flex; align-items:center; gap:6px; font-size:13px; cursor:pointer;">
                                         <input type="checkbox" id="task-dry-run">
@@ -554,6 +578,7 @@
                                 <div style="font-size:11px; color:var(--text-light); margin-top:4px;">
                                     Dry Run — пробный прогон без реальных изменений. Diff — показывает изменения в файлах.
                                 </div>
+                                `}
                             </div>
                             <div class="modal-footer">
                                 <button type="button" class="btn" onclick="document.getElementById('new-task-dialog').remove()">Отмена</button>
@@ -565,16 +590,33 @@
                 document.body.appendChild(modal);
                 modal.addEventListener('click', e => { if (e.target === modal) modal.remove(); });
 
+                // Terraform Plan mode UI toggle
+                window.updateTfModeUI = function() {
+                    const planMode = document.getElementById('tf-mode-plan')?.checked;
+                    const planBanner = document.getElementById('tf-plan-banner');
+                    const planLabel = document.getElementById('mode-plan-label');
+                    const applyLabel = document.getElementById('mode-apply-label');
+                    if (planBanner) planBanner.style.display = planMode ? '' : 'none';
+                    if (planLabel) planLabel.style.borderColor = planMode ? '#388e3c' : 'var(--border)';
+                    if (applyLabel) applyLabel.style.borderColor = !planMode ? '#1976d2' : 'var(--border)';
+                };
+                // Initialize on mount
+                setTimeout(() => { if (typeof updateTfModeUI === 'function') updateTfModeUI(); }, 50);
+
                 document.getElementById('new-task-form').addEventListener('submit', e => {
                     e.preventDefault();
                     const message = document.getElementById('task-message').value.trim() || null;
                     const branch = showBranch ? (document.getElementById('task-branch').value.trim() || null) : null;
-                    const dryRun = document.getElementById('task-dry-run').checked;
-                    const diffMode = document.getElementById('task-diff-mode').checked;
+                    const isTerraform = (tpl.app === 'terraform' || tpl.app === 'tofu');
+                    const tfPlanMode = isTerraform && document.getElementById('tf-mode-plan')?.checked;
+                    const dryRun = !isTerraform && document.getElementById('task-dry-run')?.checked;
+                    const diffMode = !isTerraform && document.getElementById('task-diff-mode')?.checked;
                     let args = showArgs ? (document.getElementById('task-args').value.trim() || '') : (tpl.arguments || '');
-                    // Append --check / --diff flags
+                    // Append --check / --diff flags for Ansible
                     if (dryRun && !args.includes('--check')) args = (args + ' --check').trim();
                     if (diffMode && !args.includes('--diff')) args = (args + ' --diff').trim();
+                    // For Terraform plan mode: set plan subcommand via dry_run flag
+                    const effectiveDryRun = dryRun || tfPlanMode;
                     const invSelect = showInventory ? document.getElementById('task-inventory') : null;
                     const inventory_id = invSelect && invSelect.value ? parseInt(invSelect.value) : null;
                     modal.remove();
@@ -582,7 +624,7 @@
                     if (branch) params.git_branch = branch;
                     if (args) params.arguments = args;
                     if (inventory_id) params.inventory_id = inventory_id;
-                    if (dryRun) params.dry_run = true;
+                    if (effectiveDryRun) params.dry_run = true;
                     const taskParams = {};
                     if (showLimit) {
                         const v = document.getElementById('task-limit').value.trim();

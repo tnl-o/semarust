@@ -148,6 +148,12 @@
                     <div class="progress-bar"><div class="progress-bar-fill"></div></div>
                 </div>
                 <div id="modal-stages" style="display:none;"></div>
+                <!-- Terraform Plan Preview banner (shown only for dry_run tasks) -->
+                <div id="tf-plan-banner-meta" style="display:none; padding:10px 14px; background:#e8f5e9; border:1px solid #a5d6a7; border-radius:6px; margin-bottom:12px; font-size:13px;">
+                    <i class="fa-solid fa-magnifying-glass" style="color:#388e3c;"></i>
+                    <strong style="color:#388e3c;">Terraform Plan Preview</strong> — это предпросмотр изменений, реальные ресурсы не изменялись.
+                    Зелёный (+) = создать, Красный (−) = удалить, Жёлтый (~) = изменить.
+                </div>
                 <div class="task-meta-grid" id="modal-meta"></div>
                 <div>
                     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
@@ -357,6 +363,16 @@
             if (task.arguments) extra.push(`<div class="task-meta-item" style="grid-column:1/-1"><div class="task-meta-label">Аргументы</div><div class="task-meta-value"><code style="font-size:12px; word-break:break-all;">${escapeHtml(task.arguments)}</code></div></div>`);
             if (task.commit_hash) extra.push(`<div class="task-meta-item"><div class="task-meta-label">Коммит</div><div class="task-meta-value"><code style="font-size:12px;">${escapeHtml(task.commit_hash.substring(0,8))}</code></div></div>`);
             if (task.version) extra.push(`<div class="task-meta-item"><div class="task-meta-label">Версия</div><div class="task-meta-value">${escapeHtml(task.version)}</div></div>`);
+
+            // Show Terraform Plan Preview banner
+            const dryRunBannerEl = $('#tf-plan-banner-meta');
+            if (dryRunBannerEl) {
+                if (task.dry_run) {
+                    dryRunBannerEl.style.display = '';
+                } else {
+                    dryRunBannerEl.style.display = 'none';
+                }
+            }
 
             $('#modal-meta').innerHTML = `
                 <div class="task-meta-item">
