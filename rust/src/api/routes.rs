@@ -429,6 +429,18 @@ pub fn api_routes() -> Router<Arc<AppState>> {
         .route("/api/project/{project_id}/notifications/{id}", put(handlers::notification::update_notification_policy))
         .route("/api/project/{project_id}/notifications/{id}", delete(handlers::notification::delete_notification_policy))
         .route("/api/project/{project_id}/notifications/{id}/test", post(handlers::notification::test_notification_policy))
+
+        // Custom Credential Types (global)
+        .route("/api/credential-types", get(handlers::credential_type::list_credential_types))
+        .route("/api/credential-types", post(handlers::credential_type::create_credential_type))
+        .route("/api/credential-types/{id}", get(handlers::credential_type::get_credential_type))
+        .route("/api/credential-types/{id}", put(handlers::credential_type::update_credential_type))
+        .route("/api/credential-types/{id}", delete(handlers::credential_type::delete_credential_type))
+
+        // Credential Instances (per-project)
+        .route("/api/project/{project_id}/credentials", get(handlers::credential_type::list_credential_instances))
+        .route("/api/project/{project_id}/credentials", post(handlers::credential_type::create_credential_instance))
+        .route("/api/project/{project_id}/credentials/{id}", delete(handlers::credential_type::delete_credential_instance))
 }
 
 /// Создаёт маршруты для статических файлов

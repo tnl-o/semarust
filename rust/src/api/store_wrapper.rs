@@ -875,4 +875,35 @@ impl crate::db::store::NotificationPolicyManager for StoreWrapper {
 }
 
 #[async_trait]
+impl crate::db::store::CredentialTypeManager for StoreWrapper {
+    async fn get_credential_types(&self) -> crate::error::Result<Vec<crate::models::credential_type::CredentialType>> {
+        self.inner.as_ref().get_credential_types().await
+    }
+    async fn get_credential_type(&self, id: i32) -> crate::error::Result<crate::models::credential_type::CredentialType> {
+        self.inner.as_ref().get_credential_type(id).await
+    }
+    async fn create_credential_type(&self, payload: crate::models::credential_type::CredentialTypeCreate) -> crate::error::Result<crate::models::credential_type::CredentialType> {
+        self.inner.as_ref().create_credential_type(payload).await
+    }
+    async fn update_credential_type(&self, id: i32, payload: crate::models::credential_type::CredentialTypeUpdate) -> crate::error::Result<crate::models::credential_type::CredentialType> {
+        self.inner.as_ref().update_credential_type(id, payload).await
+    }
+    async fn delete_credential_type(&self, id: i32) -> crate::error::Result<()> {
+        self.inner.as_ref().delete_credential_type(id).await
+    }
+    async fn get_credential_instances(&self, project_id: i32) -> crate::error::Result<Vec<crate::models::credential_type::CredentialInstance>> {
+        self.inner.as_ref().get_credential_instances(project_id).await
+    }
+    async fn get_credential_instance(&self, id: i32, project_id: i32) -> crate::error::Result<crate::models::credential_type::CredentialInstance> {
+        self.inner.as_ref().get_credential_instance(id, project_id).await
+    }
+    async fn create_credential_instance(&self, project_id: i32, payload: crate::models::credential_type::CredentialInstanceCreate) -> crate::error::Result<crate::models::credential_type::CredentialInstance> {
+        self.inner.as_ref().create_credential_instance(project_id, payload).await
+    }
+    async fn delete_credential_instance(&self, id: i32, project_id: i32) -> crate::error::Result<()> {
+        self.inner.as_ref().delete_credential_instance(id, project_id).await
+    }
+}
+
+#[async_trait]
 impl Store for StoreWrapper {}

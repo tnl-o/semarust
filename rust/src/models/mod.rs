@@ -43,6 +43,7 @@ pub mod playbook_run;
 pub mod playbook_run_history;
 pub mod workflow;
 pub mod notification;
+pub mod credential_type;
 
 #[cfg(test)]
 mod tests;
@@ -89,6 +90,7 @@ pub use task_params::{AnsibleTaskParams as AnsibleTaskParamsStruct, TerraformTas
 pub use audit_log::{AuditLog, AuditAction, AuditObjectType, AuditLevel, AuditDetails, AuditLogFilter, AuditLogResult};
 pub use webhook::{Webhook, WebhookType, CreateWebhook, UpdateWebhook, TestWebhook, WebhookLog};
 pub use analytics::{TaskStats, UserActivity, PerformanceMetrics, ResourceUsage, ChartData, TimeSeries, SystemStatus, TopItem, TopSlowTask, TopUser, AnalyticsQueryParams, ProjectAnalytics, RunnerMetrics, SystemMetrics};
+pub use credential_type::{CredentialType, CredentialTypeCreate, CredentialTypeUpdate, CredentialInstance, CredentialInstanceCreate, CredentialField, CredentialInjector};
 
 // Ре-экспорт RetrieveQueryParams из db::store
 pub use crate::db::store::RetrieveQueryParams;

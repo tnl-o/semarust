@@ -24,6 +24,7 @@ pub mod playbook_runs;
 pub mod workflow;
 pub mod notification;
 pub mod ai;
+pub mod credential_type;
 
 // Ре-экспорт всех handlers для удобства
 pub use auth::*;

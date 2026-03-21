@@ -8,6 +8,7 @@ use crate::models::playbook::{Playbook, PlaybookCreate, PlaybookUpdate};
 use crate::models::playbook_run_history::{PlaybookRun, PlaybookRunCreate, PlaybookRunUpdate, PlaybookRunStatus, PlaybookRunStats, PlaybookRunFilter};
 use crate::models::workflow::{Workflow, WorkflowCreate, WorkflowUpdate, WorkflowNode, WorkflowNodeCreate, WorkflowNodeUpdate, WorkflowEdge, WorkflowEdgeCreate, WorkflowRun};
 use crate::models::notification::{NotificationPolicy, NotificationPolicyCreate, NotificationPolicyUpdate};
+use crate::models::credential_type::{CredentialType, CredentialTypeCreate, CredentialTypeUpdate, CredentialInstance, CredentialInstanceCreate};
 use crate::models::Hook;
 use crate::error::Result;
 use crate::services::task_logger::TaskStatus;
@@ -434,6 +435,20 @@ pub trait NotificationPolicyManager: Send + Sync {
     async fn get_matching_policies(&self, project_id: i32, trigger: &str, template_id: Option<i32>) -> Result<Vec<NotificationPolicy>>;
 }
 
+/// Менеджер пользовательских типов учётных данных
+#[async_trait]
+pub trait CredentialTypeManager: Send + Sync {
+    async fn get_credential_types(&self) -> Result<Vec<CredentialType>>;
+    async fn get_credential_type(&self, id: i32) -> Result<CredentialType>;
+    async fn create_credential_type(&self, payload: CredentialTypeCreate) -> Result<CredentialType>;
+    async fn update_credential_type(&self, id: i32, payload: CredentialTypeUpdate) -> Result<CredentialType>;
+    async fn delete_credential_type(&self, id: i32) -> Result<()>;
+    async fn get_credential_instances(&self, project_id: i32) -> Result<Vec<CredentialInstance>>;
+    async fn get_credential_instance(&self, id: i32, project_id: i32) -> Result<CredentialInstance>;
+    async fn create_credential_instance(&self, project_id: i32, payload: CredentialInstanceCreate) -> Result<CredentialInstance>;
+    async fn delete_credential_instance(&self, id: i32, project_id: i32) -> Result<()>;
+}
+
 /// Менеджер Playbook
 pub trait Store:
     ConnectionManager
@@ -467,5 +482,6 @@ pub trait Store:
     + ProjectRoleManager
     + WorkflowManager
     + NotificationPolicyManager
+    + CredentialTypeManager
 {
 }

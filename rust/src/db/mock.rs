@@ -878,3 +878,34 @@ impl crate::db::store::NotificationPolicyManager for MockStore {
         Ok(Vec::new())
     }
 }
+
+#[async_trait]
+impl crate::db::store::CredentialTypeManager for MockStore {
+    async fn get_credential_types(&self) -> Result<Vec<crate::models::credential_type::CredentialType>> {
+        Ok(Vec::new())
+    }
+    async fn get_credential_type(&self, _id: i32) -> Result<crate::models::credential_type::CredentialType> {
+        Err(Error::NotFound("CredentialType not found".to_string()))
+    }
+    async fn create_credential_type(&self, _payload: crate::models::credential_type::CredentialTypeCreate) -> Result<crate::models::credential_type::CredentialType> {
+        Err(Error::Other("not implemented".to_string()))
+    }
+    async fn update_credential_type(&self, _id: i32, _payload: crate::models::credential_type::CredentialTypeUpdate) -> Result<crate::models::credential_type::CredentialType> {
+        Err(Error::Other("not implemented".to_string()))
+    }
+    async fn delete_credential_type(&self, _id: i32) -> Result<()> {
+        Ok(())
+    }
+    async fn get_credential_instances(&self, _project_id: i32) -> Result<Vec<crate::models::credential_type::CredentialInstance>> {
+        Ok(Vec::new())
+    }
+    async fn get_credential_instance(&self, _id: i32, _project_id: i32) -> Result<crate::models::credential_type::CredentialInstance> {
+        Err(Error::NotFound("CredentialInstance not found".to_string()))
+    }
+    async fn create_credential_instance(&self, _project_id: i32, _payload: crate::models::credential_type::CredentialInstanceCreate) -> Result<crate::models::credential_type::CredentialInstance> {
+        Err(Error::Other("not implemented".to_string()))
+    }
+    async fn delete_credential_instance(&self, _id: i32, _project_id: i32) -> Result<()> {
+        Ok(())
+    }
+}
