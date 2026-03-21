@@ -312,7 +312,7 @@ const MARKETPLACE_TEMPLATES = [
 
 resource "kubernetes_service_account" "app" {
   metadata {
-    name      = "${var.namespace_name}-sa"
+    name      = "\${var.namespace_name}-sa"
     namespace = kubernetes_namespace.app.metadata[0].name
   }
 }`,
@@ -334,7 +334,7 @@ resource "kubernetes_service_account" "app" {
         preview: `resource "aws_vpc" "main" {
   cidr_block = var.vpc_cidr
   enable_dns_hostnames = true
-  tags = { Name = "${var.project_name}-vpc" }
+  tags = { Name = "\${var.project_name}-vpc" }
 }
 
 resource "aws_subnet" "public" {
@@ -389,8 +389,8 @@ df -h /`,
             description: 'Deploy via git pull + service restart',
         },
         preview: `#!/bin/bash
-APP_DIR="${APP_DIR:-/opt/app}"
-SERVICE="${SERVICE:-app}"
+APP_DIR="\${APP_DIR:-/opt/app}"
+SERVICE="\${SERVICE:-app}"
 
 cd "$APP_DIR"
 git pull origin main
@@ -413,8 +413,8 @@ echo "Deployed successfully"`,
             description: 'Check HTTP endpoints availability',
         },
         preview: `#!/bin/bash
-URLS="${URLS:-http://localhost}"
-TIMEOUT="${TIMEOUT:-10}"
+URLS="\${URLS:-http://localhost}"
+TIMEOUT="\${TIMEOUT:-10}"
 
 for url in $URLS; do
   code=$(curl -s -o /dev/null -w "%{http_code}" --max-time $TIMEOUT "$url")
