@@ -966,4 +966,20 @@ impl crate::db::store::SnapshotManager for StoreWrapper {
 }
 
 #[async_trait]
+impl crate::db::store::CostEstimateManager for StoreWrapper {
+    async fn get_cost_estimates(&self, project_id: i32, limit: i64) -> crate::error::Result<Vec<crate::models::cost_estimate::CostEstimate>> {
+        self.inner.as_ref().get_cost_estimates(project_id, limit).await
+    }
+    async fn get_cost_estimate_for_task(&self, project_id: i32, task_id: i32) -> crate::error::Result<Option<crate::models::cost_estimate::CostEstimate>> {
+        self.inner.as_ref().get_cost_estimate_for_task(project_id, task_id).await
+    }
+    async fn create_cost_estimate(&self, payload: crate::models::cost_estimate::CostEstimateCreate) -> crate::error::Result<crate::models::cost_estimate::CostEstimate> {
+        self.inner.as_ref().create_cost_estimate(payload).await
+    }
+    async fn get_cost_summaries(&self, project_id: i32) -> crate::error::Result<Vec<crate::models::cost_estimate::CostSummary>> {
+        self.inner.as_ref().get_cost_summaries(project_id).await
+    }
+}
+
+#[async_trait]
 impl Store for StoreWrapper {}

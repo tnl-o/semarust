@@ -937,3 +937,11 @@ impl crate::db::store::SnapshotManager for MockStore {
     async fn create_snapshot(&self, _project_id: i32, _payload: crate::models::snapshot::TaskSnapshotCreate) -> Result<crate::models::snapshot::TaskSnapshot> { Err(Error::Other("not implemented".to_string())) }
     async fn delete_snapshot(&self, _id: i32, _project_id: i32) -> Result<()> { Ok(()) }
 }
+
+#[async_trait]
+impl crate::db::store::CostEstimateManager for MockStore {
+    async fn get_cost_estimates(&self, _project_id: i32, _limit: i64) -> Result<Vec<crate::models::cost_estimate::CostEstimate>> { Ok(Vec::new()) }
+    async fn get_cost_estimate_for_task(&self, _project_id: i32, _task_id: i32) -> Result<Option<crate::models::cost_estimate::CostEstimate>> { Ok(None) }
+    async fn create_cost_estimate(&self, _payload: crate::models::cost_estimate::CostEstimateCreate) -> Result<crate::models::cost_estimate::CostEstimate> { Err(crate::error::Error::Other("not implemented".to_string())) }
+    async fn get_cost_summaries(&self, _project_id: i32) -> Result<Vec<crate::models::cost_estimate::CostSummary>> { Ok(Vec::new()) }
+}

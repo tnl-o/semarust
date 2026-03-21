@@ -47,6 +47,7 @@ pub mod credential_type;
 pub mod drift;
 pub mod ldap_group;
 pub mod snapshot;
+pub mod cost_estimate;
 
 #[cfg(test)]
 mod tests;
@@ -96,6 +97,7 @@ pub use analytics::{TaskStats, UserActivity, PerformanceMetrics, ResourceUsage, 
 pub use credential_type::{CredentialType, CredentialTypeCreate, CredentialTypeUpdate, CredentialInstance, CredentialInstanceCreate, CredentialField, CredentialInjector};
 pub use ldap_group::{LdapGroupMapping, LdapGroupMappingCreate};
 pub use snapshot::{TaskSnapshot, TaskSnapshotCreate, RollbackRequest};
+pub use cost_estimate::{CostEstimate, CostEstimateCreate, CostSummary};
 
 // Ре-экспорт RetrieveQueryParams из db::store
 pub use crate::db::store::RetrieveQueryParams;

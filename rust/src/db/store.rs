@@ -489,6 +489,7 @@ pub trait Store:
     + DriftManager
     + LdapGroupMappingManager
     + SnapshotManager
+    + CostEstimateManager
 {
 }
 
@@ -521,4 +522,13 @@ pub trait SnapshotManager: Send + Sync {
     async fn get_snapshot(&self, id: i32, project_id: i32) -> Result<TaskSnapshot>;
     async fn create_snapshot(&self, project_id: i32, payload: TaskSnapshotCreate) -> Result<TaskSnapshot>;
     async fn delete_snapshot(&self, id: i32, project_id: i32) -> Result<()>;
+}
+
+/// Менеджер оценок стоимости Terraform (Infracost)
+#[async_trait]
+pub trait CostEstimateManager: Send + Sync {
+    async fn get_cost_estimates(&self, project_id: i32, limit: i64) -> Result<Vec<CostEstimate>>;
+    async fn get_cost_estimate_for_task(&self, project_id: i32, task_id: i32) -> Result<Option<CostEstimate>>;
+    async fn create_cost_estimate(&self, payload: CostEstimateCreate) -> Result<CostEstimate>;
+    async fn get_cost_summaries(&self, project_id: i32) -> Result<Vec<CostSummary>>;
 }

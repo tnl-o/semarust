@@ -28,6 +28,7 @@ pub mod credential_type;
 pub mod drift;
 pub mod ldap_groups;
 pub mod snapshot;
+pub mod cost_estimate;
 
 // Ре-экспорт всех handlers для удобства
 pub use auth::*;

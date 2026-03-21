@@ -155,6 +155,19 @@
                     <strong style="color:#388e3c;">Terraform Plan Preview</strong> — это предпросмотр изменений, реальные ресурсы не изменялись.
                     Зелёный (+) = создать, Красный (−) = удалить, Жёлтый (~) = изменить.
                 </div>
+                <!-- Cost Estimate banner (shown when infracost data is available) -->
+                <div id="cost-estimate-banner" style="display:none; padding:12px 16px; background:#fff8e1; border:1px solid #ffe082; border-radius:6px; margin-bottom:12px;">
+                    <div style="display:flex; align-items:center; gap:10px;">
+                        <i class="fa-solid fa-dollar-sign" style="color:#f59e0b; font-size:18px;"></i>
+                        <div style="flex:1;">
+                            <strong style="color:#92400e;">Оценка стоимости Terraform</strong>
+                            <div id="cost-estimate-content" style="font-size:13px; color:#78350f; margin-top:2px;"></div>
+                        </div>
+                        <a id="cost-estimate-link" href="#" class="btn btn-sm" style="background:#f59e0b; color:#fff; border-color:#d97706;">
+                            <i class="fa-solid fa-chart-line"></i> Детали
+                        </a>
+                    </div>
+                </div>
                 <div class="task-meta-grid" id="modal-meta"></div>
                 <div>
                     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
@@ -373,6 +386,29 @@
                 } else {
                     dryRunBannerEl.style.display = 'none';
                 }
+            }
+
+            // Load cost estimate for this task (non-blocking)
+            if (task.status === 'success' || task.status === 'error') {
+                api.request('/project/' + projectId + '/tasks/' + task.id + '/cost')
+                    .then(cost => {
+                        const banner = $('#cost-estimate-banner');
+                        const content = $('#cost-estimate-content');
+                        const link = $('#cost-estimate-link');
+                        if (!banner || !cost) return;
+                        const costStr = cost.monthly_cost != null ? `$${parseFloat(cost.monthly_cost).toFixed(2)}/месяц` : 'Расчёт выполнен';
+                        const diffStr = cost.monthly_cost_diff != null
+                            ? (cost.monthly_cost_diff > 0
+                                ? ` <span style="color:#dc2626;">↑ +$${cost.monthly_cost_diff.toFixed(2)}</span>`
+                                : cost.monthly_cost_diff < 0
+                                    ? ` <span style="color:#16a34a;">↓ $${cost.monthly_cost_diff.toFixed(2)}</span>`
+                                    : '')
+                            : '';
+                        content.innerHTML = `Оценка: <strong>${costStr}</strong>${diffStr} · ${cost.resources_added}+ ${cost.resources_changed}~ ${cost.resources_deleted}- ресурсов`;
+                        if (link) link.href = 'costs.html?id=' + projectId;
+                        banner.style.display = '';
+                    })
+                    .catch(() => { /* no cost estimate, hide banner */ });
             }
 
             $('#modal-meta').innerHTML = `

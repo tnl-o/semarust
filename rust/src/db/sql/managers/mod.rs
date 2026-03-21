@@ -65,6 +65,7 @@ pub mod credential_type;
 pub mod drift;
 pub mod ldap_group;
 pub mod snapshot;
+pub mod cost_estimate;
 
 // Ре-экспорт трейтов для удобства
 pub use connection::*;

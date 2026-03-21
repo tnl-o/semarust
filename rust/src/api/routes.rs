@@ -461,6 +461,12 @@ pub fn api_routes() -> Router<Arc<AppState>> {
         .route("/api/admin/ldap/group-mappings", get(handlers::ldap_groups::list_ldap_group_mappings))
         .route("/api/admin/ldap/group-mappings", post(handlers::ldap_groups::create_ldap_group_mapping))
         .route("/api/admin/ldap/group-mappings/{id}", delete(handlers::ldap_groups::delete_ldap_group_mapping))
+
+        // Terraform Cost Estimates (Infracost)
+        .route("/api/project/{project_id}/costs", get(handlers::cost_estimate::list_cost_estimates))
+        .route("/api/project/{project_id}/costs/summary", get(handlers::cost_estimate::cost_summary))
+        .route("/api/project/{project_id}/tasks/{task_id}/cost", get(handlers::cost_estimate::get_task_cost))
+        .route("/api/project/{project_id}/tasks/{task_id}/cost", post(handlers::cost_estimate::create_task_cost))
 }
 
 /// Создаёт маршруты для статических файлов
