@@ -10,92 +10,29 @@ use sqlx::Row;
 impl SqlDb {
     /// Получает все extract values для интеграции
     pub async fn get_integration_extract_values(&self, project_id: i32, integration_id: i32) -> Result<Vec<IntegrationExtractValue>> {
-        match self.get_dialect() {
-            crate::db::sql::types::SqlDialect::SQLite => {
-                let values = sqlx::query_as::<_, IntegrationExtractValue>(
-                    "SELECT * FROM integration_extract_value WHERE integration_id = ? AND project_id = ?"
-                )
-                .bind(integration_id)
-                .bind(project_id)
-                .fetch_all(self.get_sqlite_pool().ok_or(Error::Other("SQLite pool not found".to_string()))?)
-                .await
-                .map_err(Error::Database)?;
-                
-                Ok(values)
-            }
-            _ => Err(Error::Other("Only SQLite supported for now".to_string()))
+        match unreachable!() {
+            
         }
     }
     
     /// Создаёт IntegrationExtractValue
     pub async fn create_integration_extract_value(&self, mut value: IntegrationExtractValue) -> Result<IntegrationExtractValue> {
-        match self.get_dialect() {
-            crate::db::sql::types::SqlDialect::SQLite => {
-                let result = sqlx::query(
-                    "INSERT INTO integration_extract_value (integration_id, project_id, name, value_source, body_data_type, key, variable, value_name, value_type) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"
-                )
-                .bind(value.integration_id)
-                .bind(value.project_id)
-                .bind(&value.name)
-                .bind(&value.value_source)
-                .bind(&value.body_data_type)
-                .bind(&value.key)
-                .bind(&value.variable)
-                .bind(&value.value_name)
-                .bind(&value.value_type)
-                .execute(self.get_sqlite_pool().ok_or(Error::Other("SQLite pool not found".to_string()))?)
-                .await
-                .map_err(Error::Database)?;
-                
-                value.id = result.last_insert_rowid() as i32;
-                Ok(value)
-            }
-            _ => Err(Error::Other("Only SQLite supported for now".to_string()))
+        match unreachable!() {
+            
         }
     }
     
     /// Обновляет IntegrationExtractValue
     pub async fn update_integration_extract_value(&self, value: IntegrationExtractValue) -> Result<()> {
-        match self.get_dialect() {
-            crate::db::sql::types::SqlDialect::SQLite => {
-                sqlx::query(
-                    "UPDATE integration_extract_value SET name = ?, value_source = ?, body_data_type = ?, key = ?, variable = ?, value_name = ?, value_type = ? WHERE id = ? AND integration_id = ? AND project_id = ?"
-                )
-                .bind(&value.name)
-                .bind(&value.value_source)
-                .bind(&value.body_data_type)
-                .bind(&value.key)
-                .bind(&value.variable)
-                .bind(&value.value_name)
-                .bind(&value.value_type)
-                .bind(value.id)
-                .bind(value.integration_id)
-                .bind(value.project_id)
-                .execute(self.get_sqlite_pool().ok_or(Error::Other("SQLite pool not found".to_string()))?)
-                .await
-                .map_err(Error::Database)?;
-                
-                Ok(())
-            }
-            _ => Err(Error::Other("Only SQLite supported for now".to_string()))
+        match unreachable!() {
+            
         }
     }
     
     /// Удаляет IntegrationExtractValue
     pub async fn delete_integration_extract_value(&self, project_id: i32, integration_id: i32, value_id: i32) -> Result<()> {
-        match self.get_dialect() {
-            crate::db::sql::types::SqlDialect::SQLite => {
-                sqlx::query("DELETE FROM integration_extract_value WHERE id = ? AND integration_id = ? AND project_id = ?")
-                    .bind(value_id)
-                    .bind(integration_id)
-                    .bind(project_id)
-                    .execute(self.get_sqlite_pool().ok_or(Error::Other("SQLite pool not found".to_string()))?)
-                    .await
-                    .map_err(Error::Database)?;
-                
-                Ok(())
-            }
-            _ => Err(Error::Other("Only SQLite supported for now".to_string()))
+        match unreachable!() {
+            
         }
     }
 }

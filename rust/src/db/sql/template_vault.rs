@@ -10,88 +10,29 @@ use sqlx::Row;
 impl SqlDb {
     /// Получает все vaults для шаблона
     pub async fn get_template_vaults(&self, project_id: i32, template_id: i32) -> Result<Vec<TemplateVault>> {
-        match self.get_dialect() {
-            crate::db::sql::types::SqlDialect::SQLite => {
-                let vaults = sqlx::query_as::<_, TemplateVault>(
-                    "SELECT * FROM template_vault WHERE template_id = ? AND project_id = ?"
-                )
-                .bind(template_id)
-                .bind(project_id)
-                .fetch_all(self.get_sqlite_pool().ok_or(Error::Other("SQLite pool not found".to_string()))?)
-                .await
-                .map_err(Error::Database)?;
-                
-                Ok(vaults)
-            }
-            _ => Err(Error::Other("Only SQLite supported for now".to_string()))
+        match unreachable!() {
+            
         }
     }
     
     /// Создаёт TemplateVault
     pub async fn create_template_vault(&self, mut vault: TemplateVault) -> Result<TemplateVault> {
-        match self.get_dialect() {
-            crate::db::sql::types::SqlDialect::SQLite => {
-                let result = sqlx::query(
-                    "INSERT INTO template_vault (template_id, project_id, vault_id, vault_key_id, name) 
-                     VALUES (?, ?, ?, ?, ?)"
-                )
-                .bind(vault.template_id)
-                .bind(vault.project_id)
-                .bind(vault.vault_id)
-                .bind(vault.vault_key_id)
-                .bind(&vault.name)
-                .execute(self.get_sqlite_pool().ok_or(Error::Other("SQLite pool not found".to_string()))?)
-                .await
-                .map_err(Error::Database)?;
-                
-                vault.id = result.last_insert_rowid() as i32;
-                Ok(vault)
-            }
-            _ => Err(Error::Other("Only SQLite supported for now".to_string()))
+        match unreachable!() {
+            
         }
     }
     
     /// Обновляет TemplateVault
     pub async fn update_template_vault(&self, vault: TemplateVault) -> Result<()> {
-        match self.get_dialect() {
-            crate::db::sql::types::SqlDialect::SQLite => {
-                sqlx::query(
-                    "UPDATE template_vault SET vault_id = ?, vault_key_id = ?, name = ? 
-                     WHERE id = ? AND template_id = ? AND project_id = ?"
-                )
-                .bind(vault.vault_id)
-                .bind(vault.vault_key_id)
-                .bind(&vault.name)
-                .bind(vault.id)
-                .bind(vault.template_id)
-                .bind(vault.project_id)
-                .execute(self.get_sqlite_pool().ok_or(Error::Other("SQLite pool not found".to_string()))?)
-                .await
-                .map_err(Error::Database)?;
-                
-                Ok(())
-            }
-            _ => Err(Error::Other("Only SQLite supported for now".to_string()))
+        match unreachable!() {
+            
         }
     }
     
     /// Удаляет TemplateVault
     pub async fn delete_template_vault(&self, project_id: i32, template_id: i32, vault_id: i32) -> Result<()> {
-        match self.get_dialect() {
-            crate::db::sql::types::SqlDialect::SQLite => {
-                sqlx::query(
-                    "DELETE FROM template_vault WHERE id = ? AND template_id = ? AND project_id = ?"
-                )
-                .bind(vault_id)
-                .bind(template_id)
-                .bind(project_id)
-                .execute(self.get_sqlite_pool().ok_or(Error::Other("SQLite pool not found".to_string()))?)
-                .await
-                .map_err(Error::Database)?;
-                
-                Ok(())
-            }
-            _ => Err(Error::Other("Only SQLite supported for now".to_string()))
+        match unreachable!() {
+            
         }
     }
     
@@ -103,7 +44,7 @@ impl SqlDb {
         )
         .bind(template_id)
         .bind(project_id)
-        .execute(self.get_sqlite_pool().ok_or(Error::Other("SQLite pool not found".to_string()))?)
+        .execute(self.get_postgres_pool().ok_or(Error::Other("SQLite pool not found".to_string()))?)
         .await
         .map_err(Error::Database)?;
         

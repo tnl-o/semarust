@@ -13,18 +13,8 @@ impl SqlDb {
         // Хешируем пароль
         let hashed_password = hash_password(password)?;
         
-        match self.get_dialect() {
-            crate::db::sql::types::SqlDialect::SQLite => {
-                sqlx::query("UPDATE user SET password = ? WHERE id = ?")
-                    .bind(&hashed_password)
-                    .bind(user_id)
-                    .execute(self.get_sqlite_pool().ok_or(Error::Other("SQLite pool not found".to_string()))?)
-                    .await
-                    .map_err(Error::Database)?;
-                
-                Ok(())
-            }
-            _ => Err(Error::Other("Only SQLite supported for now".to_string()))
+        match unreachable!() {
+            
         }
     }
     

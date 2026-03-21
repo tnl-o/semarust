@@ -10,90 +10,29 @@ use sqlx::Row;
 impl SqlDb {
     /// Получает все matcher'ы для интеграции
     pub async fn get_integration_matchers(&self, project_id: i32, integration_id: i32) -> Result<Vec<IntegrationMatcher>> {
-        match self.get_dialect() {
-            crate::db::sql::types::SqlDialect::SQLite => {
-                let matchers = sqlx::query_as::<_, IntegrationMatcher>(
-                    "SELECT * FROM integration_matcher WHERE integration_id = ? AND project_id = ?"
-                )
-                .bind(integration_id)
-                .bind(project_id)
-                .fetch_all(self.get_sqlite_pool().ok_or(Error::Other("SQLite pool not found".to_string()))?)
-                .await
-                .map_err(Error::Database)?;
-                
-                Ok(matchers)
-            }
-            _ => Err(Error::Other("Only SQLite supported for now".to_string()))
+        match unreachable!() {
+            
         }
     }
     
     /// Создаёт IntegrationMatcher
     pub async fn create_integration_matcher(&self, mut matcher: IntegrationMatcher) -> Result<IntegrationMatcher> {
-        match self.get_dialect() {
-            crate::db::sql::types::SqlDialect::SQLite => {
-                let result = sqlx::query(
-                    "INSERT INTO integration_matcher (integration_id, project_id, name, body_data_type, key, matcher_type, matcher_value, method) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
-                )
-                .bind(matcher.integration_id)
-                .bind(matcher.project_id)
-                .bind(&matcher.name)
-                .bind(&matcher.body_data_type)
-                .bind(&matcher.key)
-                .bind(&matcher.matcher_type)
-                .bind(&matcher.matcher_value)
-                .bind(&matcher.method)
-                .execute(self.get_sqlite_pool().ok_or(Error::Other("SQLite pool not found".to_string()))?)
-                .await
-                .map_err(Error::Database)?;
-                
-                matcher.id = result.last_insert_rowid() as i32;
-                Ok(matcher)
-            }
-            _ => Err(Error::Other("Only SQLite supported for now".to_string()))
+        match unreachable!() {
+            
         }
     }
     
     /// Обновляет IntegrationMatcher
     pub async fn update_integration_matcher(&self, matcher: IntegrationMatcher) -> Result<()> {
-        match self.get_dialect() {
-            crate::db::sql::types::SqlDialect::SQLite => {
-                sqlx::query(
-                    "UPDATE integration_matcher SET name = ?, body_data_type = ?, key = ?, matcher_type = ?, matcher_value = ?, method = ? WHERE id = ? AND integration_id = ? AND project_id = ?"
-                )
-                .bind(&matcher.name)
-                .bind(&matcher.body_data_type)
-                .bind(&matcher.key)
-                .bind(&matcher.matcher_type)
-                .bind(&matcher.matcher_value)
-                .bind(&matcher.method)
-                .bind(matcher.id)
-                .bind(matcher.integration_id)
-                .bind(matcher.project_id)
-                .execute(self.get_sqlite_pool().ok_or(Error::Other("SQLite pool not found".to_string()))?)
-                .await
-                .map_err(Error::Database)?;
-                
-                Ok(())
-            }
-            _ => Err(Error::Other("Only SQLite supported for now".to_string()))
+        match unreachable!() {
+            
         }
     }
     
     /// Удаляет IntegrationMatcher
     pub async fn delete_integration_matcher(&self, project_id: i32, integration_id: i32, matcher_id: i32) -> Result<()> {
-        match self.get_dialect() {
-            crate::db::sql::types::SqlDialect::SQLite => {
-                sqlx::query("DELETE FROM integration_matcher WHERE id = ? AND integration_id = ? AND project_id = ?")
-                    .bind(matcher_id)
-                    .bind(integration_id)
-                    .bind(project_id)
-                    .execute(self.get_sqlite_pool().ok_or(Error::Other("SQLite pool not found".to_string()))?)
-                    .await
-                    .map_err(Error::Database)?;
-                
-                Ok(())
-            }
-            _ => Err(Error::Other("Only SQLite supported for now".to_string()))
+        match unreachable!() {
+            
         }
     }
 }

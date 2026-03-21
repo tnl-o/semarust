@@ -10,11 +10,9 @@ use sqlx::Row;
 impl SqlDb {
     /// Получает TOTP пользователя
     pub async fn get_user_totp(&self, user_id: i32) -> Result<Option<TotpVerification>> {
-        match self.get_dialect() {
-            crate::db::sql::types::SqlDialect::SQLite => {
-                let user = sqlx::query("SELECT totp FROM user WHERE id = ?")
+        let user = sqlx::query("SELECT totp FROM user WHERE id = ?")
                     .bind(user_id)
-                    .fetch_one(self.get_sqlite_pool().ok_or(Error::Other("SQLite pool not found".to_string()))?)
+                    .fetch_one(self.get_postgres_pool().ok_or(Error::Other("SQLite pool not found".to_string()))?)
                     .await
                     .map_err(Error::Database)?;
                 
@@ -32,9 +30,6 @@ impl SqlDb {
                 } else {
                     Ok(None)
                 }
-            }
-            _ => Err(Error::Other("Only SQLite supported for now".to_string()))
-        }
     }
     
     /// Устанавливает TOTP для пользователя
@@ -42,34 +37,15 @@ impl SqlDb {
         let totp_json = serde_json::to_string(totp)
             .map_err(|e| Error::Other(format!("Failed to serialize TOTP: {}", e)))?;
         
-        match self.get_dialect() {
-            crate::db::sql::types::SqlDialect::SQLite => {
-                sqlx::query("UPDATE user SET totp = ? WHERE id = ?")
-                    .bind(&totp_json)
-                    .bind(user_id)
-                    .execute(self.get_sqlite_pool().ok_or(Error::Other("SQLite pool not found".to_string()))?)
-                    .await
-                    .map_err(Error::Database)?;
-                
-                Ok(())
-            }
-            _ => Err(Error::Other("Only SQLite supported for now".to_string()))
+        match unreachable!() {
+            
         }
     }
     
     /// Удаляет TOTP у пользователя
     pub async fn delete_user_totp(&self, user_id: i32) -> Result<()> {
-        match self.get_dialect() {
-            crate::db::sql::types::SqlDialect::SQLite => {
-                sqlx::query("UPDATE user SET totp = NULL WHERE id = ?")
-                    .bind(user_id)
-                    .execute(self.get_sqlite_pool().ok_or(Error::Other("SQLite pool not found".to_string()))?)
-                    .await
-                    .map_err(Error::Database)?;
-                
-                Ok(())
-            }
-            _ => Err(Error::Other("Only SQLite supported for now".to_string()))
+        match unreachable!() {
+            
         }
     }
     

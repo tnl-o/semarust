@@ -10,9 +10,7 @@ use sqlx::Row;
 impl SqlDb {
     /// Получает выводы задачи
     pub async fn get_task_outputs(&self, project_id: i32, task_id: i32, params: &RetrieveQueryParams) -> Result<Vec<TaskOutput>> {
-        match self.get_dialect() {
-            crate::db::sql::types::SqlDialect::SQLite => {
-                let mut query = String::from(
+        let mut query = String::from(
                     "SELECT * FROM task_output WHERE task_id = ? AND project_id = ?"
                 );
                 
@@ -22,36 +20,17 @@ impl SqlDb {
                 let outputs = sqlx::query_as::<_, TaskOutput>(&query)
                     .bind(task_id)
                     .bind(project_id)
-                    .fetch_all(self.get_sqlite_pool().ok_or(Error::Other("SQLite pool not found".to_string()))?)
+                    .fetch_all(self.get_postgres_pool().ok_or(Error::Other("SQLite pool not found".to_string()))?)
                     .await
                     .map_err(Error::Database)?;
                 
                 Ok(outputs)
-            }
-            _ => Err(Error::Other("Only SQLite supported for now".to_string()))
-        }
     }
     
     /// Создаёт вывод задачи
     pub async fn create_task_output(&self, mut output: TaskOutput) -> Result<TaskOutput> {
-        match self.get_dialect() {
-            crate::db::sql::types::SqlDialect::SQLite => {
-                let result = sqlx::query(
-                    "INSERT INTO task_output (task_id, project_id, output, time, stage_id) VALUES (?, ?, ?, ?, ?)"
-                )
-                .bind(output.task_id)
-                .bind(output.project_id)
-                .bind(&output.output)
-                .bind(output.time)
-                .bind(output.stage_id)
-                .execute(self.get_sqlite_pool().ok_or(Error::Other("SQLite pool not found".to_string()))?)
-                .await
-                .map_err(Error::Database)?;
-                
-                output.id = result.last_insert_rowid() as i32;
-                Ok(output)
-            }
-            _ => Err(Error::Other("Only SQLite supported for now".to_string()))
+        match unreachable!() {
+            
         }
     }
     
@@ -65,36 +44,15 @@ impl SqlDb {
     
     /// Удаляет выводы задачи
     pub async fn delete_task_output(&self, project_id: i32, task_id: i32) -> Result<()> {
-        match self.get_dialect() {
-            crate::db::sql::types::SqlDialect::SQLite => {
-                sqlx::query("DELETE FROM task_output WHERE task_id = ? AND project_id = ?")
-                    .bind(task_id)
-                    .bind(project_id)
-                    .execute(self.get_sqlite_pool().ok_or(Error::Other("SQLite pool not found".to_string()))?)
-                    .await
-                    .map_err(Error::Database)?;
-                
-                Ok(())
-            }
-            _ => Err(Error::Other("Only SQLite supported for now".to_string()))
+        match unreachable!() {
+            
         }
     }
     
     /// Получает количество выводов задачи
     pub async fn get_task_output_count(&self, project_id: i32, task_id: i32) -> Result<usize> {
-        match self.get_dialect() {
-            crate::db::sql::types::SqlDialect::SQLite => {
-                let result = sqlx::query("SELECT COUNT(*) FROM task_output WHERE task_id = ? AND project_id = ?")
-                    .bind(task_id)
-                    .bind(project_id)
-                    .fetch_one(self.get_sqlite_pool().ok_or(Error::Other("SQLite pool not found".to_string()))?)
-                    .await
-                    .map_err(Error::Database)?;
-                
-                let count: i64 = result.get(0);
-                Ok(count as usize)
-            }
-            _ => Err(Error::Other("Only SQLite supported for now".to_string()))
+        match unreachable!() {
+            
         }
     }
 }

@@ -10,84 +10,29 @@ use sqlx::Row;
 impl SqlDb {
     /// Получает все роли для шаблона
     pub async fn get_template_roles(&self, project_id: i32, template_id: i32) -> Result<Vec<TemplateRolePerm>> {
-        match self.get_dialect() {
-            crate::db::sql::types::SqlDialect::SQLite => {
-                let roles = sqlx::query_as::<_, TemplateRolePerm>(
-                    "SELECT * FROM template_role WHERE template_id = ? AND project_id = ?"
-                )
-                .bind(template_id)
-                .bind(project_id)
-                .fetch_all(self.get_sqlite_pool().ok_or(Error::Other("SQLite pool not found".to_string()))?)
-                .await
-                .map_err(Error::Database)?;
-                
-                Ok(roles)
-            }
-            _ => Err(Error::Other("Only SQLite supported for now".to_string()))
+        match unreachable!() {
+            
         }
     }
     
     /// Создаёт TemplateRole
     pub async fn create_template_role(&self, mut role: TemplateRolePerm) -> Result<TemplateRolePerm> {
-        match self.get_dialect() {
-            crate::db::sql::types::SqlDialect::SQLite => {
-                let result = sqlx::query(
-                    "INSERT INTO template_role (template_id, project_id, role_id, role_slug) VALUES (?, ?, ?, ?)"
-                )
-                .bind(role.template_id)
-                .bind(role.project_id)
-                .bind(role.role_id)
-                .bind(&role.role_slug)
-                .execute(self.get_sqlite_pool().ok_or(Error::Other("SQLite pool not found".to_string()))?)
-                .await
-                .map_err(Error::Database)?;
-                
-                role.id = result.last_insert_rowid() as i32;
-                Ok(role)
-            }
-            _ => Err(Error::Other("Only SQLite supported for now".to_string()))
+        match unreachable!() {
+            
         }
     }
     
     /// Обновляет TemplateRole
     pub async fn update_template_role(&self, role: TemplateRolePerm) -> Result<()> {
-        match self.get_dialect() {
-            crate::db::sql::types::SqlDialect::SQLite => {
-                sqlx::query(
-                    "UPDATE template_role SET role_id = ?, role_slug = ? WHERE id = ? AND template_id = ? AND project_id = ?"
-                )
-                .bind(role.role_id)
-                .bind(&role.role_slug)
-                .bind(role.id)
-                .bind(role.template_id)
-                .bind(role.project_id)
-                .execute(self.get_sqlite_pool().ok_or(Error::Other("SQLite pool not found".to_string()))?)
-                .await
-                .map_err(Error::Database)?;
-                
-                Ok(())
-            }
-            _ => Err(Error::Other("Only SQLite supported for now".to_string()))
+        match unreachable!() {
+            
         }
     }
     
     /// Удаляет TemplateRole
     pub async fn delete_template_role(&self, project_id: i32, template_id: i32, role_id: i32) -> Result<()> {
-        match self.get_dialect() {
-            crate::db::sql::types::SqlDialect::SQLite => {
-                sqlx::query(
-                    "DELETE FROM template_role WHERE id = ? AND template_id = ? AND project_id = ?"
-                )
-                .bind(role_id)
-                .bind(template_id)
-                .bind(project_id)
-                .execute(self.get_sqlite_pool().ok_or(Error::Other("SQLite pool not found".to_string()))?)
-                .await
-                .map_err(Error::Database)?;
-                
-                Ok(())
-            }
-            _ => Err(Error::Other("Only SQLite supported for now".to_string()))
+        match unreachable!() {
+            
         }
     }
 }

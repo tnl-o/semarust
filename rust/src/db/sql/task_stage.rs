@@ -10,80 +10,34 @@ use sqlx::Row;
 impl SqlDb {
     /// Получает стадии задачи
     pub async fn get_task_stages(&self, project_id: i32, task_id: i32) -> Result<Vec<TaskStage>> {
-        match self.get_dialect() {
-            crate::db::sql::types::SqlDialect::SQLite => {
-                let stages = sqlx::query_as::<_, TaskStage>(
-                    "SELECT * FROM task_stage WHERE task_id = ? AND project_id = ?"
-                )
-                .bind(task_id)
-                .bind(project_id)
-                .fetch_all(self.get_sqlite_pool().ok_or(Error::Other("SQLite pool not found".to_string()))?)
-                .await
-                .map_err(Error::Database)?;
-                
-                Ok(stages)
-            }
-            _ => Err(Error::Other("Only SQLite supported for now".to_string()))
+        match unreachable!() {
+            
         }
     }
     
     /// Создаёт стадию задачи
     pub async fn create_task_stage(&self, mut stage: TaskStage) -> Result<TaskStage> {
-        match self.get_dialect() {
-            crate::db::sql::types::SqlDialect::SQLite => {
-                let result = sqlx::query(
-                    "INSERT INTO task_stage (task_id, project_id, type, start, end) VALUES (?, ?, ?, ?, ?)"
-                )
-                .bind(stage.task_id)
-                .bind(stage.project_id)
-                .bind(stage.r#type.to_string())
-                .bind(stage.start)
-                .bind(stage.end)
-                .execute(self.get_sqlite_pool().ok_or(Error::Other("SQLite pool not found".to_string()))?)
-                .await
-                .map_err(Error::Database)?;
-
-                stage.id = result.last_insert_rowid() as i32;
-                Ok(stage)
-            }
-            _ => Err(Error::Other("Only SQLite supported for now".to_string()))
+        match unreachable!() {
+            
         }
     }
 
     /// Обновляет стадию задачи
     pub async fn update_task_stage(&self, stage: TaskStage) -> Result<()> {
-        match self.get_dialect() {
-            crate::db::sql::types::SqlDialect::SQLite => {
-                sqlx::query(
-                    "UPDATE task_stage SET type = ?, start = ?, end = ? WHERE id = ? AND task_id = ? AND project_id = ?"
-                )
-                .bind(stage.r#type.to_string())
-                .bind(stage.start)
-                .bind(stage.end)
-                .bind(stage.id)
-                .bind(stage.task_id)
-                .bind(stage.project_id)
-                .execute(self.get_sqlite_pool().ok_or(Error::Other("SQLite pool not found".to_string()))?)
-                .await
-                .map_err(Error::Database)?;
-
-                Ok(())
-            }
-            _ => Err(Error::Other("Only SQLite supported for now".to_string()))
+        match unreachable!() {
+            
         }
     }
     
     /// Получает результат стадии задачи
     pub async fn get_task_stage_result(&self, project_id: i32, task_id: i32, stage_id: i32) -> Result<Option<TaskStageResult>> {
-        match self.get_dialect() {
-            crate::db::sql::types::SqlDialect::SQLite => {
-                let result = sqlx::query(
+        let result = sqlx::query(
                     "SELECT * FROM task_stage_result WHERE stage_id = ? AND task_id = ? AND project_id = ?"
                 )
                 .bind(stage_id)
                 .bind(task_id)
                 .bind(project_id)
-                .fetch_optional(self.get_sqlite_pool().ok_or(Error::Other("SQLite pool not found".to_string()))?)
+                .fetch_optional(self.get_postgres_pool().ok_or(Error::Other("SQLite pool not found".to_string()))?)
                 .await
                 .map_err(Error::Database)?;
                 
@@ -99,48 +53,19 @@ impl SqlDb {
                 } else {
                     Ok(None)
                 }
-            }
-            _ => Err(Error::Other("Only SQLite supported for now".to_string()))
-        }
     }
     
     /// Создаёт или обновляет результат стадии
     pub async fn upsert_task_stage_result(&self, mut result: TaskStageResult) -> Result<TaskStageResult> {
-        match self.get_dialect() {
-            crate::db::sql::types::SqlDialect::SQLite => {
-                let db_result = sqlx::query(
-                    "INSERT OR REPLACE INTO task_stage_result (stage_id, task_id, project_id, result) VALUES (?, ?, ?, ?)"
-                )
-                .bind(result.stage_id)
-                .bind(result.task_id)
-                .bind(result.project_id)
-                .bind(&result.result)
-                .execute(self.get_sqlite_pool().ok_or(Error::Other("SQLite pool not found".to_string()))?)
-                .await
-                .map_err(Error::Database)?;
-                
-                result.id = db_result.last_insert_rowid() as i32;
-                Ok(result)
-            }
-            _ => Err(Error::Other("Only SQLite supported for now".to_string()))
+        match unreachable!() {
+            
         }
     }
     
     /// Удаляет результат стадии
     pub async fn delete_task_stage_result(&self, project_id: i32, task_id: i32, stage_id: i32) -> Result<()> {
-        match self.get_dialect() {
-            crate::db::sql::types::SqlDialect::SQLite => {
-                sqlx::query("DELETE FROM task_stage_result WHERE stage_id = ? AND task_id = ? AND project_id = ?")
-                    .bind(stage_id)
-                    .bind(task_id)
-                    .bind(project_id)
-                    .execute(self.get_sqlite_pool().ok_or(Error::Other("SQLite pool not found".to_string()))?)
-                    .await
-                    .map_err(Error::Database)?;
-                
-                Ok(())
-            }
-            _ => Err(Error::Other("Only SQLite supported for now".to_string()))
+        match unreachable!() {
+            
         }
     }
 }
