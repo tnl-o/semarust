@@ -1,0 +1,26 @@
+services:
+  velum-mcp:
+    build: .
+    container_name: velum-mcp
+    restart: unless-stopped
+    ports:
+      - "${MCP_PORT:-8500}:8500"
+    environment:
+      VELUM_URL: ${VELUM_URL:-http://velum:8088}
+      VELUM_API_TOKEN: ${VELUM_API_TOKEN}
+      MCP_TRANSPORT: http
+      MCP_HOST: 0.0.0.0
+      MCP_PORT: 8500
+      VELUM_TIMEOUT: ${VELUM_TIMEOUT:-30}
+
+  # Uncomment to run alongside a local Velum demo instance:
+  # velum:
+  #   image: ghcr.io/tnl-o/velum:latest
+  #   ports: ["8088:8088"]
+  #   environment:
+  #     SEMAPHORE_DB_PATH: /data/velum.db
+  #   volumes:
+  #     - velum-data:/data
+
+# volumes:
+#   velum-data:
