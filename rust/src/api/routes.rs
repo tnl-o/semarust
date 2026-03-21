@@ -139,6 +139,12 @@ pub fn api_routes() -> Router<Arc<AppState>> {
         .route("/api/project/{project_id}/workflows/{id}/run", post(handlers::workflow::run_workflow))
         .route("/api/project/{project_id}/workflows/{id}/runs", get(handlers::workflow::get_workflow_runs))
 
+        // AI Integration
+        .route("/api/ai/settings", get(handlers::ai::get_ai_settings))
+        .route("/api/ai/settings", put(handlers::ai::update_ai_settings))
+        .route("/api/ai/analyze", post(handlers::ai::analyze_failure))
+        .route("/api/ai/generate", post(handlers::ai::generate_playbook))
+
         // Репозитории
         .route("/api/projects/{project_id}/repositories", get(handlers::get_repositories))
         .route("/api/projects/{project_id}/repositories", post(handlers::create_repository))

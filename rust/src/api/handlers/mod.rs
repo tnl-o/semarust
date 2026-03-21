@@ -23,6 +23,7 @@ pub mod playbook;
 pub mod playbook_runs;
 pub mod workflow;
 pub mod notification;
+pub mod ai;
 
 // Ре-экспорт всех handlers для удобства
 pub use auth::*;

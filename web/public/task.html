@@ -125,6 +125,7 @@
                     <button class="btn btn-sm" id="modal-reject-btn" style="display:none; background:#c53030; color:#fff;" onclick="rejectCurrentTask()"><i class="fa-solid fa-xmark"></i> Отклонить</button>
                     <button class="btn btn-sm" id="modal-stop-btn" style="display:none; color:#c53030;" onclick="stopCurrentTask()"><i class="fa-solid fa-stop"></i> Остановить</button>
                     <button class="btn btn-sm" id="modal-rerun-btn" style="display:none;" onclick="rerunCurrentTask()" title="Повторить запуск"><i class="fa-solid fa-rotate-right"></i> Повторить</button>
+                    <button class="btn btn-sm" id="modal-ai-btn" style="display:none; background:#f0f4ff; color:#3730a3;" onclick="analyzeFailureWithAI()" title="Анализ ошибки с помощью AI"><i class="fa-solid fa-wand-magic-sparkles"></i> AI анализ</button>
                     <button class="btn btn-sm" onclick="downloadCurrentLog()"><i class="fa-solid fa-download"></i> Лог</button>
                     <button class="btn btn-sm" onclick="closeTaskDetailModal()">✕</button>
                 </div>
@@ -399,6 +400,9 @@
             const badge = $('#modal-status-badge');
             if (!badge) return;
             const isFailed = badge.classList.contains('status-error') || badge.classList.contains('status-failed');
+            // Show AI analyze button for failed tasks
+            const aiBtn = document.getElementById('modal-ai-btn');
+            if (aiBtn) aiBtn.style.display = isFailed ? 'inline-block' : 'none';
             if (!isFailed) return;
 
             // Find last error/fatal line in output
@@ -663,6 +667,49 @@
                         })
                         .catch(err => ui.showAlert('Ошибка: ' + err.message, 'danger'));
                 });
+            });
+        }
+
+        function analyzeFailureWithAI() {
+            if (!currentTaskId) return;
+            const aiBtn = document.getElementById('modal-ai-btn');
+            if (aiBtn) { aiBtn.disabled = true; aiBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Анализ...'; }
+
+            // Remove old result if any
+            const oldResult = document.getElementById('ai-analysis-result');
+            if (oldResult) oldResult.remove();
+
+            api.getTaskOutput(projectId, currentTaskId).then(output => {
+                const log = output.map(item => typeof item === 'string' ? item : (item.output || '')).join('\n');
+                return api.post('/ai/analyze', {
+                    log,
+                    context: 'Ansible/Terraform task #' + currentTaskId,
+                    lang: 'ru'
+                });
+            }).then(result => {
+                if (aiBtn) { aiBtn.disabled = false; aiBtn.innerHTML = '<i class="fa-solid fa-wand-magic-sparkles"></i> AI анализ'; }
+                const div = document.createElement('div');
+                div.id = 'ai-analysis-result';
+                div.style.cssText = 'background:linear-gradient(135deg,#f0f4ff,#e8f5e9);border:1px solid #a5b4fc;border-radius:8px;padding:16px;margin-bottom:12px;font-size:13px;';
+                const suggestionsHtml = result.suggestions && result.suggestions.length
+                    ? '<ul style="margin:8px 0 0 16px; padding:0;">' + result.suggestions.map(s => `<li style="margin-bottom:4px;">${escapeHtml(s)}</li>`).join('') + '</ul>'
+                    : '';
+                div.innerHTML = `
+                    <div style="display:flex; align-items:center; gap:8px; margin-bottom:10px;">
+                        <span style="font-size:18px;">🤖</span>
+                        <strong>AI Анализ ошибки</strong>
+                        <span style="font-size:11px; color:#666; margin-left:auto;">${escapeHtml(result.provider)} / ${escapeHtml(result.model)}</span>
+                        <button style="background:none;border:none;cursor:pointer;font-size:16px;" onclick="this.closest('#ai-analysis-result').remove()">✕</button>
+                    </div>
+                    <div style="white-space:pre-wrap; line-height:1.5; color:#1e293b;">${escapeHtml(result.analysis)}</div>
+                    ${suggestionsHtml}
+                `;
+                const logSection = $('#modal-log')?.parentElement;
+                if (logSection) logSection.insertBefore(div, $('#modal-log'));
+                else document.getElementById('modal-meta')?.after(div);
+            }).catch(err => {
+                if (aiBtn) { aiBtn.disabled = false; aiBtn.innerHTML = '<i class="fa-solid fa-wand-magic-sparkles"></i> AI анализ'; }
+                ui.showAlert('AI ошибка: ' + err.message + '. Настройте AI в разделе MCP/AI.', 'warning');
             });
         }
 
