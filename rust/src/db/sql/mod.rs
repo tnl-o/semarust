@@ -717,7 +717,7 @@ impl SqlStore {
         .await
         .map_err(Error::Database)?;
 
-        // terraform_state — Terraform Remote State Backend (Phase 1)
+        // terraform_state — версии state-файлов (Phase 1: Remote State Backend)
         sqlx::query(
             "CREATE TABLE IF NOT EXISTS terraform_state (
                 id          BIGSERIAL PRIMARY KEY,
@@ -737,13 +737,13 @@ impl SqlStore {
         .map_err(Error::Database)?;
 
         sqlx::query(
-            "CREATE INDEX IF NOT EXISTS idx_tf_state_project_ws
-             ON terraform_state(project_id, workspace, serial DESC)",
+            "CREATE INDEX IF NOT EXISTS idx_tf_state_project_ws ON terraform_state(project_id, workspace, serial DESC)",
         )
         .execute(pool)
         .await
         .map_err(Error::Database)?;
 
+        // terraform_state_lock — блокировки рабочих пространств
         sqlx::query(
             "CREATE TABLE IF NOT EXISTS terraform_state_lock (
                 project_id  INTEGER NOT NULL REFERENCES project(id) ON DELETE CASCADE,
@@ -764,8 +764,7 @@ impl SqlStore {
         .map_err(Error::Database)?;
 
         sqlx::query(
-            "CREATE INDEX IF NOT EXISTS idx_tf_state_lock_expires
-             ON terraform_state_lock(expires_at)",
+            "CREATE INDEX IF NOT EXISTS idx_tf_state_lock_expires ON terraform_state_lock(expires_at)",
         )
         .execute(pool)
         .await
@@ -810,42 +809,6 @@ impl SqlStore {
 
         sqlx::query(
             "CREATE INDEX IF NOT EXISTS idx_tf_plan_project_status ON terraform_plan(project_id, status)",
-        )
-        .execute(pool)
-        .await
-        .map_err(Error::Database)?;
-
-        sqlx::query(
-            "CREATE TABLE IF NOT EXISTS cost_estimate (
-                id SERIAL PRIMARY KEY,
-                project_id INTEGER NOT NULL,
-                task_id INTEGER NOT NULL,
-                template_id INTEGER NOT NULL,
-                currency TEXT NOT NULL DEFAULT 'USD',
-                monthly_cost DOUBLE PRECISION,
-                monthly_cost_diff DOUBLE PRECISION,
-                resource_count INTEGER NOT NULL DEFAULT 0,
-                resources_added INTEGER NOT NULL DEFAULT 0,
-                resources_changed INTEGER NOT NULL DEFAULT 0,
-                resources_deleted INTEGER NOT NULL DEFAULT 0,
-                breakdown_json TEXT,
-                infracost_version TEXT,
-                created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-            )",
-        )
-        .execute(pool)
-        .await
-        .map_err(Error::Database)?;
-
-        sqlx::query(
-            "CREATE INDEX IF NOT EXISTS idx_cost_estimate_project ON cost_estimate(project_id)",
-        )
-        .execute(pool)
-        .await
-        .map_err(Error::Database)?;
-
-        sqlx::query(
-            "CREATE INDEX IF NOT EXISTS idx_cost_estimate_task ON cost_estimate(project_id, task_id)",
         )
         .execute(pool)
         .await
